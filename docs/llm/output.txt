@@ -8906,3 +8906,505 @@ real	0m0.816s
 user	0m0.896s
 sys	0m0.176s
 kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet --info; time dotnet format; time dotnet restore; time dotnet clean; time dotnet build; time dotnet test; time bash run.sh;
+Starting project export...
+Project Path: /home/kushal/src/dotnet/network-monitor
+Output File: docs/llm/dump.txt
+Generating directory structure...
+Collecting files...
+Found 36 files to export
+Processing (1/36): .github/workflows/build-and-test.yml
+Processing (2/36): .github/workflows/release.yml
+Processing (3/36): src/Directory.Build.props
+Processing (4/36): src/Directory.Packages.props
+Processing (5/36): src/NetworkMonitor.Console/appsettings.json
+Processing (6/36): src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
+Processing (7/36): src/NetworkMonitor.Console/Program.cs
+Processing (8/36): src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs
+Processing (9/36): src/NetworkMonitor.Core/Exporters/FileExporterOptions.cs
+Processing (10/36): src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs
+Processing (11/36): src/NetworkMonitor.Core/Models/HistoricalData.cs
+Processing (12/36): src/NetworkMonitor.Core/Models/MonitorOptions.cs
+Processing (13/36): src/NetworkMonitor.Core/Models/NetworkStatus.cs
+Processing (14/36): src/NetworkMonitor.Core/Models/NetworkStatusEventArgs.cs
+Processing (15/36): src/NetworkMonitor.Core/Models/PingResult.cs
+Processing (16/36): src/NetworkMonitor.Core/Models/StorageOptions.cs
+Processing (17/36): src/NetworkMonitor.Core/NetworkMonitor.Core.csproj
+Processing (18/36): src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
+Processing (19/36): src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs
+Processing (20/36): src/NetworkMonitor.Core/Services/INetworkMonitorService.cs
+Processing (21/36): src/NetworkMonitor.Core/Services/IPingService.cs
+Processing (22/36): src/NetworkMonitor.Core/Services/IStatusDisplay.cs
+Processing (23/36): src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs
+Processing (24/36): src/NetworkMonitor.Core/Services/NetworkMonitorService.cs
+Processing (25/36): src/NetworkMonitor.Core/Services/PingService.cs
+Processing (26/36): src/NetworkMonitor.Core/Storage/IStorageService.cs
+Processing (27/36): src/NetworkMonitor.Core/Storage/SqliteStorageService.cs
+Processing (28/36): src/NetworkMonitor.slnx
+Processing (29/36): src/NetworkMonitor.Tests/Fakes/FakePingService.cs
+Processing (30/36): src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs
+Processing (31/36): src/NetworkMonitor.Tests/Fakes/FakeStorageService.cs
+Processing (32/36): src/NetworkMonitor.Tests/Fakes/NullLogger.cs
+Processing (33/36): src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj
+Processing (34/36): src/NetworkMonitor.Tests/NetworkStatusTests.cs
+Processing (35/36): src/NetworkMonitor.Tests/PingResultTests.cs
+Processing (36/36): src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs
+
+Export completed successfully!
+Output file: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
+Total files exported: 36
+Output file size: 0.09 MB
+
+real	0m0.318s
+user	0m0.165s
+sys	0m0.221s
+.NET SDK:
+ Version:           10.0.101
+ Commit:            fad253f51b
+ Workload version:  10.0.101.1
+ MSBuild version:   18.0.6+fad253f51
+
+Runtime Environment:
+ OS Name:     fedora
+ OS Version:  43
+ OS Platform: Linux
+ RID:         fedora.43-x64
+ Base Path:   /usr/lib64/dotnet/sdk/10.0.101/
+
+.NET workloads installed:
+ [android]
+   Installation Source: SDK 10.0.100
+   Manifest Version:    36.1.2/10.0.100
+   Manifest Path:       /home/kushal/.dotnet/sdk-manifests/10.0.100/microsoft.net.sdk.android/36.1.2/WorkloadManifest.json
+   Install Type:        FileBased
+
+Configured to use workload sets when installing new manifests.
+
+Host:
+  Version:      10.0.1
+  Architecture: x64
+  Commit:       fad253f51b
+
+.NET SDKs installed:
+  10.0.101 [/usr/lib64/dotnet/sdk]
+
+.NET runtimes installed:
+  Microsoft.AspNetCore.App 10.0.1 [/usr/lib64/dotnet/shared/Microsoft.AspNetCore.App]
+  Microsoft.NETCore.App 10.0.1 [/usr/lib64/dotnet/shared/Microsoft.NETCore.App]
+
+Other architectures found:
+  None
+
+Environment variables:
+  DOTNET_BUNDLE_EXTRACT_BASE_DIR           [/home/kushal/.cache/dotnet_bundle_extract]
+  DOTNET_ROOT                              [/usr/lib64/dotnet]
+
+global.json file:
+  Not found
+
+Learn more:
+  https://aka.ms/dotnet/info
+
+Download .NET:
+  https://aka.ms/dotnet/download
+
+real	0m0.143s
+user	0m0.120s
+sys	0m0.022s
+
+real	0m5.209s
+user	0m6.907s
+sys	0m0.613s
+Restore complete (0.4s)
+
+Build succeeded in 0.5s
+
+real	0m0.665s
+user	0m0.684s
+sys	0m0.129s
+
+Build succeeded in 0.4s
+
+real	0m0.545s
+user	0m0.568s
+sys	0m0.087s
+Restore complete (0.4s)
+  NetworkMonitor.Core net10.0 failed with 3 error(s) (0.1s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Models/StorageOptions.cs(62,25): error CA1305: The behavior of 'DateTime.ToString(string)' could vary based on the current user's locale settings. Replace this call in 'StorageOptions.GetDataDirectory()' with a call to 'DateTime.ToString(string, IFormatProvider)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(29,9): error CA1513: Use 'ObjectDisposedException.ThrowIf' instead of explicitly throwing a new exception instance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1513)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(231,50): error CA1859: Change return type of method 'AggregateByGranularity' from 'System.Collections.Generic.IReadOnlyList<NetworkMonitor.Core.Models.HistoricalData>' to 'System.Collections.Generic.List<NetworkMonitor.Core.Models.HistoricalData>' for improved performance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1859)
+
+Build failed with 3 error(s) in 0.7s
+
+real	0m0.849s
+user	0m0.935s
+sys	0m0.159s
+Restore complete (0.5s)
+  NetworkMonitor.Core net10.0 failed with 3 error(s) (0.1s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Models/StorageOptions.cs(62,25): error CA1305: The behavior of 'DateTime.ToString(string)' could vary based on the current user's locale settings. Replace this call in 'StorageOptions.GetDataDirectory()' with a call to 'DateTime.ToString(string, IFormatProvider)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(29,9): error CA1513: Use 'ObjectDisposedException.ThrowIf' instead of explicitly throwing a new exception instance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1513)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(231,50): error CA1859: Change return type of method 'AggregateByGranularity' from 'System.Collections.Generic.IReadOnlyList<NetworkMonitor.Core.Models.HistoricalData>' to 'System.Collections.Generic.List<NetworkMonitor.Core.Models.HistoricalData>' for improved performance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1859)
+
+Build failed with 3 error(s) in 0.7s
+
+real	0m0.886s
+user	0m0.909s
+sys	0m0.157s
+Building and running...
+Restore complete (0.4s)
+  NetworkMonitor.Core net10.0 failed with 3 error(s) (0.1s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Models/StorageOptions.cs(62,25): error CA1305: The behavior of 'DateTime.ToString(string)' could vary based on the current user's locale settings. Replace this call in 'StorageOptions.GetDataDirectory()' with a call to 'DateTime.ToString(string, IFormatProvider)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(29,9): error CA1513: Use 'ObjectDisposedException.ThrowIf' instead of explicitly throwing a new exception instance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1513)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(231,50): error CA1859: Change return type of method 'AggregateByGranularity' from 'System.Collections.Generic.IReadOnlyList<NetworkMonitor.Core.Models.HistoricalData>' to 'System.Collections.Generic.List<NetworkMonitor.Core.Models.HistoricalData>' for improved performance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1859)
+
+Build failed with 3 error(s) in 0.7s
+
+real	0m0.803s
+user	0m0.897s
+sys	0m0.161s
+kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/src/; cat generate-network-monitor.sh; time bash generate-network-monitor.sh
+#!/bin/bash
+# =============================================================================
+# Fix Three Remaining Build Errors
+# =============================================================================
+# This script fixes only the 3 remaining errors after dotnet format:
+#
+# 1. CA1305 - StorageOptions.cs line 62:
+#    DateTime.ToString(string) needs IFormatProvider
+#
+# 2. CA1513 - PingService.cs line 29:
+#    Use ObjectDisposedException.ThrowIf instead of explicit throw
+#
+# 3. CA1859 - SqliteStorageService.cs line 231:
+#    Change return type of AggregateByGranularity from IReadOnlyList to List
+# =============================================================================
+
+set -e
+cd ~/src/dotnet/network-monitor/src
+
+echo "=== Fixing 3 Remaining Build Errors ==="
+echo ""
+
+# -----------------------------------------------------------------------------
+# Fix 1: StorageOptions.cs - CA1305
+# Add CultureInfo.InvariantCulture to DateTime.ToString()
+# -----------------------------------------------------------------------------
+echo "[1/3] Fixing StorageOptions.cs - CA1305 (DateTime.ToString needs IFormatProvider)"
+
+# First, add the using statement if not present
+if ! grep -q "using System.Globalization;" NetworkMonitor.Core/Models/StorageOptions.cs; then
+    sed -i '1i using System.Globalization;' NetworkMonitor.Core/Models/StorageOptions.cs
+    echo "      Added 'using System.Globalization;'"
+fi
+
+# Fix the DateTime.ToString call - need to match the exact line
+sed -i 's/DateTime\.UtcNow\.ToString("yyyyMMdd_HHmmss")/DateTime.UtcNow.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)/g' \
+    NetworkMonitor.Core/Models/StorageOptions.cs
+
+echo "      Fixed DateTime.ToString to use CultureInfo.InvariantCulture"
+
+# -----------------------------------------------------------------------------
+# Fix 2: PingService.cs - CA1513
+# Replace explicit ObjectDisposedException with ThrowIf
+# -----------------------------------------------------------------------------
+echo "[2/3] Fixing PingService.cs - CA1513 (Use ObjectDisposedException.ThrowIf)"
+
+# Replace the if block with the modern ThrowIf pattern
+# The current code is:
+#   if (_disposed)
+#   {
+#       throw new ObjectDisposedException(nameof(PingService));
+#   }
+# Replace with:
+#   ObjectDisposedException.ThrowIf(_disposed, this);
+
+sed -i '/if (_disposed)/,/^[[:space:]]*}$/c\        ObjectDisposedException.ThrowIf(_disposed, this);' \
+    NetworkMonitor.Core/Services/PingService.cs
+
+echo "      Replaced explicit throw with ObjectDisposedException.ThrowIf"
+
+# -----------------------------------------------------------------------------
+# Fix 3: SqliteStorageService.cs - CA1859
+# Change return type of AggregateByGranularity from IReadOnlyList to List
+# -----------------------------------------------------------------------------
+echo "[3/3] Fixing SqliteStorageService.cs - CA1859 (Return List instead of IReadOnlyList)"
+
+# Change the method signature
+sed -i 's/private static IReadOnlyList<HistoricalData> AggregateByGranularity/private static List<HistoricalData> AggregateByGranularity/g' \
+    NetworkMonitor.Core/Storage/SqliteStorageService.cs
+
+echo "      Changed AggregateByGranularity return type to List<HistoricalData>"
+
+# -----------------------------------------------------------------------------
+# Verification
+# -----------------------------------------------------------------------------
+echo ""
+echo "=== Verification ==="
+echo ""
+
+echo "Building to verify fixes..."
+if dotnet build --no-restore 2>&1; then
+    echo ""
+    echo "✅ BUILD SUCCESSFUL - All 3 errors fixed!"
+else
+    echo ""
+    echo "❌ Build still has errors. Checking individual files..."
+    echo ""
+    
+    # Show the relevant lines for debugging
+    echo "StorageOptions.cs - Line with DateTime.ToString:"
+    grep -n "DateTime.UtcNow.ToString" NetworkMonitor.Core/Models/StorageOptions.cs || echo "  (not found)"
+    
+    echo ""
+    echo "PingService.cs - Disposal check:"
+    grep -n -A2 "ObjectDisposedException" NetworkMonitor.Core/Services/PingService.cs | head -5 || echo "  (not found)"
+    
+    echo ""
+    echo "SqliteStorageService.cs - AggregateByGranularity signature:"
+    grep -n "AggregateByGranularity" NetworkMonitor.Core/Storage/SqliteStorageService.cs | head -3 || echo "  (not found)"
+fi
+
+echo ""
+echo "=== Done ==="
+=== Fixing 3 Remaining Build Errors ===
+
+[1/3] Fixing StorageOptions.cs - CA1305 (DateTime.ToString needs IFormatProvider)
+      Added 'using System.Globalization;'
+      Fixed DateTime.ToString to use CultureInfo.InvariantCulture
+[2/3] Fixing PingService.cs - CA1513 (Use ObjectDisposedException.ThrowIf)
+      Replaced explicit throw with ObjectDisposedException.ThrowIf
+[3/3] Fixing SqliteStorageService.cs - CA1859 (Return List instead of IReadOnlyList)
+      Changed AggregateByGranularity return type to List<HistoricalData>
+
+=== Verification ===
+
+Building to verify fixes...
+  NetworkMonitor.Core net10.0 succeeded (0.3s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Tests net10.0 failed with 13 error(s) (0.2s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/NetworkStatusTests.cs(17,17): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.NetworkStatusTests.IsUsable_ReturnsCorrectValue(NetworkMonitor.Core.Models.NetworkHealth, bool) (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/PingResultTests.cs(12,17): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.PingResultTests.Succeeded_CreatesSuccessfulResult() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs(13,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Fakes.FakePingServiceTests.AlwaysSucceed_ReturnsSuccessfulPings() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/PingResultTests.cs(25,17): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.PingResultTests.Failed_CreatesFailedResult() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs(27,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Fakes.FakePingServiceTests.QueuedResults_ReturnedInOrder() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/PingResultTests.cs(38,17): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.PingResultTests.Timestamp_IsSetToUtcNow() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs(47,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Fakes.FakePingServiceTests.PingMultipleAsync_ReturnsRequestedCount() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(29,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_WhenBothSucceed_ReturnsExcellent() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(44,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_WhenRouterFails_ReturnsOffline() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(58,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_WhenInternetFails_ReturnsPoor() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(79,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_HighLatency_ReturnsDegraded() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(98,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_FiresStatusChangedEvent() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(114,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_RespectsCancellation() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+  NetworkMonitor.Console net10.0 succeeded (0.4s) → NetworkMonitor.Console/bin/Debug/net10.0/NetworkMonitor.Console.dll
+
+Build failed with 13 error(s) in 0.8s
+
+❌ Build still has errors. Checking individual files...
+
+StorageOptions.cs - Line with DateTime.ToString:
+63:        var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
+
+PingService.cs - Disposal check:
+29:        ObjectDisposedException.ThrowIf(_disposed, this);
+30-
+31-        try
+
+SqliteStorageService.cs - AggregateByGranularity signature:
+228:        return AggregateByGranularity(results, granularity);
+231:    private static List<HistoricalData> AggregateByGranularity(
+
+=== Done ===
+
+real	0m0.938s
+user	0m0.816s
+sys	0m0.223s
+kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet --info; time dotnet format; time dotnet restore; time dotnet clean; time dotnet build; time dotnet test; time bash run.sh;
+Starting project export...
+Project Path: /home/kushal/src/dotnet/network-monitor
+Output File: docs/llm/dump.txt
+Generating directory structure...
+Collecting files...
+Found 36 files to export
+Processing (1/36): .github/workflows/build-and-test.yml
+Processing (2/36): .github/workflows/release.yml
+Processing (3/36): src/Directory.Build.props
+Processing (4/36): src/Directory.Packages.props
+Processing (5/36): src/NetworkMonitor.Console/appsettings.json
+Processing (6/36): src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
+Processing (7/36): src/NetworkMonitor.Console/Program.cs
+Processing (8/36): src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs
+Processing (9/36): src/NetworkMonitor.Core/Exporters/FileExporterOptions.cs
+Processing (10/36): src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs
+Processing (11/36): src/NetworkMonitor.Core/Models/HistoricalData.cs
+Processing (12/36): src/NetworkMonitor.Core/Models/MonitorOptions.cs
+Processing (13/36): src/NetworkMonitor.Core/Models/NetworkStatus.cs
+Processing (14/36): src/NetworkMonitor.Core/Models/NetworkStatusEventArgs.cs
+Processing (15/36): src/NetworkMonitor.Core/Models/PingResult.cs
+Processing (16/36): src/NetworkMonitor.Core/Models/StorageOptions.cs
+Processing (17/36): src/NetworkMonitor.Core/NetworkMonitor.Core.csproj
+Processing (18/36): src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
+Processing (19/36): src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs
+Processing (20/36): src/NetworkMonitor.Core/Services/INetworkMonitorService.cs
+Processing (21/36): src/NetworkMonitor.Core/Services/IPingService.cs
+Processing (22/36): src/NetworkMonitor.Core/Services/IStatusDisplay.cs
+Processing (23/36): src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs
+Processing (24/36): src/NetworkMonitor.Core/Services/NetworkMonitorService.cs
+Processing (25/36): src/NetworkMonitor.Core/Services/PingService.cs
+Processing (26/36): src/NetworkMonitor.Core/Storage/IStorageService.cs
+Processing (27/36): src/NetworkMonitor.Core/Storage/SqliteStorageService.cs
+Processing (28/36): src/NetworkMonitor.slnx
+Processing (29/36): src/NetworkMonitor.Tests/Fakes/FakePingService.cs
+Processing (30/36): src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs
+Processing (31/36): src/NetworkMonitor.Tests/Fakes/FakeStorageService.cs
+Processing (32/36): src/NetworkMonitor.Tests/Fakes/NullLogger.cs
+Processing (33/36): src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj
+Processing (34/36): src/NetworkMonitor.Tests/NetworkStatusTests.cs
+Processing (35/36): src/NetworkMonitor.Tests/PingResultTests.cs
+Processing (36/36): src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs
+
+Export completed successfully!
+Output file: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
+Total files exported: 36
+Output file size: 0.09 MB
+
+real	0m0.318s
+user	0m0.176s
+sys	0m0.210s
+.NET SDK:
+ Version:           10.0.101
+ Commit:            fad253f51b
+ Workload version:  10.0.101.1
+ MSBuild version:   18.0.6+fad253f51
+
+Runtime Environment:
+ OS Name:     fedora
+ OS Version:  43
+ OS Platform: Linux
+ RID:         fedora.43-x64
+ Base Path:   /usr/lib64/dotnet/sdk/10.0.101/
+
+.NET workloads installed:
+ [android]
+   Installation Source: SDK 10.0.100
+   Manifest Version:    36.1.2/10.0.100
+   Manifest Path:       /home/kushal/.dotnet/sdk-manifests/10.0.100/microsoft.net.sdk.android/36.1.2/WorkloadManifest.json
+   Install Type:        FileBased
+
+Configured to use workload sets when installing new manifests.
+
+Host:
+  Version:      10.0.1
+  Architecture: x64
+  Commit:       fad253f51b
+
+.NET SDKs installed:
+  10.0.101 [/usr/lib64/dotnet/sdk]
+
+.NET runtimes installed:
+  Microsoft.AspNetCore.App 10.0.1 [/usr/lib64/dotnet/shared/Microsoft.AspNetCore.App]
+  Microsoft.NETCore.App 10.0.1 [/usr/lib64/dotnet/shared/Microsoft.NETCore.App]
+
+Other architectures found:
+  None
+
+Environment variables:
+  DOTNET_BUNDLE_EXTRACT_BASE_DIR           [/home/kushal/.cache/dotnet_bundle_extract]
+  DOTNET_ROOT                              [/usr/lib64/dotnet]
+
+global.json file:
+  Not found
+
+Learn more:
+  https://aka.ms/dotnet/info
+
+Download .NET:
+  https://aka.ms/dotnet/download
+
+real	0m0.141s
+user	0m0.124s
+sys	0m0.016s
+
+real	0m5.617s
+user	0m7.313s
+sys	0m0.672s
+Restore complete (0.5s)
+
+Build succeeded in 0.6s
+
+real	0m0.731s
+user	0m0.758s
+sys	0m0.126s
+
+Build succeeded in 0.5s
+
+real	0m0.622s
+user	0m0.625s
+sys	0m0.111s
+Restore complete (0.5s)
+  NetworkMonitor.Core net10.0 succeeded (0.2s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Tests net10.0 failed with 13 error(s) (0.1s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/NetworkStatusTests.cs(17,17): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.NetworkStatusTests.IsUsable_ReturnsCorrectValue(NetworkMonitor.Core.Models.NetworkHealth, bool) (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs(13,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Fakes.FakePingServiceTests.AlwaysSucceed_ReturnsSuccessfulPings() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/PingResultTests.cs(12,17): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.PingResultTests.Succeeded_CreatesSuccessfulResult() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/PingResultTests.cs(25,17): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.PingResultTests.Failed_CreatesFailedResult() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(29,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_WhenBothSucceed_ReturnsExcellent() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/PingResultTests.cs(38,17): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.PingResultTests.Timestamp_IsSetToUtcNow() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs(27,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Fakes.FakePingServiceTests.QueuedResults_ReturnedInOrder() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(44,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_WhenRouterFails_ReturnsOffline() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs(47,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Fakes.FakePingServiceTests.PingMultipleAsync_ReturnsRequestedCount() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(58,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_WhenInternetFails_ReturnsPoor() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(79,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_HighLatency_ReturnsDegraded() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(98,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_FiresStatusChangedEvent() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(114,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_RespectsCancellation() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+  NetworkMonitor.Console net10.0 succeeded (0.4s) → NetworkMonitor.Console/bin/Debug/net10.0/NetworkMonitor.Console.dll
+
+Build failed with 13 error(s) in 1.1s
+
+real	0m1.271s
+user	0m1.347s
+sys	0m0.240s
+Restore complete (0.5s)
+  NetworkMonitor.Core net10.0 succeeded (0.0s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Tests net10.0 failed with 13 error(s) (0.1s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/NetworkStatusTests.cs(17,17): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.NetworkStatusTests.IsUsable_ReturnsCorrectValue(NetworkMonitor.Core.Models.NetworkHealth, bool) (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs(13,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Fakes.FakePingServiceTests.AlwaysSucceed_ReturnsSuccessfulPings() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/PingResultTests.cs(12,17): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.PingResultTests.Succeeded_CreatesSuccessfulResult() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/PingResultTests.cs(25,17): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.PingResultTests.Failed_CreatesFailedResult() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs(27,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Fakes.FakePingServiceTests.QueuedResults_ReturnedInOrder() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/PingResultTests.cs(38,17): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.PingResultTests.Timestamp_IsSetToUtcNow() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs(47,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Fakes.FakePingServiceTests.PingMultipleAsync_ReturnsRequestedCount() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(29,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_WhenBothSucceed_ReturnsExcellent() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(44,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_WhenRouterFails_ReturnsOffline() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(58,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_WhenInternetFails_ReturnsPoor() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(79,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_HighLatency_ReturnsDegraded() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(98,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_FiresStatusChangedEvent() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(114,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_RespectsCancellation() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+
+Build failed with 13 error(s) in 0.8s
+
+real	0m0.941s
+user	0m1.024s
+sys	0m0.183s
+Building and running...
+Restore complete (0.5s)
+  NetworkMonitor.Core net10.0 succeeded (0.0s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Tests net10.0 failed with 13 error(s) (0.1s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/NetworkStatusTests.cs(17,17): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.NetworkStatusTests.IsUsable_ReturnsCorrectValue(NetworkMonitor.Core.Models.NetworkHealth, bool) (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs(13,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Fakes.FakePingServiceTests.AlwaysSucceed_ReturnsSuccessfulPings() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/PingResultTests.cs(12,17): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.PingResultTests.Succeeded_CreatesSuccessfulResult() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/PingResultTests.cs(25,17): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.PingResultTests.Failed_CreatesFailedResult() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/PingResultTests.cs(38,17): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.PingResultTests.Timestamp_IsSetToUtcNow() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs(27,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Fakes.FakePingServiceTests.QueuedResults_ReturnedInOrder() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(29,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_WhenBothSucceed_ReturnsExcellent() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs(47,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Fakes.FakePingServiceTests.PingMultipleAsync_ReturnsRequestedCount() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(44,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_WhenRouterFails_ReturnsOffline() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(58,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_WhenInternetFails_ReturnsPoor() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(79,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_HighLatency_ReturnsDegraded() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(98,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_FiresStatusChangedEvent() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(114,23): error CA1707: Remove the underscores from member name NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_RespectsCancellation() (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1707)
+  NetworkMonitor.Console net10.0 succeeded (0.2s) → NetworkMonitor.Console/bin/Debug/net10.0/NetworkMonitor.Console.dll
+
+Build failed with 13 error(s) in 0.9s
+
+real	0m1.061s
+user	0m1.168s
+sys	0m0.217s
+kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ 
