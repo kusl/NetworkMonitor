@@ -160,6 +160,40 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService, 
             return false;
         }
     }
+    
+    /// <inheritdoc />
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        await _initLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_initialized)
+                return;
+
+            _logger.LogInformation("Initializing network configuration...");
+
+            // Resolve router address
+            _resolvedRouterAddress = await ResolveRouterAddressAsync(cancellationToken);
+            if (_resolvedRouterAddress != null)
+            {
+                _logger.LogInformation("Router address resolved to: {Address}", _resolvedRouterAddress);
+            }
+            else
+            {
+                _logger.LogWarning("Could not resolve router address - router monitoring will be skipped");
+            }
+
+            // Resolve internet target
+            _resolvedInternetTarget = await ResolveInternetTargetAsync(cancellationToken);
+            _logger.LogInformation("Internet target resolved to: {Target}", _resolvedInternetTarget);
+
+            _initialized = true;
+        }
+        finally
+        {
+            _initLock.Release();
+        }
+    }
 
     /// <summary>
     /// Disposes the service and releases resources.
