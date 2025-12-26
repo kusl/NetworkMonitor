@@ -378,3 +378,53 @@ bash fix-ping-issues.sh
 
 
 
+I feel like we are almost there. One more test failed. 
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.1+bf6400fd51 (64-bit .NET 10.0.1)
+[xUnit.net 00:00:00.13]   Discovering: NetworkMonitor.Tests
+[xUnit.net 00:00:00.27]   Discovered:  NetworkMonitor.Tests
+[xUnit.net 00:00:00.41]   Starting:    NetworkMonitor.Tests
+[xUnit.net 00:00:00.50]     NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_HighLatency_ReturnsDegraded [FAIL]
+[xUnit.net 00:00:00.50]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:00.50]       Expected: Degraded
+[xUnit.net 00:00:00.50]       Actual:   Poor
+[xUnit.net 00:00:00.50]       Stack Trace:
+[xUnit.net 00:00:00.50]         /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(94,0): at NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_HighLatency_ReturnsDegraded()
+[xUnit.net 00:00:00.50]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.51]   Finished:    NetworkMonitor.Tests
+  NetworkMonitor.Tests test net10.0 failed with 1 error(s) (1.0s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(94): error TESTERROR: 
+      NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_HighLatency_ReturnsDegraded (1ms): Error Message: Assert.Equal() Failure: Values differ
+      Expected: Degraded
+      Actual:   Poor
+      Stack Trace:
+         at NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_HighLatency_ReturnsDegraded() in /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServ
+      iceTests.cs:line 94
+      --- End of stack trace from previous location ---
+
+Test summary: total: 17, failed: 1, succeeded: 16, skipped: 0, duration: 1.0s
+Build failed with 1 error(s) in 1.7s
+ran again just to verify 
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.1+bf6400fd51 (64-bit .NET 10.0.1)
+[xUnit.net 00:00:00.11]   Discovering: NetworkMonitor.Tests
+[xUnit.net 00:00:00.24]   Discovered:  NetworkMonitor.Tests
+[xUnit.net 00:00:00.37]   Starting:    NetworkMonitor.Tests
+[xUnit.net 00:00:00.46]     NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_HighLatency_ReturnsDegraded [FAIL]
+[xUnit.net 00:00:00.46]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:00.46]       Expected: Degraded
+[xUnit.net 00:00:00.46]       Actual:   Poor
+[xUnit.net 00:00:00.46]       Stack Trace:
+[xUnit.net 00:00:00.46]         /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(94,0): at NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_HighLatency_ReturnsDegraded()
+[xUnit.net 00:00:00.46]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.47]   Finished:    NetworkMonitor.Tests
+  NetworkMonitor.Tests test net10.0 failed with 1 error(s) (0.9s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(94): error TESTERROR: 
+      NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_HighLatency_ReturnsDegraded (1ms): Error Message: Assert.Equal() Failure: Values differ
+      Expected: Degraded
+      Actual:   Poor
+      Stack Trace:
+         at NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_HighLatency_ReturnsDegraded() in /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServ
+      iceTests.cs:line 94
+      --- End of stack trace from previous location ---
+
+Test summary: total: 17, failed: 1, succeeded: 16, skipped: 0, duration: 0.9s
+Build failed with 1 error(s) in 1.5s

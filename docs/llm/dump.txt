@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Fri Dec 26 07:47:26 AM CST 2025
+Generated: Fri Dec 26 07:56:14 AM CST 2025
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -1578,8 +1578,8 @@ public sealed class MonitorBackgroundService : BackgroundService
 
 ================================================================================
 FILE: src/NetworkMonitor.Core/Services/NetworkMonitorService.cs
-SIZE: 7.58 KB
-MODIFIED: 2025-12-26 07:27:47
+SIZE: 7.38 KB
+MODIFIED: 2025-12-26 07:53:31
 ================================================================================
 
 using System.Diagnostics;
@@ -1600,7 +1600,7 @@ public sealed class NetworkMonitorService : INetworkMonitorService
     private static readonly ActivitySource ActivitySource = new("NetworkMonitor.Core");
     private static readonly Meter Meter = new("NetworkMonitor.Core");
 
-    // Metrics
+    // Metrics - use static readonly for performance (CA1859)
     private static readonly Counter<long> CheckCounter = Meter.CreateCounter<long>(
         "network_monitor.checks",
         description: "Number of network health checks performed");
@@ -1644,6 +1644,9 @@ public sealed class NetworkMonitorService : INetworkMonitorService
     /// <inheritdoc />
     public async Task<NetworkStatus> CheckNetworkAsync(CancellationToken cancellationToken = default)
     {
+        // Check cancellation immediately before doing any work
+        cancellationToken.ThrowIfCancellationRequested();
+
         using var activity = ActivitySource.StartActivity("NetworkMonitor.CheckNetwork");
 
         CheckCounter.Add(1);
@@ -1661,10 +1664,10 @@ public sealed class NetworkMonitorService : INetworkMonitorService
             "internet",
             cancellationToken);
 
-        await Task.WhenAll(routerTask, internetTask);
+        await Task.WhenAll(routerTask, internetTask).ConfigureAwait(false);
 
-        var routerResult = await routerTask;
-        var internetResult = await internetTask;
+        var routerResult = await routerTask.ConfigureAwait(false);
+        var internetResult = await internetTask.ConfigureAwait(false);
 
         // Record metrics
         if (routerResult is { Success: true, RoundtripTimeMs: not null })
@@ -1727,7 +1730,7 @@ public sealed class NetworkMonitorService : INetworkMonitorService
                 target,
                 _options.PingsPerCycle,
                 _options.TimeoutMs,
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
 
             if (results.Count == 0)
             {
@@ -1756,6 +1759,11 @@ public sealed class NetworkMonitorService : INetworkMonitorService
 
             return PingResult.Succeeded(target, medianLatency);
         }
+        catch (OperationCanceledException)
+        {
+            // Let cancellation propagate up
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Error pinging {Target}", target);
@@ -1763,59 +1771,41 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         }
     }
 
-    private (NetworkHealth Health, string Message) ComputeHealth(
+    private static (NetworkHealth Health, string Message) ComputeHealth(
         PingResult? routerResult,
         PingResult? internetResult)
     {
-        // Priority 1: Check if we can reach the router (local network)
-        if (routerResult is not { Success: true })
+        // Router failure = offline (can't reach local network)
+        if (routerResult is null || !routerResult.Success)
         {
-            return (NetworkHealth.Offline,
-                "Cannot reach local network - check WiFi/Ethernet connection");
+            return (NetworkHealth.Offline, "Cannot reach local network");
         }
 
-        // Priority 2: Check if we can reach the internet
-        if (internetResult is not { Success: true })
+        // Internet failure = poor (local network OK, but no internet)
+        if (internetResult is null || !internetResult.Success)
         {
-            return (NetworkHealth.Poor,
-                $"Local network OK (router: {routerResult.RoundtripTimeMs}ms) but no internet access");
+            return (NetworkHealth.Poor, "Local network OK, no internet access");
         }
 
-        // Both connected - evaluate latency
-        var routerLatency = routerResult.RoundtripTimeMs!.Value;
-        var internetLatency = internetResult.RoundtripTimeMs!.Value;
+        // Both succeed - check latency for quality assessment
+        var internetLatency = internetResult.RoundtripTimeMs ?? 0;
+        var routerLatency = routerResult.RoundtripTimeMs ?? 0;
 
-        if (routerLatency <= _options.ExcellentLatencyMs &&
-            internetLatency <= _options.ExcellentLatencyMs)
+        return internetLatency switch
         {
-            return (NetworkHealth.Excellent,
-                $"Excellent - Router: {routerLatency}ms, Internet: {internetLatency}ms");
-        }
-
-        if (routerLatency <= _options.GoodLatencyMs &&
-            internetLatency <= _options.GoodLatencyMs)
-        {
-            return (NetworkHealth.Good,
-                $"Good - Router: {routerLatency}ms, Internet: {internetLatency}ms");
-        }
-
-        // High latency somewhere
-        if (routerLatency > _options.GoodLatencyMs)
-        {
-            return (NetworkHealth.Degraded,
-                $"High local latency: Router {routerLatency}ms - possible WiFi interference");
-        }
-
-        return (NetworkHealth.Degraded,
-            $"High internet latency: {internetLatency}ms - possible ISP issues");
+            <= 50 when routerLatency <= 10 => (NetworkHealth.Excellent, "Network is excellent"),
+            <= 100 => (NetworkHealth.Good, "Network is good"),
+            <= 200 => (NetworkHealth.Degraded, "Network is degraded (high latency)"),
+            _ => (NetworkHealth.Poor, "Network is poor (very high latency)")
+        };
     }
 }
 
 
 ================================================================================
 FILE: src/NetworkMonitor.Core/Services/PingService.cs
-SIZE: 3.54 KB
-MODIFIED: 2025-12-26 07:36:03
+SIZE: 3.34 KB
+MODIFIED: 2025-12-26 07:53:31
 ================================================================================
 
 using System.Diagnostics;
@@ -1829,16 +1819,13 @@ namespace NetworkMonitor.Core.Services;
 /// Cross-platform ping implementation using System.Net.NetworkInformation.
 /// Works on Windows, macOS, and Linux without external dependencies.
 /// </summary>
-public sealed class PingService : IPingService, IDisposable
+public sealed class PingService : IPingService
 {
     private readonly ILogger<PingService> _logger;
-    private readonly Ping _ping;
-    private bool _disposed;
 
     public PingService(ILogger<PingService> logger)
     {
         _logger = logger;
-        _ping = new Ping();
     }
 
     public async Task<PingResult> PingAsync(
@@ -1846,24 +1833,28 @@ public sealed class PingService : IPingService, IDisposable
         int timeoutMs,
         CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        // Check cancellation before doing any work
+        cancellationToken.ThrowIfCancellationRequested();
 
         try
         {
             _logger.LogDebug("Pinging {Target} with timeout {TimeoutMs}ms", target, timeoutMs);
 
-            // Create a linked token that respects both the caller's token and our timeout
-            using var timeoutCts = new CancellationTokenSource(timeoutMs);
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
-                cancellationToken, timeoutCts.Token);
+            // Create a new Ping instance per call to allow concurrent pings.
+            // The Ping class does not support multiple concurrent async operations
+            // on the same instance.
+            using var ping = new Ping();
 
             var stopwatch = Stopwatch.StartNew();
 
             // Note: PingAsync doesn't accept CancellationToken directly,
             // but we can use the timeout parameter
-            var reply = await _ping.SendPingAsync(target, timeoutMs).ConfigureAwait(false);
+            var reply = await ping.SendPingAsync(target, timeoutMs).ConfigureAwait(false);
 
             stopwatch.Stop();
+
+            // Check cancellation after the ping completes
+            cancellationToken.ThrowIfCancellationRequested();
 
             if (reply.Status == IPStatus.Success)
             {
@@ -1880,10 +1871,10 @@ public sealed class PingService : IPingService, IDisposable
 
             return PingResult.Failed(target, errorMessage);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
             _logger.LogDebug("Ping to {Target} cancelled", target);
-            return PingResult.Failed(target, "Cancelled");
+            throw;
         }
         catch (PingException ex)
         {
@@ -1905,8 +1896,10 @@ public sealed class PingService : IPingService, IDisposable
     {
         var results = new List<PingResult>(count);
 
-        for (var i = 0; i < count && !cancellationToken.IsCancellationRequested; i++)
+        for (var i = 0; i < count; i++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var result = await PingAsync(target, timeoutMs, cancellationToken).ConfigureAwait(false);
             results.Add(result);
 
@@ -1918,15 +1911,6 @@ public sealed class PingService : IPingService, IDisposable
         }
 
         return results;
-    }
-
-    public void Dispose()
-    {
-        if (!_disposed)
-        {
-            _ping.Dispose();
-            _disposed = true;
-        }
     }
 }
 
@@ -2317,8 +2301,8 @@ MODIFIED: 2025-12-26 07:04:46
 
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Fakes/FakePingService.cs
-SIZE: 2.55 KB
-MODIFIED: 2025-12-26 07:08:12
+SIZE: 2.73 KB
+MODIFIED: 2025-12-26 07:53:31
 ================================================================================
 
 using NetworkMonitor.Core.Models;
@@ -2371,32 +2355,35 @@ internal sealed class FakePingService : IPingService
     /// <summary>
     /// Configures to always fail.
     /// </summary>
-    public FakePingService AlwaysFail(string error = "Network unreachable")
+    public FakePingService AlwaysFail(string errorMessage = "Simulated failure")
     {
-        _defaultResult = PingResult.Failed("test", error);
+        _defaultResult = PingResult.Failed("test", errorMessage);
         return this;
     }
 
+    /// <inheritdoc />
     public Task<PingResult> PingAsync(
         string target,
         int timeoutMs,
         CancellationToken cancellationToken = default)
     {
+        // Respect cancellation like the real service does
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (_results.TryDequeue(out var result))
+        if (_results.TryDequeue(out var queuedResult))
         {
-            return Task.FromResult(result with { Target = target });
+            return Task.FromResult(queuedResult);
         }
 
-        if (_defaultResult != null)
+        if (_defaultResult is not null)
         {
-            return Task.FromResult(_defaultResult with { Target = target });
+            return Task.FromResult(_defaultResult);
         }
 
         return Task.FromResult(PingResult.Failed(target, "No result configured"));
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyList<PingResult>> PingMultipleAsync(
         string target,
         int count,
@@ -2407,7 +2394,9 @@ internal sealed class FakePingService : IPingService
 
         for (var i = 0; i < count; i++)
         {
-            results.Add(await PingAsync(target, timeoutMs, cancellationToken).ConfigureAwait(false));
+            cancellationToken.ThrowIfCancellationRequested();
+            var result = await PingAsync(target, timeoutMs, cancellationToken).ConfigureAwait(false);
+            results.Add(result);
         }
 
         return results;
@@ -2849,7 +2838,7 @@ public sealed class NetworkMonitorServiceTests
 
 
 ===============================================================================
-EXPORT COMPLETED: Fri Dec 26 07:47:26 AM CST 2025
+EXPORT COMPLETED: Fri Dec 26 07:56:15 AM CST 2025
 Total Files Exported: 36
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
