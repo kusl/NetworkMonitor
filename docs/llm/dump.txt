@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Fri Dec 26 12:10:38 PM CST 2025
+Generated: Fri Dec 26 12:16:30 PM CST 2025
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -3595,7 +3595,7 @@ public sealed class MonitorOptionsTests
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs
 SIZE: 1.48 KB
-MODIFIED: 2025-12-26 12:10:19
+MODIFIED: 2025-12-26 12:14:26
 ================================================================================
 
 using NetworkMonitor.Core.Models;
@@ -3611,12 +3611,12 @@ public sealed class NetworkHealthTests
     [Fact]
     public void NetworkHealth_HasExpectedValues()
     {
-        // Assert all expected values exist
-        Assert.True(Enum.IsDefined(NetworkHealth, NetworkHealth.Offline));
-        Assert.True(Enum.IsDefined(NetworkHealth, NetworkHealth.Poor));
-        Assert.True(Enum.IsDefined(NetworkHealth, NetworkHealth.Degraded));
-        Assert.True(Enum.IsDefined(NetworkHealth, NetworkHealth.Good));
-        Assert.True(Enum.IsDefined(NetworkHealth, NetworkHealth.Excellent));
+        // Assert all expected vales exist
+        Assert.True(Enum.IsDefined<NetworkHealth>(NetworkHealth.Offline));
+        Assert.True(Enum.IsDefined<NetworkHealth>(NetworkHealth.Poor));
+        Assert.True(Enum.IsDefined<NetworkHealth>(NetworkHealth.Degraded));
+        Assert.True(Enum.IsDefined<NetworkHealth>(NetworkHealth.Good));
+        Assert.True(Enum.IsDefined<NetworkHealth>(NetworkHealth.Excellent));
     }
 
     [Fact]
@@ -3639,7 +3639,6 @@ public sealed class NetworkHealthTests
         Assert.Equal("Offline", NetworkHealth.Offline.ToString());
     }
 }
-
 
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Models/NetworkStatusEventArgsTests.cs
@@ -4460,7 +4459,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
 
 
 ===============================================================================
-EXPORT COMPLETED: Fri Dec 26 12:10:39 PM CST 2025
+EXPORT COMPLETED: Fri Dec 26 12:16:31 PM CST 2025
 Total Files Exported: 51
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
