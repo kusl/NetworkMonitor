@@ -146,4 +146,22 @@ Build succeeded in 1.7s
 real	0m1.888s
 user	0m0.979s
 sys	0m0.217s
+kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ git remote show
+kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ git remote add origin git@github.com:kusl/NetworkMonitor.git
+kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ time git push origin --all --verbose
+Pushing to github.com:kusl/NetworkMonitor.git
+Enumerating objects: 342, done.
+Counting objects: 100% (342/342), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (309/309), done.
+Writing objects: 100% (342/342), 463.63 KiB | 13.25 MiB/s, done.
+Total 342 (delta 199), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (199/199), done.
+To github.com:kusl/NetworkMonitor.git
+ * [new branch]      master -> master
+updating local tracking ref 'refs/remotes/origin/master'
+
+real	0m1.878s
+user	0m0.119s
+sys	0m0.039s
 kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ 
