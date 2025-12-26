@@ -24,11 +24,11 @@ public sealed class NetworkHealthTests
     public void NetworkHealth_ValuesAreDefined()
     {
         // Assert all expected values are defined in the enum
-        Assert.True(Enum.IsDefined(NetworkHealth.Offline));
-        Assert.True(Enum.IsDefined(NetworkHealth.Poor));
-        Assert.True(Enum.IsDefined(NetworkHealth.Degraded));
-        Assert.True(Enum.IsDefined(NetworkHealth.Good));
-        Assert.True(Enum.IsDefined(NetworkHealth.Excellent));
+        Assert.True(Enum.IsDefined<NetworkHealth>(NetworkHealth.Offline));
+        Assert.True(Enum.IsDefined<NetworkHealth>(NetworkHealth.Poor));
+        Assert.True(Enum.IsDefined<NetworkHealth>(NetworkHealth.Degraded));
+        Assert.True(Enum.IsDefined<NetworkHealth>(NetworkHealth.Good));
+        Assert.True(Enum.IsDefined<NetworkHealth>(NetworkHealth.Excellent));
     }
 
     [Fact]
