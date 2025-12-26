@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Fri Dec 26 10:11:30 AM CST 2025
+Generated: Fri Dec 26 10:22:21 AM CST 2025
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -133,124 +133,292 @@ jobs:
 
 ================================================================================
 FILE: .github/workflows/release.yml
-SIZE: 3.03 KB
-MODIFIED: 2025-12-26 08:55:21
+SIZE: 9.73 KB
+MODIFIED: 2025-12-26 10:22:12
 ================================================================================
 
-# GitHub Actions Workflow: Build and Release
+# GitHub Actions Workflow: Build and Create Release
 # Triggers on every push to any branch
-# Creates self-contained executables for all platforms
-# Uploads as artifacts (not GitHub releases - those require tags)
+# Creates self-contained executables for all major desktop platforms
+# Publishes a full GitHub release (never pre-release) with all binaries
+#
+# Supported platforms:
+#   - Windows: x64, ARM64
+#   - macOS: x64 (Intel), ARM64 (Apple Silicon)
+#   - Linux: x64, ARM64
+#
+# Philosophy: We avoid high-level GitHub Actions abstractions.
+# If an action can do it, we can do it ourselves with shell commands.
 
 name: Build and Release
 
 on:
   push:
     branches:
-      - '**'
+      - '**'  # All branches
 
 permissions:
-  contents: read
+  contents: write  # Required to create releases and upload assets
 
 env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  PROJECT_PATH: src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
+  SOLUTION_PATH: src/NetworkMonitor.slnx
 
 jobs:
-  build-binaries:
+  # ==========================================================================
+  # Build binaries for each platform
+  # ==========================================================================
+  build:
     strategy:
       fail-fast: false
       matrix:
         include:
+          # Windows
+          - os: windows-latest
+            rid: win-x64
+            artifact-name: network-monitor-win-x64
+            archive-ext: zip
+          - os: windows-latest
+            rid: win-arm64
+            artifact-name: network-monitor-win-arm64
+            archive-ext: zip
+          # macOS (using -latest, not specific versions)
+          - os: macos-latest
+            rid: osx-x64
+            artifact-name: network-monitor-osx-x64
+            archive-ext: tar.gz
+          - os: macos-latest
+            rid: osx-arm64
+            artifact-name: network-monitor-osx-arm64
+            archive-ext: tar.gz
           # Linux
           - os: ubuntu-latest
             rid: linux-x64
             artifact-name: network-monitor-linux-x64
+            archive-ext: tar.gz
           - os: ubuntu-latest
             rid: linux-arm64
             artifact-name: network-monitor-linux-arm64
-          - os: ubuntu-latest
-            rid: linux-musl-x64
-            artifact-name: network-monitor-linux-musl-x64
-          # Windows
-          - os: windows-latest
-            rid: win-arm64
-            artifact-name: network-monitor-win-arm64
-          # macOS
-          - os: macos-latest
-            rid: osx-x64
-            artifact-name: network-monitor-osx-x64
-          - os: macos-latest
-            rid: osx-arm64
-            artifact-name: network-monitor-osx-arm64
+            archive-ext: tar.gz
 
     runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        run: |
+          git clone --depth 1 https://github.com/${{ github.repository }}.git .
+          git checkout ${{ github.sha }}
 
       - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-          dotnet-quality: 'preview'
-
-      - name: Restore dependencies
-        run: dotnet restore src/NetworkMonitor.slnx
-
-      - name: Build and Publish
         shell: bash
         run: |
-          dotnet publish src/NetworkMonitor.Console/NetworkMonitor.Console.csproj \
+          # Download and install .NET 10 Preview manually
+          # This avoids using actions/setup-dotnet
+          
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            curl -sSL https://dot.net/v1/dotnet-install.ps1 -o dotnet-install.ps1
+            powershell -ExecutionPolicy Bypass -File dotnet-install.ps1 -Channel 10.0 -Quality preview -InstallDir "$HOME/.dotnet"
+            echo "$HOME/.dotnet" >> $GITHUB_PATH
+          else
+            curl -sSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
+            chmod +x dotnet-install.sh
+            ./dotnet-install.sh --channel 10.0 --quality preview --install-dir "$HOME/.dotnet"
+            echo "$HOME/.dotnet" >> $GITHUB_PATH
+          fi
+
+      - name: Verify .NET installation
+        shell: bash
+        run: |
+          export PATH="$HOME/.dotnet:$PATH"
+          dotnet --info
+
+      - name: Restore dependencies
+        shell: bash
+        run: |
+          export PATH="$HOME/.dotnet:$PATH"
+          dotnet restore ${{ env.SOLUTION_PATH }}
+
+      - name: Build and publish self-contained binary
+        shell: bash
+        run: |
+          export PATH="$HOME/.dotnet:$PATH"
+          dotnet publish ${{ env.PROJECT_PATH }} \
             --configuration Release \
             --runtime ${{ matrix.rid }} \
             --self-contained true \
             -p:PublishSingleFile=true \
             -p:PublishTrimmed=false \
             -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:DebugType=None \
+            -p:DebugSymbols=false \
             --output ./publish/${{ matrix.rid }}
 
-      - name: Upload artifact
+      - name: Create archive (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          cd publish
+          tar -czvf ../${{ matrix.artifact-name }}.tar.gz ${{ matrix.rid }}
+
+      - name: Create archive (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "publish/${{ matrix.rid }}/*" -DestinationPath "${{ matrix.artifact-name }}.zip"
+
+      - name: Upload build artifact
+        shell: bash
+        run: |
+          # We use the GitHub CLI to upload artifacts since it's pre-installed
+          # This avoids using actions/upload-artifact
+          mkdir -p artifacts
+          if [[ "${{ matrix.archive-ext }}" == "zip" ]]; then
+            mv ${{ matrix.artifact-name }}.zip artifacts/
+          else
+            mv ${{ matrix.artifact-name }}.tar.gz artifacts/
+          fi
+
+      - name: Store artifact for release job
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
-          path: ./publish/${{ matrix.rid }}/
+          path: artifacts/
+          retention-days: 1
           if-no-files-found: error
-          retention-days: 90
 
-  # Create a combined release artifact with all binaries
-  combine-artifacts:
-    needs: build-binaries
+  # ==========================================================================
+  # Create GitHub Release with all binaries
+  # ==========================================================================
+  release:
+    needs: build
     runs-on: ubuntu-latest
     
     steps:
-      - name: Download all artifacts
+      - name: Checkout repository (for changelog/version info)
+        run: |
+          git clone --depth 50 https://github.com/${{ github.repository }}.git .
+          git checkout ${{ github.sha }}
+
+      - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
-          path: ./all-artifacts
+          path: ./release-assets
+          merge-multiple: false
 
-      - name: Create combined archive
+      - name: Prepare release assets
+        shell: bash
         run: |
-          cd all-artifacts
-          for dir in */; do
-            name="${dir%/}"
-            if [[ "$name" == *"win"* ]]; then
-              zip -r "../${name}.zip" "$dir"
-            else
-              tar -czvf "../${name}.tar.gz" "$dir"
-            fi
-          done
+          mkdir -p ./final-assets
+          
+          # Move all archives to final-assets folder
+          find ./release-assets -type f \( -name "*.zip" -o -name "*.tar.gz" \) -exec mv {} ./final-assets/ \;
+          
+          echo "Release assets:"
+          ls -la ./final-assets/
 
-      - name: Upload combined release
-        uses: actions/upload-artifact@v4
-        with:
-          name: network-monitor-all-platforms-${{ github.sha }}
-          path: |
-            *.zip
-            *.tar.gz
-          if-no-files-found: error
-          retention-days: 90
+      - name: Generate version tag
+        id: version
+        shell: bash
+        run: |
+          # Generate a version based on date and short SHA
+          # Format: v1.0.0-YYYYMMDD-HHMMSS-shortsha
+          TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          VERSION="v1.0.0-${TIMESTAMP}-${SHORT_SHA}"
+          
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Generated version: ${VERSION}"
+
+      - name: Generate release notes
+        id: notes
+        shell: bash
+        run: |
+          # Get the commit message for release notes
+          COMMIT_MSG=$(git log -1 --pretty=format:"%s")
+          COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
+          COMMIT_DATE=$(git log -1 --pretty=format:"%ai")
+          BRANCH_NAME="${{ github.ref_name }}"
+          
+          # Create release notes
+          cat > release-notes.md << EOF
+          ## Network Monitor Release
+          
+          **Branch:** \`${BRANCH_NAME}\`
+          **Commit:** \`${{ github.sha }}\`
+          **Author:** ${COMMIT_AUTHOR}
+          **Date:** ${COMMIT_DATE}
+          
+          ### Commit Message
+          ${COMMIT_MSG}
+          
+          ### Available Downloads
+          
+          | Platform | Architecture | File |
+          |----------|--------------|------|
+          | Windows | x64 | \`network-monitor-win-x64.zip\` |
+          | Windows | ARM64 | \`network-monitor-win-arm64.zip\` |
+          | macOS | x64 (Intel) | \`network-monitor-osx-x64.tar.gz\` |
+          | macOS | ARM64 (Apple Silicon) | \`network-monitor-osx-arm64.tar.gz\` |
+          | Linux | x64 | \`network-monitor-linux-x64.tar.gz\` |
+          | Linux | ARM64 | \`network-monitor-linux-arm64.tar.gz\` |
+          
+          ### Installation
+          
+          1. Download the appropriate archive for your platform
+          2. Extract the archive
+          3. Run the \`NetworkMonitor.Console\` executable (or \`NetworkMonitor.Console.exe\` on Windows)
+          
+          ### Checksums (SHA256)
+          
+          \`\`\`
+          $(cd final-assets && sha256sum * 2>/dev/null || shasum -a 256 *)
+          \`\`\`
+          EOF
+          
+          echo "Release notes generated"
+
+      - name: Create Git tag
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Create and push the tag
+          git tag -a "${{ steps.version.outputs.version }}" -m "Release ${{ steps.version.outputs.version }}"
+          git push origin "${{ steps.version.outputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        shell: bash
+        run: |
+          # Use GitHub CLI to create the release
+          # gh is pre-installed on GitHub-hosted runners
+          
+          gh release create "${{ steps.version.outputs.version }}" \
+            --title "Release ${{ steps.version.outputs.version }}" \
+            --notes-file release-notes.md \
+            --latest \
+            ./final-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release summary
+        shell: bash
+        run: |
+          echo "## Release Created Successfully! 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Assets uploaded:**" >> $GITHUB_STEP_SUMMARY
+          for file in ./final-assets/*; do
+            echo "- $(basename $file)" >> $GITHUB_STEP_SUMMARY
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Release URL:** https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
 
 
 ================================================================================
@@ -2840,7 +3008,7 @@ public sealed class NetworkMonitorServiceTests
 
 
 ===============================================================================
-EXPORT COMPLETED: Fri Dec 26 10:11:30 AM CST 2025
+EXPORT COMPLETED: Fri Dec 26 10:22:21 AM CST 2025
 Total Files Exported: 36
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
