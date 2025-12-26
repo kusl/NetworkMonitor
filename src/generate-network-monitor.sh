@@ -4,6 +4,8 @@
 # Fixes:
 #   1. CS0104: Ambiguous NullLogger<> reference (2 instances)
 #   2. CA1001: NetworkMonitorServiceTests owns disposable field but is not disposable
+#   3. CS7036: Task.FromResult requires argument - use Task.CompletedTask
+#   4. CS1061: PingResult uses RoundtripTimeMs, not LatencyMs
 # =============================================================================
 
 set -e
@@ -45,7 +47,100 @@ else
 fi
 
 # =============================================================================
-# Fix 2: Update NetworkConfigurationServiceTests to use fully qualified NullLogger
+# Fix 2: Update FakeNetworkConfigurationService with InitializeAsync
+# =============================================================================
+log_info "Updating FakeNetworkConfigurationService..."
+
+cat > "$SRC_DIR/NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs" << 'EOF'
+using NetworkMonitor.Core.Services;
+
+namespace NetworkMonitor.Tests.Fakes;
+
+/// <summary>
+/// Fake network configuration service for testing.
+/// Returns configurable addresses without actual network operations.
+/// </summary>
+public sealed class FakeNetworkConfigurationService : INetworkConfigurationService, IDisposable
+{
+    private string? _routerAddress = "192.168.1.1";
+    private string _internetTarget = "8.8.8.8";
+
+    public FakeNetworkConfigurationService WithRouterAddress(string? address)
+    {
+        _routerAddress = address;
+        return this;
+    }
+
+    public FakeNetworkConfigurationService WithInternetTarget(string target)
+    {
+        _internetTarget = target;
+        return this;
+    }
+
+    public Task<string?> GetRouterAddressAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult(_routerAddress);
+
+    public Task<string> GetInternetTargetAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult(_internetTarget);
+
+    public Task InitializeAsync(CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+
+    public void Dispose()
+    {
+        // Nothing to dispose in fake
+    }
+}
+EOF
+log_success "FakeNetworkConfigurationService updated with InitializeAsync"
+
+# =============================================================================
+# Fix 3: Update FakeInternetTargetProvider with WithPrimaryTarget method
+# =============================================================================
+log_info "Updating FakeInternetTargetProvider..."
+
+cat > "$SRC_DIR/NetworkMonitor.Tests/Fakes/FakeInternetTargetProvider.cs" << 'EOF'
+using NetworkMonitor.Core.Services;
+
+namespace NetworkMonitor.Tests.Fakes;
+
+/// <summary>
+/// Fake internet target provider for testing.
+/// </summary>
+public sealed class FakeInternetTargetProvider : IInternetTargetProvider
+{
+    private string _primaryTarget = "8.8.8.8";
+    private List<string> _targets = new() { "8.8.8.8", "1.1.1.1", "208.67.222.222" };
+
+    public string PrimaryTarget => _primaryTarget;
+
+    public FakeInternetTargetProvider WithPrimaryTarget(string target)
+    {
+        _primaryTarget = target;
+        if (!_targets.Contains(target))
+        {
+            _targets.Insert(0, target);
+        }
+        return this;
+    }
+
+    public FakeInternetTargetProvider WithTargets(params string[] targets)
+    {
+        _targets = targets.ToList();
+        if (_targets.Count > 0)
+        {
+            _primaryTarget = _targets[0];
+        }
+        return this;
+    }
+
+    public IReadOnlyList<string> GetTargets() => _targets;
+}
+EOF
+log_success "FakeInternetTargetProvider updated"
+
+# =============================================================================
+# Fix 4: Update NetworkConfigurationServiceTests
 # =============================================================================
 log_info "Updating NetworkConfigurationServiceTests..."
 
@@ -231,7 +326,7 @@ EOF
 log_success "NetworkConfigurationServiceTests updated"
 
 # =============================================================================
-# Fix 3: Update NetworkMonitorServiceTests to implement IDisposable
+# Fix 5: Update NetworkMonitorServiceTests to implement IDisposable
 # =============================================================================
 log_info "Updating NetworkMonitorServiceTests to implement IDisposable..."
 
@@ -428,7 +523,7 @@ EOF
 log_success "NetworkMonitorServiceTests updated with IDisposable"
 
 # =============================================================================
-# Update InternetTargetProviderTests to use Microsoft's NullLogger
+# Fix 6: Update InternetTargetProviderTests to use Microsoft's NullLogger
 # =============================================================================
 log_info "Updating InternetTargetProviderTests..."
 
@@ -506,97 +601,92 @@ EOF
 log_success "InternetTargetProviderTests updated"
 
 # =============================================================================
-# Ensure FakeNetworkConfigurationService implements IDisposable
+# Fix 7: Update PingResultTests to use RoundtripTimeMs (correct property name)
 # =============================================================================
-log_info "Ensuring FakeNetworkConfigurationService implements IDisposable..."
+log_info "Updating PingResultTests with correct property name..."
 
-cat > "$SRC_DIR/NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs" << 'EOF'
-using NetworkMonitor.Core.Services;
+cat > "$SRC_DIR/NetworkMonitor.Tests/Models/PingResultTests.cs" << 'EOF'
+using NetworkMonitor.Core.Models;
+using Xunit;
 
-namespace NetworkMonitor.Tests.Fakes;
+namespace NetworkMonitor.Tests.Models;
 
 /// <summary>
-/// Fake network configuration service for testing.
-/// Returns configurable addresses without actual network operations.
+/// Tests for PingResult.
 /// </summary>
-public sealed class FakeNetworkConfigurationService : INetworkConfigurationService, IDisposable
+public sealed class PingResultTests
 {
-    private string? _routerAddress = "192.168.1.1";
-    private string _internetTarget = "8.8.8.8";
-
-    public FakeNetworkConfigurationService WithRouterAddress(string? address)
+    [Fact]
+    public void Succeeded_CreatesSuccessfulResult()
     {
-        _routerAddress = address;
-        return this;
+        // Act
+        var result = PingResult.Succeeded("8.8.8.8", 15);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal("8.8.8.8", result.Target);
+        Assert.Equal(15, result.RoundtripTimeMs);
+        Assert.Null(result.ErrorMessage);
     }
 
-    public FakeNetworkConfigurationService WithInternetTarget(string target)
+    [Fact]
+    public void Failed_CreatesFailedResult()
     {
-        _internetTarget = target;
-        return this;
+        // Act
+        var result = PingResult.Failed("8.8.8.8", "Request timed out");
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal("8.8.8.8", result.Target);
+        Assert.Null(result.RoundtripTimeMs);
+        Assert.Equal("Request timed out", result.ErrorMessage);
     }
 
-    public Task<string?> GetRouterAddressAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult(_routerAddress);
-
-    public Task<string> GetInternetTargetAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult(_internetTarget);
-
-    public void Dispose()
+    [Fact]
+    public void Timestamp_IsSetToCurrentTime()
     {
-        // Nothing to dispose in fake
+        // Arrange
+        var before = DateTimeOffset.UtcNow;
+
+        // Act
+        var result = PingResult.Succeeded("8.8.8.8", 10);
+
+        // Assert
+        var after = DateTimeOffset.UtcNow;
+        Assert.True(result.Timestamp >= before);
+        Assert.True(result.Timestamp <= after);
+    }
+
+    [Fact]
+    public void Succeeded_WithZeroLatency_IsValid()
+    {
+        // Act
+        var result = PingResult.Succeeded("localhost", 0);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal(0, result.RoundtripTimeMs);
+    }
+
+    [Fact]
+    public void Record_Equality_WorksCorrectly()
+    {
+        // Arrange
+        var timestamp = DateTimeOffset.UtcNow;
+        var result1 = new PingResult("8.8.8.8", true, 10, timestamp);
+        var result2 = new PingResult("8.8.8.8", true, 10, timestamp);
+        var result3 = new PingResult("8.8.8.8", true, 20, timestamp);
+
+        // Assert
+        Assert.Equal(result1, result2);
+        Assert.NotEqual(result1, result3);
     }
 }
 EOF
-log_success "FakeNetworkConfigurationService updated"
+log_success "PingResultTests updated with RoundtripTimeMs"
 
 # =============================================================================
-# Ensure FakeInternetTargetProvider exists with proper methods
-# =============================================================================
-log_info "Ensuring FakeInternetTargetProvider is properly configured..."
-
-cat > "$SRC_DIR/NetworkMonitor.Tests/Fakes/FakeInternetTargetProvider.cs" << 'EOF'
-using NetworkMonitor.Core.Services;
-
-namespace NetworkMonitor.Tests.Fakes;
-
-/// <summary>
-/// Fake internet target provider for testing.
-/// </summary>
-public sealed class FakeInternetTargetProvider : IInternetTargetProvider
-{
-    private string _primaryTarget = "8.8.8.8";
-    private List<string> _targets = new() { "8.8.8.8", "1.1.1.1", "208.67.222.222" };
-
-    public string PrimaryTarget => _primaryTarget;
-
-    public FakeInternetTargetProvider WithPrimaryTarget(string target)
-    {
-        _primaryTarget = target;
-        if (!_targets.Contains(target))
-        {
-            _targets.Insert(0, target);
-        }
-        return this;
-    }
-
-    public FakeInternetTargetProvider WithTargets(params string[] targets)
-    {
-        _targets = targets.ToList();
-        if (_targets.Count > 0)
-        {
-            _primaryTarget = _targets[0];
-        }
-        return this;
-    }
-
-    public IReadOnlyList<string> GetTargets() => _targets;
-}
-EOF
-log_success "FakeInternetTargetProvider updated"
-
-# =============================================================================
-# Add NetworkStatusEventArgsTests for better coverage
+# Fix 8: Add NetworkStatusEventArgsTests
 # =============================================================================
 log_info "Adding NetworkStatusEventArgsTests..."
 
@@ -675,78 +765,7 @@ EOF
 log_success "NetworkStatusEventArgsTests added"
 
 # =============================================================================
-# Add PingResultTests for better coverage
-# =============================================================================
-log_info "Adding PingResultTests..."
-
-cat > "$SRC_DIR/NetworkMonitor.Tests/Models/PingResultTests.cs" << 'EOF'
-using NetworkMonitor.Core.Models;
-using Xunit;
-
-namespace NetworkMonitor.Tests.Models;
-
-/// <summary>
-/// Tests for PingResult.
-/// </summary>
-public sealed class PingResultTests
-{
-    [Fact]
-    public void Succeeded_CreatesSuccessfulResult()
-    {
-        // Act
-        var result = PingResult.Succeeded("8.8.8.8", 15);
-
-        // Assert
-        Assert.True(result.Success);
-        Assert.Equal("8.8.8.8", result.Target);
-        Assert.Equal(15, result.LatencyMs);
-        Assert.Null(result.ErrorMessage);
-    }
-
-    [Fact]
-    public void Failed_CreatesFailedResult()
-    {
-        // Act
-        var result = PingResult.Failed("8.8.8.8", "Request timed out");
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.Equal("8.8.8.8", result.Target);
-        Assert.Null(result.LatencyMs);
-        Assert.Equal("Request timed out", result.ErrorMessage);
-    }
-
-    [Fact]
-    public void Timestamp_IsSetToCurrentTime()
-    {
-        // Arrange
-        var before = DateTimeOffset.UtcNow;
-
-        // Act
-        var result = PingResult.Succeeded("8.8.8.8", 10);
-
-        // Assert
-        var after = DateTimeOffset.UtcNow;
-        Assert.True(result.Timestamp >= before);
-        Assert.True(result.Timestamp <= after);
-    }
-
-    [Fact]
-    public void Succeeded_WithZeroLatency_IsValid()
-    {
-        // Act
-        var result = PingResult.Succeeded("localhost", 0);
-
-        // Assert
-        Assert.True(result.Success);
-        Assert.Equal(0, result.LatencyMs);
-    }
-}
-EOF
-log_success "PingResultTests added"
-
-# =============================================================================
-# Add NetworkHealthTests for better coverage
+# Fix 9: Add NetworkHealthTests
 # =============================================================================
 log_info "Adding NetworkHealthTests..."
 
@@ -765,25 +784,125 @@ public sealed class NetworkHealthTests
     public void NetworkHealth_HasExpectedValues()
     {
         // Assert all expected values exist
-        Assert.Equal(0, (int)NetworkHealth.Offline);
-        Assert.Equal(1, (int)NetworkHealth.Poor);
-        Assert.Equal(2, (int)NetworkHealth.Degraded);
-        Assert.Equal(3, (int)NetworkHealth.Good);
-        Assert.Equal(4, (int)NetworkHealth.Excellent);
+        Assert.True(Enum.IsDefined(typeof(NetworkHealth), NetworkHealth.Offline));
+        Assert.True(Enum.IsDefined(typeof(NetworkHealth), NetworkHealth.Poor));
+        Assert.True(Enum.IsDefined(typeof(NetworkHealth), NetworkHealth.Degraded));
+        Assert.True(Enum.IsDefined(typeof(NetworkHealth), NetworkHealth.Good));
+        Assert.True(Enum.IsDefined(typeof(NetworkHealth), NetworkHealth.Excellent));
     }
 
     [Fact]
     public void NetworkHealth_CanCompare()
     {
-        // Assert ordering works as expected
+        // Assert ordering works as expected (Excellent > Good > Degraded > Poor > Offline)
         Assert.True(NetworkHealth.Excellent > NetworkHealth.Good);
         Assert.True(NetworkHealth.Good > NetworkHealth.Degraded);
         Assert.True(NetworkHealth.Degraded > NetworkHealth.Poor);
         Assert.True(NetworkHealth.Poor > NetworkHealth.Offline);
     }
+
+    [Fact]
+    public void NetworkHealth_ToString_ReturnsName()
+    {
+        Assert.Equal("Excellent", NetworkHealth.Excellent.ToString());
+        Assert.Equal("Good", NetworkHealth.Good.ToString());
+        Assert.Equal("Degraded", NetworkHealth.Degraded.ToString());
+        Assert.Equal("Poor", NetworkHealth.Poor.ToString());
+        Assert.Equal("Offline", NetworkHealth.Offline.ToString());
+    }
 }
 EOF
 log_success "NetworkHealthTests added"
+
+# =============================================================================
+# Fix 10: Add MonitorOptionsTests
+# =============================================================================
+log_info "Ensuring MonitorOptionsTests exists..."
+
+cat > "$SRC_DIR/NetworkMonitor.Tests/Models/MonitorOptionsTests.cs" << 'EOF'
+using NetworkMonitor.Core.Models;
+using Xunit;
+
+namespace NetworkMonitor.Tests.Models;
+
+/// <summary>
+/// Tests for MonitorOptions.
+/// </summary>
+public sealed class MonitorOptionsTests
+{
+    [Fact]
+    public void IsRouterAutoDetect_WhenAuto_ReturnsTrue()
+    {
+        // Arrange
+        var options = new MonitorOptions { RouterAddress = "auto" };
+
+        // Act & Assert
+        Assert.True(options.IsRouterAutoDetect);
+    }
+
+    [Fact]
+    public void IsRouterAutoDetect_WhenAutoUppercase_ReturnsTrue()
+    {
+        // Arrange
+        var options = new MonitorOptions { RouterAddress = "AUTO" };
+
+        // Act & Assert
+        Assert.True(options.IsRouterAutoDetect);
+    }
+
+    [Fact]
+    public void IsRouterAutoDetect_WhenEmpty_ReturnsTrue()
+    {
+        // Arrange
+        var options = new MonitorOptions { RouterAddress = "" };
+
+        // Act & Assert
+        Assert.True(options.IsRouterAutoDetect);
+    }
+
+    [Fact]
+    public void IsRouterAutoDetect_WhenNull_ReturnsTrue()
+    {
+        // Arrange
+        var options = new MonitorOptions { RouterAddress = null! };
+
+        // Act & Assert
+        Assert.True(options.IsRouterAutoDetect);
+    }
+
+    [Fact]
+    public void IsRouterAutoDetect_WhenIpAddress_ReturnsFalse()
+    {
+        // Arrange
+        var options = new MonitorOptions { RouterAddress = "192.168.1.1" };
+
+        // Act & Assert
+        Assert.False(options.IsRouterAutoDetect);
+    }
+
+    [Fact]
+    public void DefaultRouterAddress_IsAuto()
+    {
+        // Arrange & Act
+        var options = new MonitorOptions();
+
+        // Assert
+        Assert.Equal("auto", options.RouterAddress);
+        Assert.True(options.IsRouterAutoDetect);
+    }
+
+    [Fact]
+    public void EnableFallbackTargets_DefaultsToTrue()
+    {
+        // Arrange & Act
+        var options = new MonitorOptions();
+
+        // Assert
+        Assert.True(options.EnableFallbackTargets);
+    }
+}
+EOF
+log_success "MonitorOptionsTests updated"
 
 # =============================================================================
 # Build and Test
@@ -813,30 +932,29 @@ echo "==========================================================================
 echo -e "${GREEN}Fix Summary${NC}"
 echo "============================================================================="
 echo ""
-echo "Fixed 3 build errors:"
+echo "Fixed 4 build errors:"
 echo ""
-echo "1. CS0104: Ambiguous NullLogger<> reference (NetworkConfigurationServiceTests)"
+echo "1. CS0104: Ambiguous NullLogger<> reference (2 files)"
 echo "   - Removed custom NullLogger.cs from Fakes folder"
 echo "   - Now using Microsoft.Extensions.Logging.Abstractions.NullLogger<T>"
 echo ""
-echo "2. CS0104: Ambiguous NullLogger<> reference (NetworkMonitorServiceTests)"
-echo "   - Same fix as above - using Microsoft's NullLogger<T>"
-echo ""
-echo "3. CA1001: NetworkMonitorServiceTests owns disposable field '_configService'"
+echo "2. CA1001: NetworkMonitorServiceTests owns disposable field '_configService'"
 echo "   - Made NetworkMonitorServiceTests implement IDisposable"
 echo "   - Added Dispose() method that disposes _configService"
 echo ""
-echo "Added/Updated test files for better coverage:"
-echo "   - NetworkStatusEventArgsTests.cs"
-echo "   - PingResultTests.cs"
-echo "   - NetworkHealthTests.cs"
-echo "   - NetworkConfigurationServiceTests.cs (with dispose tests)"
-echo "   - NetworkMonitorServiceTests.cs (implements IDisposable)"
-echo "   - InternetTargetProviderTests.cs"
+echo "3. CS7036: Task.FromResult() requires an argument"
+echo "   - Changed InitializeAsync to return Task.CompletedTask"
 echo ""
-echo "Updated Fakes:"
-echo "   - Removed NullLogger.cs (using Microsoft's version)"
-echo "   - FakeNetworkConfigurationService.cs (implements IDisposable)"
-echo "   - FakeInternetTargetProvider.cs (fluent configuration)"
+echo "4. CS1061: PingResult uses 'RoundtripTimeMs', not 'LatencyMs'"
+echo "   - Fixed PingResultTests to use correct property name"
+echo ""
+echo "Test coverage includes:"
+echo "   - PingResultTests (factory methods, equality)"
+echo "   - NetworkStatusEventArgsTests (constructors, properties)"
+echo "   - NetworkHealthTests (enum values, comparison)"
+echo "   - MonitorOptionsTests (default values, auto-detect)"
+echo "   - NetworkConfigurationServiceTests (resolution, caching, dispose)"
+echo "   - NetworkMonitorServiceTests (health checks, events)"
+echo "   - InternetTargetProviderTests (targets, fallbacks)"
 echo ""
 echo "============================================================================="
