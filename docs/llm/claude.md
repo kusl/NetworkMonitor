@@ -678,3 +678,53 @@ chmod +x fix-build-errors.sh
 
 
 
+the latest code gave me an error saying this method was missing so I brought it back
+```csharp
+/// <inheritdoc />
+public async Task InitializeAsync(CancellationToken cancellationToken = default)
+{
+    await _initLock.WaitAsync(cancellationToken);
+    try
+    {
+        if (_initialized)
+            return;
+
+        _logger.LogInformation("Initializing network configuration...");
+
+        // Resolve router address
+        _resolvedRouterAddress = await ResolveRouterAddressAsync(cancellationToken);
+        if (_resolvedRouterAddress != null)
+        {
+            _logger.LogInformation("Router address resolved to: {Address}", _resolvedRouterAddress);
+        }
+        else
+        {
+            _logger.LogWarning("Could not resolve router address - router monitoring will be skipped");
+        }
+
+        // Resolve internet target
+        _resolvedInternetTarget = await ResolveInternetTargetAsync(cancellationToken);
+        _logger.LogInformation("Internet target resolved to: {Target}", _resolvedInternetTarget);
+
+        _initialized = true;
+    }
+    finally
+    {
+        _initLock.Release();
+    }
+}
+```
+however, now I have three more errors 
+  NetworkMonitor.Core net10.0 succeeded (0.0s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Tests net10.0 failed with 3 error(s) (0.1s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs(34,13): error CS0104: 'NullLogger<>' is an ambiguous reference between 'NetworkMonitor.Tests.Fakes.NullLogger<T>' and 'Microsoft.Extensions.Logging.Abstractions.NullLogger<T>'
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(29,13): error CS0104: 'NullLogger<>' is an ambiguous reference between 'NetworkMonitor.Tests.Fakes.NullLogger<T>' and 'Microsoft.Extensions.Logging.Abstractions.NullLogger<T>'
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(14,21): error CA1001: Type 'NetworkMonitorServiceTests' owns disposable field(s) '_configService' but is not disposable (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1001)
+
+Build failed with 3 error(s) in 0.7s
+Can you please look at `dump.txt` for the latest code and resolve these errors? Also please review to make sure we have a good test coverage and generate me a single shell script that addresses all the concerns. Please and thank you. 
+
+
+
+
+
