@@ -498,3 +498,15 @@ Now let me search for more details about the models and data structures used:Now
 17. **License** - AGPL-3.0 as specified
 
 You can copy the entire markdown content from the artifact and paste it directly into your `README.md` file in the repository root!
+
+
+
+
+
+
+
+
+
+
+Now that we have a good well running application, please update the github action or create a new one to create binaries for distribution on all major desktop platforms Windows, MacOS, and Linux, x86 and arm. Use the latest github actions versions, for macOS, remember to use `-latest` and not a specific version of macOS. Also please avoid using higher abstractions of github actions. if we can use those actions, surely we can build it ourselves. also each time there is a new push, we should build a new release. we should never build a pre-release. always a full release. please and thank you. 
+
