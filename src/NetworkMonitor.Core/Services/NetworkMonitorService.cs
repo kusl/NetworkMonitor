@@ -36,6 +36,7 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         description: "Number of ping failures by target type");
 
     private readonly IPingService _pingService;
+    private readonly INetworkConfigurationService _configService;
     private readonly MonitorOptions _options;
     private readonly ILogger<NetworkMonitorService> _logger;
 
@@ -49,10 +50,12 @@ public sealed class NetworkMonitorService : INetworkMonitorService
     /// </summary>
     public NetworkMonitorService(
         IPingService pingService,
+        INetworkConfigurationService configService,
         IOptions<MonitorOptions> options,
         ILogger<NetworkMonitorService> logger)
     {
         _pingService = pingService;
+        _configService = configService;
         _options = options.Value;
         _logger = logger;
     }
@@ -60,42 +63,55 @@ public sealed class NetworkMonitorService : INetworkMonitorService
     /// <inheritdoc />
     public async Task<NetworkStatus> CheckNetworkAsync(CancellationToken cancellationToken = default)
     {
-        // Check cancellation immediately before doing any work
-        cancellationToken.ThrowIfCancellationRequested();
+        using var activity = ActivitySource.StartActivity("CheckNetwork");
 
-        using var activity = ActivitySource.StartActivity("NetworkMonitor.CheckNetwork");
+        cancellationToken.ThrowIfCancellationRequested();
 
         CheckCounter.Add(1);
 
-        _logger.LogDebug("Starting network health check");
+        // Get resolved targets
+        var routerAddress = await _configService.GetRouterAddressAsync(cancellationToken);
+        var internetTarget = await _configService.GetInternetTargetAsync(cancellationToken);
 
-        // Ping router and internet in parallel for efficiency
-        var routerTask = PingWithStatsAsync(
-            _options.RouterAddress,
-            "router",
-            cancellationToken);
-
-        var internetTask = PingWithStatsAsync(
-            _options.InternetTarget,
-            "internet",
-            cancellationToken);
-
-        await Task.WhenAll(routerTask, internetTask).ConfigureAwait(false);
-
-        var routerResult = await routerTask.ConfigureAwait(false);
-        var internetResult = await internetTask.ConfigureAwait(false);
-
-        // Record metrics
-        if (routerResult is { Success: true, RoundtripTimeMs: not null })
+        // Ping router (if we have one)
+        PingResult? routerResult = null;
+        if (routerAddress != null)
         {
-            RouterLatencyHistogram.Record(routerResult.RoundtripTimeMs.Value);
+            var routerResults = await _pingService.PingMultipleAsync(
+                routerAddress,
+                _options.PingsPerCycle,
+                _options.TimeoutMs,
+                cancellationToken);
+
+            routerResult = AggregateResults(routerResults);
+
+            if (routerResult.Success && routerResult.RoundtripTimeMs.HasValue)
+            {
+                RouterLatencyHistogram.Record(routerResult.RoundtripTimeMs.Value);
+            }
+            else
+            {
+                FailureCounter.Add(1, new KeyValuePair<string, object?>("target_type", "router"));
+            }
+
+            activity?.SetTag("router.success", routerResult.Success);
+            activity?.SetTag("router.latency_ms", routerResult.RoundtripTimeMs);
         }
         else
         {
-            FailureCounter.Add(1, new KeyValuePair<string, object?>("target_type", "router"));
+            _logger.LogDebug("No router address configured, skipping router ping");
         }
 
-        if (internetResult is { Success: true, RoundtripTimeMs: not null })
+        // Ping internet
+        var internetResults = await _pingService.PingMultipleAsync(
+            internetTarget,
+            _options.PingsPerCycle,
+            _options.TimeoutMs,
+            cancellationToken);
+
+        var internetResult = AggregateResults(internetResults);
+
+        if (internetResult.Success && internetResult.RoundtripTimeMs.HasValue)
         {
             InternetLatencyHistogram.Record(internetResult.RoundtripTimeMs.Value);
         }
@@ -103,6 +119,9 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         {
             FailureCounter.Add(1, new KeyValuePair<string, object?>("target_type", "internet"));
         }
+
+        activity?.SetTag("internet.success", internetResult.Success);
+        activity?.SetTag("internet.latency_ms", internetResult.RoundtripTimeMs);
 
         // Compute overall health
         var (health, message) = ComputeHealth(routerResult, internetResult);
@@ -115,11 +134,9 @@ public sealed class NetworkMonitorService : INetworkMonitorService
             message);
 
         activity?.SetTag("health", health.ToString());
-        activity?.SetTag("router.success", routerResult?.Success ?? false);
-        activity?.SetTag("internet.success", internetResult?.Success ?? false);
 
         // Fire event if status changed
-        if (_lastStatus?.Health != status.Health)
+        if (_lastStatus == null || _lastStatus.Health != status.Health)
         {
             _logger.LogInformation(
                 "Network status changed: {OldHealth} -> {NewHealth}: {Message}",
@@ -127,85 +144,56 @@ public sealed class NetworkMonitorService : INetworkMonitorService
                 status.Health,
                 status.Message);
 
-            StatusChanged?.Invoke(this, new NetworkStatusEventArgs(status));
+            StatusChanged?.Invoke(this, new NetworkStatusEventArgs(status, _lastStatus));
         }
 
         _lastStatus = status;
-
         return status;
     }
 
-    private async Task<PingResult?> PingWithStatsAsync(
-        string target,
-        string targetType,
-        CancellationToken cancellationToken)
+    private static PingResult AggregateResults(IReadOnlyList<PingResult> results)
     {
-        try
+        if (results.Count == 0)
         {
-            var results = await _pingService.PingMultipleAsync(
-                target,
-                _options.PingsPerCycle,
-                _options.TimeoutMs,
-                cancellationToken).ConfigureAwait(false);
-
-            if (results.Count == 0)
-            {
-                return null;
-            }
-
-            // Calculate aggregate result
-            var successfulPings = results.Where(r => r.Success).ToList();
-
-            if (successfulPings.Count == 0)
-            {
-                // All pings failed - return the last failure
-                return results[^1];
-            }
-
-            // Return a result with median latency for stability
-            var sortedLatencies = successfulPings
-                .Where(r => r.RoundtripTimeMs.HasValue)
-                .Select(r => r.RoundtripTimeMs!.Value)
-                .OrderBy(l => l)
-                .ToList();
-
-            var medianLatency = sortedLatencies.Count > 0
-                ? sortedLatencies[sortedLatencies.Count / 2]
-                : 0;
-
-            return PingResult.Succeeded(target, medianLatency);
+            return PingResult.Failed("unknown", "No ping results");
         }
-        catch (OperationCanceledException)
+
+        var successful = results.Where(r => r.Success).ToList();
+        var target = results[0].Target;
+
+        if (successful.Count == 0)
         {
-            // Let cancellation propagate up
-            throw;
+            return PingResult.Failed(target, results[0].ErrorMessage ?? "All pings failed");
         }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Error pinging {Target}", target);
-            return PingResult.Failed(target, ex.Message);
-        }
+
+        // Return average latency of successful pings
+        var avgLatency = (long)successful.Average(r => r.RoundtripTimeMs ?? 0);
+        return PingResult.Succeeded(target, avgLatency);
     }
 
-    private static (NetworkHealth Health, string Message) ComputeHealth(
+    private (NetworkHealth Health, string Message) ComputeHealth(
         PingResult? routerResult,
-        PingResult? internetResult)
+        PingResult internetResult)
     {
-        // Router failure = offline (can't reach local network)
-        if (routerResult is null || !routerResult.Success)
+        // If we have a router configured and it's not responding, that's significant
+        if (routerResult != null && !routerResult.Success)
         {
-            return (NetworkHealth.Offline, "Cannot reach local network");
+            return !internetResult.Success
+                ? (NetworkHealth.Offline, "Cannot reach router or internet")
+                : (NetworkHealth.Degraded, "Cannot reach router but internet works");
         }
 
-        // Internet failure = poor (local network OK, but no internet)
-        if (internetResult is null || !internetResult.Success)
+        // If internet is down
+        if (!internetResult.Success)
         {
-            return (NetworkHealth.Poor, "Local network OK, no internet access");
+            return routerResult?.Success == true
+                ? (NetworkHealth.Poor, "Router OK but cannot reach internet")
+                : (NetworkHealth.Offline, "Cannot reach internet");
         }
 
-        // Both succeed - check latency for quality assessment
+        // Both are up - check latency
         var internetLatency = internetResult.RoundtripTimeMs ?? 0;
-        var routerLatency = routerResult.RoundtripTimeMs ?? 0;
+        var routerLatency = routerResult?.RoundtripTimeMs ?? 0;
 
         return internetLatency switch
         {

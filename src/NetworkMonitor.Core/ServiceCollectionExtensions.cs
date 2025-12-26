@@ -18,24 +18,21 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Registers all Network Monitor services with the DI container.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="configuration">The configuration.</param>
-    /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddNetworkMonitor(
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(configuration);
-
         // Bind options from configuration
         services.Configure<MonitorOptions>(
             configuration.GetSection(MonitorOptions.SectionName));
         services.Configure<StorageOptions>(
             configuration.GetSection(StorageOptions.SectionName));
 
-        // Register services
+        // Register core services
         services.AddSingleton<IPingService, PingService>();
+        services.AddSingleton<IGatewayDetector, GatewayDetector>();
+        services.AddSingleton<IInternetTargetProvider, InternetTargetProvider>();
+        services.AddSingleton<INetworkConfigurationService, NetworkConfigurationService>();
         services.AddSingleton<INetworkMonitorService, NetworkMonitorService>();
         services.AddSingleton<IStatusDisplay, ConsoleStatusDisplay>();
         services.AddSingleton<IStorageService, SqliteStorageService>();
@@ -49,15 +46,10 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Adds OpenTelemetry metrics with file and console export.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="fileOptions">Optional file exporter options.</param>
-    /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddNetworkMonitorTelemetry(
         this IServiceCollection services,
         FileExporterOptions? fileOptions = null)
     {
-        ArgumentNullException.ThrowIfNull(services);
-
         fileOptions ??= FileExporterOptions.Default;
 
         services.AddOpenTelemetry()

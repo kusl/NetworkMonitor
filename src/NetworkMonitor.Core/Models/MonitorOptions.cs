@@ -12,15 +12,35 @@ public sealed class MonitorOptions
     public const string SectionName = "NetworkMonitor";
 
     /// <summary>
-    /// Router/gateway IP address to ping for local network health.
-    /// Default: 192.168.1.1 (common home router)
+    /// Special value indicating auto-detection should be used.
     /// </summary>
-    public string RouterAddress { get; set; } = "192.168.1.1";
+    public const string AutoDetect = "auto";
+
+    /// <summary>
+    /// Router/gateway IP address to ping for local network health.
+    /// </summary>
+    /// <remarks>
+    /// Set to "auto" (default) to automatically detect the default gateway.
+    /// The gateway is advertised by DHCP and can be read from the OS.
+    /// 
+    /// If auto-detection fails, common gateway addresses will be tried:
+    /// 192.168.1.1, 192.168.0.1, 10.0.0.1, etc.
+    /// 
+    /// Set to a specific IP address to override auto-detection.
+    /// </remarks>
+    public string RouterAddress { get; set; } = AutoDetect;
 
     /// <summary>
     /// Internet target to ping for WAN connectivity.
-    /// Default: 8.8.8.8 (Google DNS - highly reliable)
     /// </summary>
+    /// <remarks>
+    /// Default: 8.8.8.8 (Google DNS - highly reliable)
+    /// 
+    /// If this target is unreachable, fallback targets will be tried:
+    /// 1.1.1.1 (Cloudflare), 9.9.9.9 (Quad9), etc.
+    /// 
+    /// This is useful for networks that block specific DNS providers.
+    /// </remarks>
     public string InternetTarget { get; set; } = "8.8.8.8";
 
     /// <summary>
@@ -58,4 +78,17 @@ public sealed class MonitorOptions
     /// Default: 10%
     /// </summary>
     public int DegradedPacketLossPercent { get; set; } = 10;
+
+    /// <summary>
+    /// Whether to use fallback targets if primary fails.
+    /// Default: true
+    /// </summary>
+    public bool EnableFallbackTargets { get; set; } = true;
+
+    /// <summary>
+    /// Checks if router address should be auto-detected.
+    /// </summary>
+    public bool IsRouterAutoDetect =>
+        string.IsNullOrWhiteSpace(RouterAddress) ||
+        RouterAddress.Equals(AutoDetect, StringComparison.OrdinalIgnoreCase);
 }
