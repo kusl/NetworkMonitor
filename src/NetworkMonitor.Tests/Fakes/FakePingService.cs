@@ -48,32 +48,35 @@ internal sealed class FakePingService : IPingService
     /// <summary>
     /// Configures to always fail.
     /// </summary>
-    public FakePingService AlwaysFail(string error = "Network unreachable")
+    public FakePingService AlwaysFail(string errorMessage = "Simulated failure")
     {
-        _defaultResult = PingResult.Failed("test", error);
+        _defaultResult = PingResult.Failed("test", errorMessage);
         return this;
     }
 
+    /// <inheritdoc />
     public Task<PingResult> PingAsync(
         string target,
         int timeoutMs,
         CancellationToken cancellationToken = default)
     {
+        // Respect cancellation like the real service does
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (_results.TryDequeue(out var result))
+        if (_results.TryDequeue(out var queuedResult))
         {
-            return Task.FromResult(result with { Target = target });
+            return Task.FromResult(queuedResult);
         }
 
-        if (_defaultResult != null)
+        if (_defaultResult is not null)
         {
-            return Task.FromResult(_defaultResult with { Target = target });
+            return Task.FromResult(_defaultResult);
         }
 
         return Task.FromResult(PingResult.Failed(target, "No result configured"));
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyList<PingResult>> PingMultipleAsync(
         string target,
         int count,
@@ -84,7 +87,9 @@ internal sealed class FakePingService : IPingService
 
         for (var i = 0; i < count; i++)
         {
-            results.Add(await PingAsync(target, timeoutMs, cancellationToken).ConfigureAwait(false));
+            cancellationToken.ThrowIfCancellationRequested();
+            var result = await PingAsync(target, timeoutMs, cancellationToken).ConfigureAwait(false);
+            results.Add(result);
         }
 
         return results;

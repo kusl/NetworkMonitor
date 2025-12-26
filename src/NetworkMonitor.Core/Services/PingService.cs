@@ -9,16 +9,13 @@ namespace NetworkMonitor.Core.Services;
 /// Cross-platform ping implementation using System.Net.NetworkInformation.
 /// Works on Windows, macOS, and Linux without external dependencies.
 /// </summary>
-public sealed class PingService : IPingService, IDisposable
+public sealed class PingService : IPingService
 {
     private readonly ILogger<PingService> _logger;
-    private readonly Ping _ping;
-    private bool _disposed;
 
     public PingService(ILogger<PingService> logger)
     {
         _logger = logger;
-        _ping = new Ping();
     }
 
     public async Task<PingResult> PingAsync(
@@ -26,24 +23,28 @@ public sealed class PingService : IPingService, IDisposable
         int timeoutMs,
         CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        // Check cancellation before doing any work
+        cancellationToken.ThrowIfCancellationRequested();
 
         try
         {
             _logger.LogDebug("Pinging {Target} with timeout {TimeoutMs}ms", target, timeoutMs);
 
-            // Create a linked token that respects both the caller's token and our timeout
-            using var timeoutCts = new CancellationTokenSource(timeoutMs);
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
-                cancellationToken, timeoutCts.Token);
+            // Create a new Ping instance per call to allow concurrent pings.
+            // The Ping class does not support multiple concurrent async operations
+            // on the same instance.
+            using var ping = new Ping();
 
             var stopwatch = Stopwatch.StartNew();
 
             // Note: PingAsync doesn't accept CancellationToken directly,
             // but we can use the timeout parameter
-            var reply = await _ping.SendPingAsync(target, timeoutMs).ConfigureAwait(false);
+            var reply = await ping.SendPingAsync(target, timeoutMs).ConfigureAwait(false);
 
             stopwatch.Stop();
+
+            // Check cancellation after the ping completes
+            cancellationToken.ThrowIfCancellationRequested();
 
             if (reply.Status == IPStatus.Success)
             {
@@ -60,10 +61,10 @@ public sealed class PingService : IPingService, IDisposable
 
             return PingResult.Failed(target, errorMessage);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
             _logger.LogDebug("Ping to {Target} cancelled", target);
-            return PingResult.Failed(target, "Cancelled");
+            throw;
         }
         catch (PingException ex)
         {
@@ -85,8 +86,10 @@ public sealed class PingService : IPingService, IDisposable
     {
         var results = new List<PingResult>(count);
 
-        for (var i = 0; i < count && !cancellationToken.IsCancellationRequested; i++)
+        for (var i = 0; i < count; i++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var result = await PingAsync(target, timeoutMs, cancellationToken).ConfigureAwait(false);
             results.Add(result);
 
@@ -98,14 +101,5 @@ public sealed class PingService : IPingService, IDisposable
         }
 
         return results;
-    }
-
-    public void Dispose()
-    {
-        if (!_disposed)
-        {
-            _ping.Dispose();
-            _disposed = true;
-        }
     }
 }

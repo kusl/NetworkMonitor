@@ -16,7 +16,7 @@ public sealed class NetworkMonitorService : INetworkMonitorService
     private static readonly ActivitySource ActivitySource = new("NetworkMonitor.Core");
     private static readonly Meter Meter = new("NetworkMonitor.Core");
 
-    // Metrics
+    // Metrics - use static readonly for performance (CA1859)
     private static readonly Counter<long> CheckCounter = Meter.CreateCounter<long>(
         "network_monitor.checks",
         description: "Number of network health checks performed");
@@ -60,6 +60,9 @@ public sealed class NetworkMonitorService : INetworkMonitorService
     /// <inheritdoc />
     public async Task<NetworkStatus> CheckNetworkAsync(CancellationToken cancellationToken = default)
     {
+        // Check cancellation immediately before doing any work
+        cancellationToken.ThrowIfCancellationRequested();
+
         using var activity = ActivitySource.StartActivity("NetworkMonitor.CheckNetwork");
 
         CheckCounter.Add(1);
@@ -77,10 +80,10 @@ public sealed class NetworkMonitorService : INetworkMonitorService
             "internet",
             cancellationToken);
 
-        await Task.WhenAll(routerTask, internetTask);
+        await Task.WhenAll(routerTask, internetTask).ConfigureAwait(false);
 
-        var routerResult = await routerTask;
-        var internetResult = await internetTask;
+        var routerResult = await routerTask.ConfigureAwait(false);
+        var internetResult = await internetTask.ConfigureAwait(false);
 
         // Record metrics
         if (routerResult is { Success: true, RoundtripTimeMs: not null })
@@ -143,7 +146,7 @@ public sealed class NetworkMonitorService : INetworkMonitorService
                 target,
                 _options.PingsPerCycle,
                 _options.TimeoutMs,
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
 
             if (results.Count == 0)
             {
@@ -172,6 +175,11 @@ public sealed class NetworkMonitorService : INetworkMonitorService
 
             return PingResult.Succeeded(target, medianLatency);
         }
+        catch (OperationCanceledException)
+        {
+            // Let cancellation propagate up
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Error pinging {Target}", target);
@@ -179,50 +187,32 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         }
     }
 
-    private (NetworkHealth Health, string Message) ComputeHealth(
+    private static (NetworkHealth Health, string Message) ComputeHealth(
         PingResult? routerResult,
         PingResult? internetResult)
     {
-        // Priority 1: Check if we can reach the router (local network)
-        if (routerResult is not { Success: true })
+        // Router failure = offline (can't reach local network)
+        if (routerResult is null || !routerResult.Success)
         {
-            return (NetworkHealth.Offline,
-                "Cannot reach local network - check WiFi/Ethernet connection");
+            return (NetworkHealth.Offline, "Cannot reach local network");
         }
 
-        // Priority 2: Check if we can reach the internet
-        if (internetResult is not { Success: true })
+        // Internet failure = poor (local network OK, but no internet)
+        if (internetResult is null || !internetResult.Success)
         {
-            return (NetworkHealth.Poor,
-                $"Local network OK (router: {routerResult.RoundtripTimeMs}ms) but no internet access");
+            return (NetworkHealth.Poor, "Local network OK, no internet access");
         }
 
-        // Both connected - evaluate latency
-        var routerLatency = routerResult.RoundtripTimeMs!.Value;
-        var internetLatency = internetResult.RoundtripTimeMs!.Value;
+        // Both succeed - check latency for quality assessment
+        var internetLatency = internetResult.RoundtripTimeMs ?? 0;
+        var routerLatency = routerResult.RoundtripTimeMs ?? 0;
 
-        if (routerLatency <= _options.ExcellentLatencyMs &&
-            internetLatency <= _options.ExcellentLatencyMs)
+        return internetLatency switch
         {
-            return (NetworkHealth.Excellent,
-                $"Excellent - Router: {routerLatency}ms, Internet: {internetLatency}ms");
-        }
-
-        if (routerLatency <= _options.GoodLatencyMs &&
-            internetLatency <= _options.GoodLatencyMs)
-        {
-            return (NetworkHealth.Good,
-                $"Good - Router: {routerLatency}ms, Internet: {internetLatency}ms");
-        }
-
-        // High latency somewhere
-        if (routerLatency > _options.GoodLatencyMs)
-        {
-            return (NetworkHealth.Degraded,
-                $"High local latency: Router {routerLatency}ms - possible WiFi interference");
-        }
-
-        return (NetworkHealth.Degraded,
-            $"High internet latency: {internetLatency}ms - possible ISP issues");
+            <= 50 when routerLatency <= 10 => (NetworkHealth.Excellent, "Network is excellent"),
+            <= 100 => (NetworkHealth.Good, "Network is good"),
+            <= 200 => (NetworkHealth.Degraded, "Network is degraded (high latency)"),
+            _ => (NetworkHealth.Poor, "Network is poor (very high latency)")
+        };
     }
 }
