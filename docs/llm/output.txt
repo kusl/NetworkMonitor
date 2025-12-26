@@ -5160,4 +5160,235 @@ The given project `NetworkMonitor.Tests` has no updates given the current source
 real	0m5.345s
 user	0m2.035s
 sys	0m0.346s
+kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet --info; time dotnet format; time dotnet restore; time dotnet clean; time dotnet build; time dotnet test; time dotnet list package; time dotnet list package --outdated;
+Starting project export...
+Project Path: /home/kushal/src/dotnet/network-monitor
+Output File: docs/llm/dump.txt
+Generating directory structure...
+Collecting files...
+Found 51 files to export
+Processing (1/51): .github/workflows/build-and-test.yml
+Processing (2/51): .github/workflows/release.yml
+Processing (3/51): src/Directory.Build.props
+Processing (4/51): src/Directory.Packages.props
+Processing (5/51): src/NetworkMonitor.Console/appsettings.json
+Processing (6/51): src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
+Processing (7/51): src/NetworkMonitor.Console/Program.cs
+Processing (8/51): src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs
+Processing (9/51): src/NetworkMonitor.Core/Exporters/FileExporterOptions.cs
+Processing (10/51): src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs
+Processing (11/51): src/NetworkMonitor.Core/Models/HistoricalData.cs
+Processing (12/51): src/NetworkMonitor.Core/Models/MonitorOptions.cs
+Processing (13/51): src/NetworkMonitor.Core/Models/NetworkStatus.cs
+Processing (14/51): src/NetworkMonitor.Core/Models/NetworkStatusEventArgs.cs
+Processing (15/51): src/NetworkMonitor.Core/Models/PingResult.cs
+Processing (16/51): src/NetworkMonitor.Core/Models/StorageOptions.cs
+Processing (17/51): src/NetworkMonitor.Core/NetworkMonitor.Core.csproj
+Processing (18/51): src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
+Processing (19/51): src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs
+Processing (20/51): src/NetworkMonitor.Core/Services/GatewayDetector.cs
+Processing (21/51): src/NetworkMonitor.Core/Services/IGatewayDetector.cs
+Processing (22/51): src/NetworkMonitor.Core/Services/IInternetTargetProvider.cs
+Processing (23/51): src/NetworkMonitor.Core/Services/INetworkConfigurationService.cs
+Processing (24/51): src/NetworkMonitor.Core/Services/INetworkMonitorService.cs
+Processing (25/51): src/NetworkMonitor.Core/Services/InternetTargetProvider.cs
+Processing (26/51): src/NetworkMonitor.Core/Services/IPingService.cs
+Processing (27/51): src/NetworkMonitor.Core/Services/IStatusDisplay.cs
+Processing (28/51): src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs
+Processing (29/51): src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs
+Processing (30/51): src/NetworkMonitor.Core/Services/NetworkMonitorService.cs
+Processing (31/51): src/NetworkMonitor.Core/Services/PingService.cs
+Processing (32/51): src/NetworkMonitor.Core/Storage/IStorageService.cs
+Processing (33/51): src/NetworkMonitor.Core/Storage/SqliteStorageService.cs
+Processing (34/51): src/NetworkMonitor.slnx
+Processing (35/51): src/NetworkMonitor.Tests/Fakes/FakeGatewayDetector.cs
+Processing (36/51): src/NetworkMonitor.Tests/Fakes/FakeInternetTargetProvider.cs
+Processing (37/51): src/NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs
+Processing (38/51): src/NetworkMonitor.Tests/Fakes/FakePingService.cs
+Processing (39/51): src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs
+Processing (40/51): src/NetworkMonitor.Tests/Fakes/FakeStorageService.cs
+Processing (41/51): src/NetworkMonitor.Tests/Models/MonitorOptionsTests.cs
+Processing (42/51): src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs
+Processing (43/51): src/NetworkMonitor.Tests/Models/NetworkStatusEventArgsTests.cs
+Processing (44/51): src/NetworkMonitor.Tests/Models/PingResultTests.cs
+Processing (45/51): src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj
+Processing (46/51): src/NetworkMonitor.Tests/NetworkStatusTests.cs
+Processing (47/51): src/NetworkMonitor.Tests/PingResultTests.cs
+Processing (48/51): src/NetworkMonitor.Tests/Services/GatewayDetectorTests.cs
+Processing (49/51): src/NetworkMonitor.Tests/Services/InternetTargetProviderTests.cs
+Processing (50/51): src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs
+Processing (51/51): src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs
+
+Export completed successfully!
+Output file: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
+Total files exported: 51
+Output file size: 0.15 MB
+
+real	0m0.442s
+user	0m0.246s
+sys	0m0.293s
+.NET SDK:
+ Version:           10.0.101
+ Commit:            fad253f51b
+ Workload version:  10.0.101.1
+ MSBuild version:   18.0.6+fad253f51
+
+Runtime Environment:
+ OS Name:     fedora
+ OS Version:  43
+ OS Platform: Linux
+ RID:         fedora.43-x64
+ Base Path:   /usr/lib64/dotnet/sdk/10.0.101/
+
+.NET workloads installed:
+ [android]
+   Installation Source: SDK 10.0.100
+   Manifest Version:    36.1.2/10.0.100
+   Manifest Path:       /home/kushal/.dotnet/sdk-manifests/10.0.100/microsoft.net.sdk.android/36.1.2/WorkloadManifest.json
+   Install Type:        FileBased
+
+Configured to use workload sets when installing new manifests.
+
+Host:
+  Version:      10.0.1
+  Architecture: x64
+  Commit:       fad253f51b
+
+.NET SDKs installed:
+  10.0.101 [/usr/lib64/dotnet/sdk]
+
+.NET runtimes installed:
+  Microsoft.AspNetCore.App 10.0.1 [/usr/lib64/dotnet/shared/Microsoft.AspNetCore.App]
+  Microsoft.NETCore.App 10.0.1 [/usr/lib64/dotnet/shared/Microsoft.NETCore.App]
+
+Other architectures found:
+  None
+
+Environment variables:
+  DOTNET_BUNDLE_EXTRACT_BASE_DIR           [/home/kushal/.cache/dotnet_bundle_extract]
+  DOTNET_ROOT                              [/usr/lib64/dotnet]
+
+global.json file:
+  Not found
+
+Learn more:
+  https://aka.ms/dotnet/info
+
+Download .NET:
+  https://aka.ms/dotnet/download
+
+real	0m0.143s
+user	0m0.119s
+sys	0m0.023s
+
+real	0m5.293s
+user	0m7.753s
+sys	0m0.659s
+Restore complete (0.4s)
+
+Build succeeded in 0.5s
+
+real	0m0.666s
+user	0m0.696s
+sys	0m0.123s
+
+Build succeeded in 0.4s
+
+real	0m0.552s
+user	0m0.567s
+sys	0m0.100s
+Restore complete (0.4s)
+  NetworkMonitor.Core net10.0 succeeded (0.1s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Tests net10.0 succeeded (0.2s) → NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll
+  NetworkMonitor.Console net10.0 succeeded (0.3s) → NetworkMonitor.Console/bin/Debug/net10.0/NetworkMonitor.Console.dll
+
+Build succeeded in 1.0s
+
+real	0m1.115s
+user	0m1.217s
+sys	0m0.207s
+Restore complete (0.4s)
+  NetworkMonitor.Core net10.0 succeeded (0.0s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Tests net10.0 succeeded (0.1s) → NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.1)
+[xUnit.net 00:00:00.14]   Discovering: NetworkMonitor.Tests
+[xUnit.net 00:00:00.31]   Discovered:  NetworkMonitor.Tests
+[xUnit.net 00:00:00.46]   Starting:    NetworkMonitor.Tests
+[xUnit.net 00:00:00.58]     NetworkMonitor.Tests.Services.NetworkConfigurationServiceTests.GetInternetTargetAsync_WhenPrimaryUnreachable_UsesFallback [FAIL]
+[xUnit.net 00:00:00.58]       Assert.Equal() Failure: Strings differ
+[xUnit.net 00:00:00.58]                  ↓ (pos 0)
+[xUnit.net 00:00:00.58]       Expected: "1.1.1.1"
+[xUnit.net 00:00:00.58]       Actual:   "8.8.8.8"
+[xUnit.net 00:00:00.58]                  ↑ (pos 0)
+[xUnit.net 00:00:00.58]       Stack Trace:
+[xUnit.net 00:00:00.58]         /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs(139,0): at NetworkMonitor.Tests.Services.NetworkConfigurationServiceTests.GetInternetTargetAsync_WhenPrimaryUnreachable_UsesFallback()
+[xUnit.net 00:00:00.58]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.59]   Finished:    NetworkMonitor.Tests (ID = '2e8f57cd5826539fc7a5cd3a97d27721fcb9a15ff7c496b1112166f6757858fe')
+  NetworkMonitor.Tests test net10.0 failed with 1 error(s) (1.1s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs(139): error TESTERROR: 
+      NetworkMonitor.Tests.Services.NetworkConfigurationServiceTests.GetInternetTargetAsync_WhenPrimaryUnreachable_UsesFallback (4ms): Error Message: Assert.Equal() Failure: Strings differ
+                 ↓ (pos 0)
+      Expected: "1.1.1.1"
+      Actual:   "8.8.8.8"
+                 ↑ (pos 0)
+      Stack Trace:
+         at NetworkMonitor.Tests.Services.NetworkConfigurationServiceTests.GetInternetTargetAsync_WhenPrimaryUnreachable_UsesFallback() in /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services
+      /NetworkConfigurationServiceTests.cs:line 139
+      --- End of stack trace from previous location ---
+
+Test summary: total: 57, failed: 1, succeeded: 56, skipped: 0, duration: 1.1s
+Build failed with 1 error(s) in 1.8s
+
+real	0m1.906s
+user	0m1.001s
+sys	0m0.188s
+Restore complete (0.4s)
+
+Build succeeded in 0.5s
+Project 'NetworkMonitor.Console' has the following package references
+   [net10.0]: 
+   Top-level Package                            Requested   Resolved
+   > Microsoft.Extensions.Hosting               10.0.1      10.0.1  
+   > OpenTelemetry.Exporter.Console             1.14.0      1.14.0  
+   > OpenTelemetry.Extensions.Hosting           1.14.0      1.14.0  
+   > OpenTelemetry.Instrumentation.Runtime      1.14.0      1.14.0  
+
+Project 'NetworkMonitor.Core' has the following package references
+   [net10.0]: 
+   Top-level Package                                Requested   Resolved
+   > Microsoft.Data.Sqlite                          10.0.1      10.0.1  
+   > Microsoft.Extensions.Hosting                   10.0.1      10.0.1  
+   > Microsoft.Extensions.Logging.Abstractions      10.0.1      10.0.1  
+   > Microsoft.Extensions.Options                   10.0.1      10.0.1  
+   > OpenTelemetry                                  1.14.0      1.14.0  
+   > OpenTelemetry.Exporter.Console                 1.14.0      1.14.0  
+   > OpenTelemetry.Extensions.Hosting               1.14.0      1.14.0  
+   > OpenTelemetry.Instrumentation.Runtime          1.14.0      1.14.0  
+
+Project 'NetworkMonitor.Tests' has the following package references
+   [net10.0]: 
+   Top-level Package                                Requested   Resolved
+   > Microsoft.Extensions.Logging.Abstractions      10.0.1      10.0.1  
+   > Microsoft.NET.Test.Sdk                         18.0.1      18.0.1  
+   > xunit.runner.visualstudio                      3.1.5       3.1.5   
+   > xunit.v3                                       3.2.1       3.2.1   
+
+
+real	0m1.309s
+user	0m1.284s
+sys	0m0.260s
+Restore complete (0.4s)
+
+Build succeeded in 0.5s
+
+The following sources were used:
+   https://api.nuget.org/v3/index.json
+
+The given project `NetworkMonitor.Console` has no updates given the current sources.
+The given project `NetworkMonitor.Core` has no updates given the current sources.
+The given project `NetworkMonitor.Tests` has no updates given the current sources.
+
+real	0m1.923s
+user	0m1.772s
+sys	0m0.287s
 kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ 

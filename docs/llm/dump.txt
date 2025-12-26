@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Fri Dec 26 12:44:39 PM CST 2025
+Generated: Fri Dec 26 12:46:02 PM CST 2025
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -3273,8 +3273,8 @@ public sealed class FakeNetworkConfigurationService : INetworkConfigurationServi
 
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Fakes/FakePingService.cs
-SIZE: 2.72 KB
-MODIFIED: 2025-12-26 12:43:07
+SIZE: 2.61 KB
+MODIFIED: 2025-12-26 12:45:12
 ================================================================================
 
 using NetworkMonitor.Core.Models;
@@ -3374,13 +3374,6 @@ public sealed class FakePingService : IPingService
 
         return results;
     }
-    
-    public void Reset() 
-{
-    _queuedResults.Clear();
-    _specificResults.Clear();
-    _alwaysSucceed = false;
-}
 }
 
 
@@ -4558,7 +4551,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
 
 
 ===============================================================================
-EXPORT COMPLETED: Fri Dec 26 12:44:39 PM CST 2025
+EXPORT COMPLETED: Fri Dec 26 12:46:02 PM CST 2025
 Total Files Exported: 51
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
