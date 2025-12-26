@@ -14,7 +14,7 @@ namespace NetworkMonitor.Core.Services;
 /// 3. Verify targets are reachable before using them
 /// 4. Cache resolved addresses to avoid repeated detection
 /// </remarks>
-public sealed class NetworkConfigurationService : INetworkConfigurationService
+public sealed class NetworkConfigurationService : INetworkConfigurationService, IDisposable
 {
     private readonly IGatewayDetector _gatewayDetector;
     private readonly IInternetTargetProvider _internetTargetProvider;
@@ -26,6 +26,7 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService
     private string? _resolvedInternetTarget;
     private readonly SemaphoreSlim _initLock = new(1, 1);
     private bool _initialized;
+    private bool _disposed;
 
     public NetworkConfigurationService(
         IGatewayDetector gatewayDetector,
@@ -44,6 +45,7 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService
     /// <inheritdoc />
     public async Task<string?> GetRouterAddressAsync(CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         await EnsureInitializedAsync(cancellationToken);
         return _resolvedRouterAddress;
     }
@@ -51,37 +53,34 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService
     /// <inheritdoc />
     public async Task<string> GetInternetTargetAsync(CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         await EnsureInitializedAsync(cancellationToken);
         return _resolvedInternetTarget ?? _internetTargetProvider.PrimaryTarget;
     }
 
-    /// <inheritdoc />
-    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    private async Task EnsureInitializedAsync(CancellationToken cancellationToken)
     {
+        if (_initialized) return;
+
         await _initLock.WaitAsync(cancellationToken);
         try
         {
-            if (_initialized)
-                return;
+            if (_initialized) return;
 
-            _logger.LogInformation("Initializing network configuration...");
+            _logger.LogDebug("Initializing network configuration...");
 
             // Resolve router address
             _resolvedRouterAddress = await ResolveRouterAddressAsync(cancellationToken);
-            if (_resolvedRouterAddress != null)
-            {
-                _logger.LogInformation("Router address resolved to: {Address}", _resolvedRouterAddress);
-            }
-            else
-            {
-                _logger.LogWarning("Could not resolve router address - router monitoring will be skipped");
-            }
 
             // Resolve internet target
             _resolvedInternetTarget = await ResolveInternetTargetAsync(cancellationToken);
-            _logger.LogInformation("Internet target resolved to: {Target}", _resolvedInternetTarget);
 
             _initialized = true;
+
+            _logger.LogInformation(
+                "Network configuration initialized. Router: {Router}, Internet: {Internet}",
+                _resolvedRouterAddress ?? "(none)",
+                _resolvedInternetTarget);
         }
         finally
         {
@@ -89,50 +88,42 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService
         }
     }
 
-    private async Task EnsureInitializedAsync(CancellationToken cancellationToken)
-    {
-        if (!_initialized)
-        {
-            await InitializeAsync(cancellationToken);
-        }
-    }
-
     private async Task<string?> ResolveRouterAddressAsync(CancellationToken cancellationToken)
     {
-        // If user specified a specific address, use it directly
+        // If user specified a specific address (not "auto"), use it
         if (!_options.IsRouterAutoDetect)
         {
             _logger.LogDebug("Using configured router address: {Address}", _options.RouterAddress);
             return _options.RouterAddress;
         }
 
-        // Try auto-detection first
-        _logger.LogDebug("Attempting router auto-detection...");
+        _logger.LogDebug("Auto-detecting gateway...");
+
+        // Try OS-level detection first
         var detected = _gatewayDetector.DetectDefaultGateway();
-        if (detected != null)
+        if (!string.IsNullOrEmpty(detected))
         {
-            // Verify it's reachable
+            _logger.LogDebug("OS detected gateway: {Gateway}", detected);
             if (await IsReachableAsync(detected, cancellationToken))
             {
-                _logger.LogDebug("Auto-detected gateway {Address} is reachable", detected);
+                _logger.LogInformation("Using detected gateway: {Gateway}", detected);
                 return detected;
             }
-            _logger.LogWarning("Auto-detected gateway {Address} is not reachable", detected);
+            _logger.LogDebug("Detected gateway {Gateway} is not reachable", detected);
         }
 
-        // Fall back to common addresses
+        // Fall back to common gateway addresses
         _logger.LogDebug("Trying common gateway addresses...");
-        foreach (var address in _gatewayDetector.GetCommonGatewayAddresses())
+        foreach (var gateway in _gatewayDetector.GetCommonGatewayAddresses())
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (await IsReachableAsync(address, cancellationToken))
+            if (await IsReachableAsync(gateway, cancellationToken))
             {
-                _logger.LogInformation("Found reachable gateway at common address: {Address}", address);
-                return address;
+                _logger.LogInformation("Using fallback gateway: {Gateway}", gateway);
+                return gateway;
             }
         }
 
+        _logger.LogWarning("No reachable gateway found. Router monitoring will be disabled.");
         return null;
     }
 
@@ -140,57 +131,43 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService
     {
         var targets = _internetTargetProvider.GetTargets();
 
-        // If fallback is disabled, just use the primary
-        if (!_options.EnableFallbackTargets)
-        {
-            _logger.LogDebug("Fallback targets disabled, using primary: {Target}", targets[0]);
-            return targets[0];
-        }
-
-        // Try each target until one responds
         foreach (var target in targets)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
             if (await IsReachableAsync(target, cancellationToken))
             {
-                if (target != targets[0])
-                {
-                    _logger.LogInformation(
-                        "Primary target {Primary} unreachable, using fallback: {Fallback}",
-                        targets[0], target);
-                }
+                _logger.LogDebug("Using internet target: {Target}", target);
                 return target;
             }
-
             _logger.LogDebug("Internet target {Target} is not reachable", target);
         }
 
-        // If nothing is reachable, use the primary anyway (might come back online)
-        _logger.LogWarning(
-            "No internet targets are reachable, defaulting to: {Target}",
-            targets[0]);
-        return targets[0];
+        // Return primary target even if not reachable - we'll report the failure
+        _logger.LogWarning("No reachable internet targets found. Using primary: {Target}",
+            _internetTargetProvider.PrimaryTarget);
+        return _internetTargetProvider.PrimaryTarget;
     }
 
     private async Task<bool> IsReachableAsync(string target, CancellationToken cancellationToken)
     {
         try
         {
-            var result = await _pingService.PingAsync(
-                target,
-                _options.TimeoutMs,
-                cancellationToken);
+            var result = await _pingService.PingAsync(target, 2000, cancellationToken);
             return result.Success;
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Ping to {Target} failed", target);
+            _logger.LogDebug(ex, "Failed to ping {Target}", target);
             return false;
         }
+    }
+
+    /// <summary>
+    /// Disposes the service and releases resources.
+    /// </summary>
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _initLock.Dispose();
     }
 }

@@ -5,7 +5,7 @@ namespace NetworkMonitor.Tests.Fakes;
 /// <summary>
 /// Fake network configuration service for testing.
 /// </summary>
-public sealed class FakeNetworkConfigurationService : INetworkConfigurationService
+public sealed class FakeNetworkConfigurationService : INetworkConfigurationService, IDisposable
 {
     private string? _routerAddress = "192.168.1.1";
     private string _internetTarget = "8.8.8.8";
@@ -28,6 +28,8 @@ public sealed class FakeNetworkConfigurationService : INetworkConfigurationServi
     public Task<string> GetInternetTargetAsync(CancellationToken cancellationToken = default)
         => Task.FromResult(_internetTarget);
 
-    public Task InitializeAsync(CancellationToken cancellationToken = default)
-        => Task.CompletedTask;
+    public void Dispose()
+    {
+        // Nothing to dispose in fake
+    }
 }
