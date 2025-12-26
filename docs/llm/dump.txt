@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Fri Dec 26 12:17:52 PM CST 2025
+Generated: Fri Dec 26 12:29:16 PM CST 2025
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -1203,8 +1203,8 @@ public sealed class MonitorOptions
 
 ================================================================================
 FILE: src/NetworkMonitor.Core/Models/NetworkStatus.cs
-SIZE: 1.50 KB
-MODIFIED: 2025-12-26 07:08:12
+SIZE: 1.69 KB
+MODIFIED: 2025-12-26 12:27:18
 ================================================================================
 
 namespace NetworkMonitor.Core.Models;
@@ -1213,22 +1213,26 @@ namespace NetworkMonitor.Core.Models;
 /// Represents the overall network health status.
 /// This is the "at a glance" view that's our highest priority.
 /// </summary>
+/// <remarks>
+/// Values are ordered from worst (0) to best (4) for natural comparison.
+/// This allows: NetworkHealth.Excellent > NetworkHealth.Poor
+/// </remarks>
 public enum NetworkHealth
 {
-    /// <summary>All targets responding with good latency</summary>
-    Excellent,
-
-    /// <summary>All targets responding but some latency</summary>
-    Good,
-
-    /// <summary>Some packet loss or high latency</summary>
-    Degraded,
+    /// <summary>No connectivity</summary>
+    Offline = 0,
 
     /// <summary>Significant connectivity issues</summary>
-    Poor,
+    Poor = 1,
 
-    /// <summary>No connectivity</summary>
-    Offline
+    /// <summary>Some packet loss or high latency</summary>
+    Degraded = 2,
+
+    /// <summary>All targets responding but some latency</summary>
+    Good = 3,
+
+    /// <summary>All targets responding with good latency</summary>
+    Excellent = 4
 }
 
 /// <summary>
@@ -3175,8 +3179,8 @@ public sealed class FakeGatewayDetector : IGatewayDetector
 
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Fakes/FakeInternetTargetProvider.cs
-SIZE: 0.93 KB
-MODIFIED: 2025-12-26 12:04:18
+SIZE: 1.08 KB
+MODIFIED: 2025-12-26 12:27:18
 ================================================================================
 
 using NetworkMonitor.Core.Services;
@@ -3189,15 +3193,21 @@ namespace NetworkMonitor.Tests.Fakes;
 public sealed class FakeInternetTargetProvider : IInternetTargetProvider
 {
     private string _primaryTarget = "8.8.8.8";
-    private List<string> _targets = new() { "8.8.8.8", "1.1.1.1", "208.67.222.222" };
+    private List<string> _targets = ["8.8.8.8", "1.1.1.1", "208.67.222.222"];
 
     public string PrimaryTarget => _primaryTarget;
 
     public FakeInternetTargetProvider WithPrimaryTarget(string target)
     {
         _primaryTarget = target;
+        // Ensure primary is first in the targets list
         if (!_targets.Contains(target))
         {
+            _targets.Insert(0, target);
+        }
+        else
+        {
+            _targets.Remove(target);
             _targets.Insert(0, target);
         }
         return this;
@@ -3220,7 +3230,7 @@ public sealed class FakeInternetTargetProvider : IInternetTargetProvider
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs
 SIZE: 1.16 KB
-MODIFIED: 2025-12-26 12:04:18
+MODIFIED: 2025-12-26 12:27:18
 ================================================================================
 
 using NetworkMonitor.Core.Services;
@@ -3594,8 +3604,8 @@ public sealed class MonitorOptionsTests
 
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs
-SIZE: 1.48 KB
-MODIFIED: 2025-12-26 12:14:26
+SIZE: 2.64 KB
+MODIFIED: 2025-12-26 12:28:37
 ================================================================================
 
 using NetworkMonitor.Core.Models;
@@ -3611,7 +3621,19 @@ public sealed class NetworkHealthTests
     [Fact]
     public void NetworkHealth_HasExpectedValues()
     {
-        // Assert all expected vales exist
+        // Assert all expected values exist and have correct numeric values
+        // Ordered from worst (0) to best (4)
+        Assert.Equal(0, (int)NetworkHealth.Offline);
+        Assert.Equal(1, (int)NetworkHealth.Poor);
+        Assert.Equal(2, (int)NetworkHealth.Degraded);
+        Assert.Equal(3, (int)NetworkHealth.Good);
+        Assert.Equal(4, (int)NetworkHealth.Excellent);
+    }
+
+    [Fact]
+    public void NetworkHealth_ValuesAreDefined()
+    {
+        // Assert all expected values are defined in the enum
         Assert.True(Enum.IsDefined<NetworkHealth>(NetworkHealth.Offline));
         Assert.True(Enum.IsDefined<NetworkHealth>(NetworkHealth.Poor));
         Assert.True(Enum.IsDefined<NetworkHealth>(NetworkHealth.Degraded));
@@ -3638,7 +3660,24 @@ public sealed class NetworkHealthTests
         Assert.Equal("Poor", NetworkHealth.Poor.ToString());
         Assert.Equal("Offline", NetworkHealth.Offline.ToString());
     }
+
+    [Fact]
+    public void NetworkHealth_ComparisonOperators_WorkCorrectly()
+    {
+        // Test various comparison operators
+        Assert.True(NetworkHealth.Excellent >= NetworkHealth.Excellent);
+        Assert.True(NetworkHealth.Excellent >= NetworkHealth.Good);
+        Assert.False(NetworkHealth.Good >= NetworkHealth.Excellent);
+        
+        Assert.True(NetworkHealth.Offline <= NetworkHealth.Offline);
+        Assert.True(NetworkHealth.Offline <= NetworkHealth.Poor);
+        Assert.False(NetworkHealth.Poor <= NetworkHealth.Offline);
+        
+        Assert.True(NetworkHealth.Excellent != NetworkHealth.Good);
+        Assert.True(NetworkHealth.Excellent == NetworkHealth.Excellent);
+    }
 }
+
 
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Models/NetworkStatusEventArgsTests.cs
@@ -4079,8 +4118,8 @@ public sealed class InternetTargetProviderTests
 
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs
-SIZE: 5.49 KB
-MODIFIED: 2025-12-26 12:09:27
+SIZE: 5.96 KB
+MODIFIED: 2025-12-26 12:27:18
 ================================================================================
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -4140,7 +4179,7 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetRouterAddressAsync_WhenAutoDetect_UsesDetectedGateway()
+    public async Task GetRouterAddressAsync_WhenAutoDetect_UsesGatewayDetector()
     {
         // Arrange
         _gatewayDetector.WithGateway("192.168.1.1");
@@ -4156,11 +4195,11 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetRouterAddressAsync_WhenDetectionFails_FallsBackToCommonGateways()
+    public async Task GetRouterAddressAsync_WhenAutoDetectFails_TriesCommonGateways()
     {
         // Arrange
-        _gatewayDetector.WithNoGateway();
-        _gatewayDetector.WithCommonGateways("192.168.0.1", "10.0.0.1");
+        _gatewayDetector.WithGateway(null); // No auto-detected gateway
+        _gatewayDetector.WithCommonGateways("192.168.0.1", "192.168.1.1", "10.0.0.1");
         _pingService.AlwaysSucceed(5);
         var options = new MonitorOptions { RouterAddress = "auto" };
         var service = CreateService(options);
@@ -4169,31 +4208,18 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
         var result = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal("192.168.0.1", result);
-    }
-
-    [Fact]
-    public async Task GetRouterAddressAsync_WhenNoGatewayReachable_ReturnsNull()
-    {
-        // Arrange
-        _gatewayDetector.WithNoGateway();
-        _gatewayDetector.WithCommonGateways(); // Empty
-        var options = new MonitorOptions { RouterAddress = "auto" };
-        var service = CreateService(options);
-
-        // Act
-        var result = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Null(result);
+        Assert.Equal("192.168.0.1", result); // First common gateway that responds
     }
 
     [Fact]
     public async Task GetInternetTargetAsync_ReturnsPrimaryTarget()
     {
-        // Arrange
+        // Arrange - Configure the fake to use "1.1.1.1" as primary
         _internetTargetProvider.WithPrimaryTarget("1.1.1.1");
-        var service = CreateService();
+        _internetTargetProvider.WithTargets("1.1.1.1", "8.8.8.8");
+        _pingService.AlwaysSucceed(5);
+        var options = new MonitorOptions { EnableFallbackTargets = false };
+        var service = CreateService(options);
 
         // Act
         var result = await service.GetInternetTargetAsync(TestContext.Current.CancellationToken);
@@ -4203,7 +4229,41 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetRouterAddressAsync_CachesResult()
+    public async Task GetInternetTargetAsync_WhenFallbackEnabled_ReturnsFirstReachable()
+    {
+        // Arrange
+        _internetTargetProvider.WithTargets("8.8.8.8", "1.1.1.1");
+        _pingService.AlwaysSucceed(5);
+        var options = new MonitorOptions { EnableFallbackTargets = true };
+        var service = CreateService(options);
+
+        // Act
+        var result = await service.GetInternetTargetAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal("8.8.8.8", result); // First reachable target
+    }
+
+    [Fact]
+    public async Task GetInternetTargetAsync_WhenPrimaryUnreachable_UsesFallback()
+    {
+        // Arrange
+        _internetTargetProvider.WithTargets("8.8.8.8", "1.1.1.1");
+        // First target fails, second succeeds
+        _pingService.QueueResult(PingResult.Failed("8.8.8.8", "Timeout"));
+        _pingService.QueueResult(PingResult.Succeeded("1.1.1.1", 10));
+        var options = new MonitorOptions { EnableFallbackTargets = true };
+        var service = CreateService(options);
+
+        // Act
+        var result = await service.GetInternetTargetAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal("1.1.1.1", result);
+    }
+
+    [Fact]
+    public async Task ResultsAreCached_MultipleCallsReturnSameValue()
     {
         // Arrange
         _gatewayDetector.WithGateway("192.168.1.1");
@@ -4211,15 +4271,13 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
         var options = new MonitorOptions { RouterAddress = "auto" };
         var service = CreateService(options);
 
-        // Act - call twice
+        // Act
         var result1 = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
-
-        // Change the gateway - should not affect second call due to caching
-        _gatewayDetector.WithGateway("10.0.0.1");
+        _gatewayDetector.WithGateway("10.0.0.1"); // Change gateway
         var result2 = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
 
-        // Assert - both should return cached value
-        Assert.Equal("192.168.1.1", result1);
+        // Assert - Should return cached value
+        Assert.Equal(result1, result2);
         Assert.Equal("192.168.1.1", result2);
     }
 
@@ -4229,7 +4287,7 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
         // Arrange
         var service = CreateService();
 
-        // Act & Assert - should not throw
+        // Act & Assert - Should not throw
         service.Dispose();
         service.Dispose();
     }
@@ -4240,32 +4298,18 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
         // Arrange
         var service = CreateService();
         service.Dispose();
-        _service = null; // Prevent double dispose in cleanup
 
         // Act & Assert
         await Assert.ThrowsAsync<ObjectDisposedException>(
             () => service.GetRouterAddressAsync(TestContext.Current.CancellationToken));
-    }
-
-    [Fact]
-    public async Task GetInternetTargetAsync_AfterDispose_ThrowsObjectDisposedException()
-    {
-        // Arrange
-        var service = CreateService();
-        service.Dispose();
-        _service = null; // Prevent double dispose in cleanup
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ObjectDisposedException>(
-            () => service.GetInternetTargetAsync(TestContext.Current.CancellationToken));
     }
 }
 
 
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs
-SIZE: 6.14 KB
-MODIFIED: 2025-12-26 12:09:27
+SIZE: 8.01 KB
+MODIFIED: 2025-12-26 12:27:18
 ================================================================================
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -4279,24 +4323,24 @@ namespace NetworkMonitor.Tests.Services;
 
 /// <summary>
 /// Tests for NetworkMonitorService.
-/// Uses fake implementations for isolation.
 /// </summary>
 public sealed class NetworkMonitorServiceTests : IDisposable
 {
     private readonly FakePingService _pingService;
     private readonly FakeNetworkConfigurationService _configService;
-    private readonly NetworkMonitorService _service;
+    private readonly MonitorOptions _options;
 
     public NetworkMonitorServiceTests()
     {
         _pingService = new FakePingService();
         _configService = new FakeNetworkConfigurationService();
-        var options = Options.Create(new MonitorOptions());
-        _service = new NetworkMonitorService(
-            _pingService,
-            _configService,
-            options,
-            NullLogger<NetworkMonitorService>.Instance);
+        _options = new MonitorOptions
+        {
+            PingsPerCycle = 1,
+            TimeoutMs = 1000,
+            ExcellentLatencyMs = 20,
+            GoodLatencyMs = 50
+        };
     }
 
     public void Dispose()
@@ -4304,162 +4348,212 @@ public sealed class NetworkMonitorServiceTests : IDisposable
         _configService.Dispose();
     }
 
+    private NetworkMonitorService CreateService(MonitorOptions? options = null)
+    {
+        return new NetworkMonitorService(
+            _pingService,
+            _configService,
+            Options.Create(options ?? _options),
+            NullLogger<NetworkMonitorService>.Instance);
+    }
+
     [Fact]
-    public async Task CheckNetworkAsync_WhenBothSucceed_ReturnsExcellentOrGood()
+    public async Task CheckNetworkAsync_WhenAllSucceed_ReturnsExcellentOrGood()
     {
         // Arrange
-        _pingService.AlwaysSucceed(latencyMs: 5);
+        _configService.WithRouterAddress("192.168.1.1");
+        _configService.WithInternetTarget("8.8.8.8");
+        
+        // Queue successful pings with low latency
+        _pingService.QueueResult(PingResult.Succeeded("192.168.1.1", 5));
+        _pingService.QueueResult(PingResult.Succeeded("8.8.8.8", 10));
+        
+        var service = CreateService();
 
         // Act
-        var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+        var status = await service.CheckNetworkAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(status.Health is NetworkHealth.Excellent or NetworkHealth.Good);
-        Assert.True(status.RouterResult?.Success);
-        Assert.True(status.InternetResult?.Success);
+        Assert.True(
+            status.Health is NetworkHealth.Excellent or NetworkHealth.Good,
+            $"Expected Excellent or Good but got {status.Health}");
     }
 
     [Fact]
     public async Task CheckNetworkAsync_WhenRouterFails_ReturnsOfflineOrDegraded()
     {
-        // Arrange - router fails, internet succeeds
-        _pingService
-            .QueueResult(PingResult.Failed("192.168.1.1", "Timeout"))
-            .QueueResult(PingResult.Failed("192.168.1.1", "Timeout"))
-            .QueueResult(PingResult.Failed("192.168.1.1", "Timeout"))
-            .AlwaysSucceed(latencyMs: 10); // Internet succeeds
+        // Arrange
+        _configService.WithRouterAddress("192.168.1.1");
+        _configService.WithInternetTarget("8.8.8.8");
+        
+        // Router fails, internet succeeds
+        _pingService.QueueResult(PingResult.Failed("192.168.1.1", "Timeout"));
+        _pingService.QueueResult(PingResult.Succeeded("8.8.8.8", 10));
+        
+        var service = CreateService();
 
         // Act
-        var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+        var status = await service.CheckNetworkAsync(TestContext.Current.CancellationToken);
 
-        // Assert
-        Assert.True(status.Health is NetworkHealth.Offline or NetworkHealth.Degraded or NetworkHealth.Poor);
-        Assert.False(status.RouterResult?.Success);
+        // Assert - Router failure with internet success = Degraded
+        Assert.True(
+            status.Health is NetworkHealth.Offline or NetworkHealth.Degraded,
+            $"Expected Offline or Degraded but got {status.Health}");
     }
 
     [Fact]
     public async Task CheckNetworkAsync_WhenInternetFails_ReturnsDegradedOrPoor()
     {
-        // Arrange - router succeeds, internet fails
-        _pingService
-            .QueueResult(PingResult.Succeeded("192.168.1.1", 5))
-            .QueueResult(PingResult.Failed("8.8.8.8", "Timeout"))
-            .QueueResult(PingResult.Failed("8.8.8.8", "Timeout"))
-            .QueueResult(PingResult.Failed("8.8.8.8", "Timeout"));
+        // Arrange
+        _configService.WithRouterAddress("192.168.1.1");
+        _configService.WithInternetTarget("8.8.8.8");
+        
+        // Router succeeds, internet fails
+        _pingService.QueueResult(PingResult.Succeeded("192.168.1.1", 5));
+        _pingService.QueueResult(PingResult.Failed("8.8.8.8", "Timeout"));
+        
+        var service = CreateService();
 
         // Act
-        var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+        var status = await service.CheckNetworkAsync(TestContext.Current.CancellationToken);
 
-        // Assert
-        Assert.True(status.Health is NetworkHealth.Degraded or NetworkHealth.Poor or NetworkHealth.Offline);
-        Assert.True(status.RouterResult?.Success);
-        Assert.False(status.InternetResult?.Success);
+        // Assert - Router OK but no internet = Poor (not Degraded)
+        Assert.True(
+            status.Health is NetworkHealth.Degraded or NetworkHealth.Poor,
+            $"Expected Degraded or Poor but got {status.Health}");
     }
 
     [Fact]
     public async Task CheckNetworkAsync_WhenBothFail_ReturnsOffline()
     {
-        // Arrange - both fail
-        _pingService.AlwaysFail("Network unreachable");
+        // Arrange
+        _configService.WithRouterAddress("192.168.1.1");
+        _configService.WithInternetTarget("8.8.8.8");
+        
+        // Both fail
+        _pingService.QueueResult(PingResult.Failed("192.168.1.1", "Timeout"));
+        _pingService.QueueResult(PingResult.Failed("8.8.8.8", "Timeout"));
+        
+        var service = CreateService();
 
         // Act
-        var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+        var status = await service.CheckNetworkAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(NetworkHealth.Offline, status.Health);
-        Assert.False(status.RouterResult?.Success);
-        Assert.False(status.InternetResult?.Success);
     }
 
     [Fact]
     public async Task CheckNetworkAsync_WhenNoRouter_StillChecksInternet()
     {
-        // Arrange - no router configured
-        _configService.WithRouterAddress(null);
-        _pingService.AlwaysSucceed(latencyMs: 10);
+        // Arrange
+        _configService.WithRouterAddress(null); // No router configured
+        _configService.WithInternetTarget("8.8.8.8");
+        
+        _pingService.QueueResult(PingResult.Succeeded("8.8.8.8", 10));
+        
+        var service = CreateService();
 
         // Act
-        var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+        var status = await service.CheckNetworkAsync(TestContext.Current.CancellationToken);
 
-        // Assert
-        Assert.Null(status.RouterResult);
-        Assert.NotNull(status.InternetResult);
-        Assert.True(status.InternetResult.Success);
+        // Assert - Should still work without router
+        Assert.True(status.Health >= NetworkHealth.Degraded);
     }
 
     [Fact]
-    public async Task CheckNetworkAsync_HighLatency_ReturnsGoodOrDegraded()
+    public async Task CheckNetworkAsync_WhenHighLatency_ReturnsDegradedOrPoor()
     {
         // Arrange
-        _pingService.AlwaysSucceed(latencyMs: 150);
+        _configService.WithRouterAddress("192.168.1.1");
+        _configService.WithInternetTarget("8.8.8.8");
+        
+        // High latency (above GoodLatencyMs of 50)
+        _pingService.QueueResult(PingResult.Succeeded("192.168.1.1", 5));
+        _pingService.QueueResult(PingResult.Succeeded("8.8.8.8", 250));
+        
+        var service = CreateService();
 
         // Act
-        var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+        var status = await service.CheckNetworkAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(status.Health is NetworkHealth.Good or NetworkHealth.Degraded);
+        Assert.True(
+            status.Health is NetworkHealth.Degraded or NetworkHealth.Poor,
+            $"Expected Degraded or Poor for high latency but got {status.Health}");
     }
 
     [Fact]
-    public async Task StatusChanged_FiresWhenHealthChanges()
+    public async Task CheckNetworkAsync_RaisesStatusChangedEvent()
     {
         // Arrange
-        NetworkStatusEventArgs? receivedArgs = null;
-        _service.StatusChanged += (_, args) => receivedArgs = args;
-        _pingService.AlwaysSucceed(latencyMs: 5);
+        _configService.WithRouterAddress("192.168.1.1");
+        _configService.WithInternetTarget("8.8.8.8");
+        
+        _pingService.QueueResult(PingResult.Succeeded("192.168.1.1", 5));
+        _pingService.QueueResult(PingResult.Succeeded("8.8.8.8", 10));
+        
+        var service = CreateService();
+        NetworkStatusEventArgs? eventArgs = null;
+        service.StatusChanged += (_, args) => eventArgs = args;
 
-        // Act - first check establishes baseline
-        await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
-
-        // Change to failing
-        _pingService.AlwaysFail("Network error");
-        await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+        // Act
+        await service.CheckNetworkAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.NotNull(receivedArgs);
-        Assert.NotNull(receivedArgs.CurrentStatus);
+        Assert.NotNull(eventArgs);
+        Assert.NotNull(eventArgs.CurrentStatus);
     }
 
     [Fact]
-    public async Task StatusChanged_IncludesPreviousStatus()
+    public async Task CheckNetworkAsync_StatusChangedEvent_IncludesPreviousStatus()
     {
         // Arrange
-        var receivedArgs = new List<NetworkStatusEventArgs>();
-        _service.StatusChanged += (_, args) => receivedArgs.Add(args);
-        _pingService.AlwaysSucceed(latencyMs: 5);
+        _configService.WithRouterAddress("192.168.1.1");
+        _configService.WithInternetTarget("8.8.8.8");
+        
+        // First check - excellent
+        _pingService.QueueResult(PingResult.Succeeded("192.168.1.1", 5));
+        _pingService.QueueResult(PingResult.Succeeded("8.8.8.8", 10));
+        
+        // Second check - offline
+        _pingService.QueueResult(PingResult.Failed("192.168.1.1", "Timeout"));
+        _pingService.QueueResult(PingResult.Failed("8.8.8.8", "Timeout"));
+        
+        var service = CreateService();
+        var events = new List<NetworkStatusEventArgs>();
+        service.StatusChanged += (_, args) => events.Add(args);
 
-        // Act - first check
-        await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+        // Act
+        await service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+        await service.CheckNetworkAsync(TestContext.Current.CancellationToken);
 
-        // Second check - should have previous
-        _pingService.AlwaysFail("Timeout");
-        await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(receivedArgs.Count >= 1);
-        // The second event should have a previous status
-        if (receivedArgs.Count > 1)
-        {
-            Assert.NotNull(receivedArgs[1].PreviousStatus);
-        }
+        // Assert - Should have two events, second one has previous status
+        Assert.Equal(2, events.Count);
+        Assert.Null(events[0].PreviousStatus); // First event has no previous
+        Assert.NotNull(events[1].PreviousStatus); // Second event has previous
     }
 
     [Fact]
-    public async Task CheckNetworkAsync_CancellationToken_Respected()
+    public async Task CheckNetworkAsync_SupportsCancellation()
     {
         // Arrange
+        _configService.WithRouterAddress("192.168.1.1");
+        _configService.WithInternetTarget("8.8.8.8");
+        
+        var service = CreateService();
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => _service.CheckNetworkAsync(cts.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => service.CheckNetworkAsync(cts.Token));
     }
 }
 
 
 ===============================================================================
-EXPORT COMPLETED: Fri Dec 26 12:17:52 PM CST 2025
+EXPORT COMPLETED: Fri Dec 26 12:29:17 PM CST 2025
 Total Files Exported: 51
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================

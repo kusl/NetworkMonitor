@@ -49,11 +49,11 @@ public sealed class NetworkMonitorServiceTests : IDisposable
         // Arrange
         _configService.WithRouterAddress("192.168.1.1");
         _configService.WithInternetTarget("8.8.8.8");
-        
+
         // Queue successful pings with low latency
         _pingService.QueueResult(PingResult.Succeeded("192.168.1.1", 5));
         _pingService.QueueResult(PingResult.Succeeded("8.8.8.8", 10));
-        
+
         var service = CreateService();
 
         // Act
@@ -71,11 +71,11 @@ public sealed class NetworkMonitorServiceTests : IDisposable
         // Arrange
         _configService.WithRouterAddress("192.168.1.1");
         _configService.WithInternetTarget("8.8.8.8");
-        
+
         // Router fails, internet succeeds
         _pingService.QueueResult(PingResult.Failed("192.168.1.1", "Timeout"));
         _pingService.QueueResult(PingResult.Succeeded("8.8.8.8", 10));
-        
+
         var service = CreateService();
 
         // Act
@@ -93,11 +93,11 @@ public sealed class NetworkMonitorServiceTests : IDisposable
         // Arrange
         _configService.WithRouterAddress("192.168.1.1");
         _configService.WithInternetTarget("8.8.8.8");
-        
+
         // Router succeeds, internet fails
         _pingService.QueueResult(PingResult.Succeeded("192.168.1.1", 5));
         _pingService.QueueResult(PingResult.Failed("8.8.8.8", "Timeout"));
-        
+
         var service = CreateService();
 
         // Act
@@ -115,11 +115,11 @@ public sealed class NetworkMonitorServiceTests : IDisposable
         // Arrange
         _configService.WithRouterAddress("192.168.1.1");
         _configService.WithInternetTarget("8.8.8.8");
-        
+
         // Both fail
         _pingService.QueueResult(PingResult.Failed("192.168.1.1", "Timeout"));
         _pingService.QueueResult(PingResult.Failed("8.8.8.8", "Timeout"));
-        
+
         var service = CreateService();
 
         // Act
@@ -135,9 +135,9 @@ public sealed class NetworkMonitorServiceTests : IDisposable
         // Arrange
         _configService.WithRouterAddress(null); // No router configured
         _configService.WithInternetTarget("8.8.8.8");
-        
+
         _pingService.QueueResult(PingResult.Succeeded("8.8.8.8", 10));
-        
+
         var service = CreateService();
 
         // Act
@@ -153,11 +153,11 @@ public sealed class NetworkMonitorServiceTests : IDisposable
         // Arrange
         _configService.WithRouterAddress("192.168.1.1");
         _configService.WithInternetTarget("8.8.8.8");
-        
+
         // High latency (above GoodLatencyMs of 50)
         _pingService.QueueResult(PingResult.Succeeded("192.168.1.1", 5));
         _pingService.QueueResult(PingResult.Succeeded("8.8.8.8", 250));
-        
+
         var service = CreateService();
 
         // Act
@@ -175,10 +175,10 @@ public sealed class NetworkMonitorServiceTests : IDisposable
         // Arrange
         _configService.WithRouterAddress("192.168.1.1");
         _configService.WithInternetTarget("8.8.8.8");
-        
+
         _pingService.QueueResult(PingResult.Succeeded("192.168.1.1", 5));
         _pingService.QueueResult(PingResult.Succeeded("8.8.8.8", 10));
-        
+
         var service = CreateService();
         NetworkStatusEventArgs? eventArgs = null;
         service.StatusChanged += (_, args) => eventArgs = args;
@@ -197,15 +197,15 @@ public sealed class NetworkMonitorServiceTests : IDisposable
         // Arrange
         _configService.WithRouterAddress("192.168.1.1");
         _configService.WithInternetTarget("8.8.8.8");
-        
+
         // First check - excellent
         _pingService.QueueResult(PingResult.Succeeded("192.168.1.1", 5));
         _pingService.QueueResult(PingResult.Succeeded("8.8.8.8", 10));
-        
+
         // Second check - offline
         _pingService.QueueResult(PingResult.Failed("192.168.1.1", "Timeout"));
         _pingService.QueueResult(PingResult.Failed("8.8.8.8", "Timeout"));
-        
+
         var service = CreateService();
         var events = new List<NetworkStatusEventArgs>();
         service.StatusChanged += (_, args) => events.Add(args);
@@ -226,7 +226,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
         // Arrange
         _configService.WithRouterAddress("192.168.1.1");
         _configService.WithInternetTarget("8.8.8.8");
-        
+
         var service = CreateService();
         using var cts = new CancellationTokenSource();
         cts.Cancel();
