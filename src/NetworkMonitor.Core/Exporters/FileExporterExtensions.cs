@@ -18,15 +18,15 @@ public static class FileExporterExtensions
         FileExporterOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(builder);
-        
+
         options ??= FileExporterOptions.Default;
-        
+
         var exporter = new FileMetricExporter(options);
         var reader = new PeriodicExportingMetricReader(exporter, exportIntervalMilliseconds: 10000);
-        
+
         return builder.AddReader(reader);
     }
-    
+
     /// <summary>
     /// Adds a file exporter with custom configuration.
     /// </summary>
@@ -39,7 +39,7 @@ public static class FileExporterExtensions
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(configure);
-        
+
         var options = new FileExporterOptions();
         configure(options);
         return builder.AddFileExporter(options);

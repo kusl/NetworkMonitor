@@ -10,7 +10,7 @@ public sealed class NetworkStatusEventArgs : EventArgs
     /// The new network status.
     /// </summary>
     public NetworkStatus Status { get; }
-    
+
     /// <summary>
     /// Creates a new instance of NetworkStatusEventArgs.
     /// </summary>

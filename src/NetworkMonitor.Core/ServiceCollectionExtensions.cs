@@ -27,25 +27,25 @@ public static class ServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
-        
+
         // Bind options from configuration
         services.Configure<MonitorOptions>(
             configuration.GetSection(MonitorOptions.SectionName));
         services.Configure<StorageOptions>(
             configuration.GetSection(StorageOptions.SectionName));
-        
+
         // Register services
         services.AddSingleton<IPingService, PingService>();
         services.AddSingleton<INetworkMonitorService, NetworkMonitorService>();
         services.AddSingleton<IStatusDisplay, ConsoleStatusDisplay>();
         services.AddSingleton<IStorageService, SqliteStorageService>();
-        
+
         // Register background service
         services.AddHostedService<MonitorBackgroundService>();
-        
+
         return services;
     }
-    
+
     /// <summary>
     /// Adds OpenTelemetry metrics with file and console export.
     /// </summary>
@@ -57,9 +57,9 @@ public static class ServiceCollectionExtensions
         FileExporterOptions? fileOptions = null)
     {
         ArgumentNullException.ThrowIfNull(services);
-        
+
         fileOptions ??= FileExporterOptions.Default;
-        
+
         services.AddOpenTelemetry()
             .ConfigureResource(resource => resource
                 .AddService(
@@ -73,7 +73,7 @@ public static class ServiceCollectionExtensions
                     .AddConsoleExporter()
                     .AddFileExporter(fileOptions);
             });
-        
+
         return services;
     }
 }
