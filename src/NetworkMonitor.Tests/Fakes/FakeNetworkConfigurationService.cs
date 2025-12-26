@@ -29,6 +29,9 @@ public sealed class FakeNetworkConfigurationService : INetworkConfigurationServi
     public Task<string> GetInternetTargetAsync(CancellationToken cancellationToken = default)
         => Task.FromResult(_internetTarget);
 
+    public Task InitializeAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult();
+
     public void Dispose()
     {
         // Nothing to dispose in fake
