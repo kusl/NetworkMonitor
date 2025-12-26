@@ -160,7 +160,7 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService, 
             return false;
         }
     }
-    
+
     /// <inheritdoc />
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {

@@ -32,4 +32,9 @@ public sealed class FakeNetworkConfigurationService : INetworkConfigurationServi
     {
         // Nothing to dispose in fake
     }
+
+    public Task InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
 }
