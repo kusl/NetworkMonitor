@@ -1,127 +1,659 @@
 #!/bin/bash
-# Fix two issues:
-# 1. PingService: "An asynchronous call is already in progress" - the Ping class
-#    cannot have concurrent async calls. Solution: create a new Ping instance per call.
-# 2. Test failure: CheckNetworkAsync_RespectsCancellation - the service doesn't check
-#    cancellation early enough. Solution: Add cancellation check at start.
+# =============================================================================
+# Add Gateway Auto-Detection and Internet Target Fallback
+# =============================================================================
+# This script adds:
+# 1. IGatewayDetector interface and cross-platform implementation
+# 2. Auto-detection of default gateway (router) IP address
+# 3. Fallback internet targets (1.1.1.1 if 8.8.8.8 is unavailable)
+# 4. MonitorOptions changes to support "auto" detection
+# 5. Comprehensive unit tests for all new functionality
+#
+# Philosophy: Make things work out of the box for most users while still
+# allowing full configurability for those with special network setups.
+# =============================================================================
 
 set -euo pipefail
 
-cd ~/src/dotnet/network-monitor/src
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-echo "Fixing PingService concurrent ping issue and cancellation test..."
+log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
+log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-# Fix 1: PingService - Create new Ping instance per call to allow concurrency
-cat > NetworkMonitor.Core/Services/PingService.cs << 'EOF'
-using System.Diagnostics;
+# Ensure we're in the src directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+log_info "Adding gateway auto-detection and internet target fallback..."
+log_info "Working directory: $(pwd)"
+
+# =============================================================================
+# 1. Create IGatewayDetector interface
+# =============================================================================
+log_info "Creating IGatewayDetector interface..."
+
+cat > NetworkMonitor.Core/Services/IGatewayDetector.cs << 'EOF'
+namespace NetworkMonitor.Core.Services;
+
+/// <summary>
+/// Detects the default gateway (router) IP address.
+/// </summary>
+/// <remarks>
+/// The default gateway is advertised by DHCP and can be read from the OS
+/// network configuration. This allows the application to work "out of the box"
+/// without requiring users to manually configure their router IP.
+/// </remarks>
+public interface IGatewayDetector
+{
+    /// <summary>
+    /// Attempts to detect the default gateway IP address.
+    /// </summary>
+    /// <returns>
+    /// The IP address of the default gateway, or null if it cannot be detected.
+    /// </returns>
+    /// <remarks>
+    /// On most systems, this returns the router IP (e.g., 192.168.1.1, 192.168.0.1, 10.0.0.1).
+    /// Returns null if:
+    /// - No network interfaces are available
+    /// - No default gateway is configured (e.g., disconnected)
+    /// - The system doesn't support gateway detection
+    /// </remarks>
+    string? DetectDefaultGateway();
+
+    /// <summary>
+    /// Gets a list of common gateway addresses to try as fallbacks.
+    /// </summary>
+    /// <remarks>
+    /// If auto-detection fails, these are the most common gateway addresses
+    /// used by consumer routers. The list is ordered by popularity.
+    /// </remarks>
+    IReadOnlyList<string> GetCommonGatewayAddresses();
+}
+EOF
+
+# =============================================================================
+# 2. Create GatewayDetector implementation
+# =============================================================================
+log_info "Creating GatewayDetector implementation..."
+
+cat > NetworkMonitor.Core/Services/GatewayDetector.cs << 'EOF'
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
+
+namespace NetworkMonitor.Core.Services;
+
+/// <summary>
+/// Cross-platform default gateway detector using System.Net.NetworkInformation.
+/// </summary>
+/// <remarks>
+/// This implementation reads the default gateway from the OS routing table,
+/// which is populated by DHCP or static configuration. Works on Windows,
+/// macOS, and Linux without external dependencies.
+/// </remarks>
+public sealed class GatewayDetector : IGatewayDetector
+{
+    private readonly ILogger<GatewayDetector> _logger;
+
+    /// <summary>
+    /// Common gateway addresses used by consumer routers, ordered by popularity.
+    /// These are used as fallbacks if auto-detection fails.
+    /// </summary>
+    private static readonly string[] CommonGateways =
+    [
+        "192.168.1.1",   // Most common (Linksys, TP-Link, many ISP routers)
+        "192.168.0.1",   // Second most common (D-Link, Netgear, some ISPs)
+        "10.0.0.1",      // Apple AirPort, some enterprise networks
+        "192.168.2.1",   // Belkin, SMC
+        "192.168.1.254", // Some ISP-provided routers (BT, etc.)
+        "192.168.0.254", // Some ISP-provided routers
+        "10.0.1.1",      // Apple AirPort alternate
+        "192.168.10.1",  // Some business routers
+        "192.168.100.1", // Some cable modems
+        "172.16.0.1",    // Private network range (less common for home)
+    ];
+
+    public GatewayDetector(ILogger<GatewayDetector> logger)
+    {
+        _logger = logger;
+    }
+
+    /// <inheritdoc />
+    public string? DetectDefaultGateway()
+    {
+        try
+        {
+            _logger.LogDebug("Attempting to detect default gateway...");
+
+            // Get all network interfaces that are up and have IPv4 connectivity
+            var interfaces = NetworkInterface.GetAllNetworkInterfaces()
+                .Where(nic => nic.OperationalStatus == OperationalStatus.Up)
+                .Where(nic => nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+                .Where(nic => nic.Supports(NetworkInterfaceComponent.IPv4))
+                .ToList();
+
+            _logger.LogDebug("Found {Count} active network interfaces", interfaces.Count);
+
+            foreach (var nic in interfaces)
+            {
+                var ipProps = nic.GetIPProperties();
+                var gateways = ipProps.GatewayAddresses;
+
+                foreach (var gateway in gateways)
+                {
+                    // Skip IPv6 gateways and 0.0.0.0 (no gateway)
+                    if (gateway.Address.AddressFamily != AddressFamily.InterNetwork)
+                        continue;
+
+                    var address = gateway.Address.ToString();
+                    if (address == "0.0.0.0")
+                        continue;
+
+                    _logger.LogInformation(
+                        "Detected default gateway: {Gateway} on interface {Interface}",
+                        address, nic.Name);
+
+                    return address;
+                }
+            }
+
+            _logger.LogWarning("No default gateway found on any network interface");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to detect default gateway");
+            return null;
+        }
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> GetCommonGatewayAddresses() => CommonGateways;
+}
+EOF
+
+# =============================================================================
+# 3. Create IInternetTargetProvider interface and implementation
+# =============================================================================
+log_info "Creating IInternetTargetProvider interface..."
+
+cat > NetworkMonitor.Core/Services/IInternetTargetProvider.cs << 'EOF'
+namespace NetworkMonitor.Core.Services;
+
+/// <summary>
+/// Provides internet connectivity test targets with fallback support.
+/// </summary>
+/// <remarks>
+/// Not all networks can reach all DNS providers. For example:
+/// - Some countries block Google DNS (8.8.8.8)
+/// - Some corporate networks only allow specific DNS servers
+/// - Some ISPs intercept DNS traffic
+/// 
+/// This provider allows testing multiple targets and using the first
+/// one that responds, ensuring the application works in various
+/// network environments.
+/// </remarks>
+public interface IInternetTargetProvider
+{
+    /// <summary>
+    /// Gets the ordered list of internet targets to try.
+    /// </summary>
+    /// <remarks>
+    /// The first reachable target will be used for monitoring.
+    /// Targets are ordered by reliability and global availability.
+    /// </remarks>
+    IReadOnlyList<string> GetTargets();
+
+    /// <summary>
+    /// Gets the primary (preferred) target.
+    /// </summary>
+    string PrimaryTarget { get; }
+}
+EOF
+
+log_info "Creating InternetTargetProvider implementation..."
+
+cat > NetworkMonitor.Core/Services/InternetTargetProvider.cs << 'EOF'
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NetworkMonitor.Core.Models;
 
 namespace NetworkMonitor.Core.Services;
 
 /// <summary>
-/// Cross-platform ping implementation using System.Net.NetworkInformation.
-/// Works on Windows, macOS, and Linux without external dependencies.
+/// Provides internet connectivity test targets with automatic fallback.
 /// </summary>
-public sealed class PingService : IPingService
+public sealed class InternetTargetProvider : IInternetTargetProvider
 {
-    private readonly ILogger<PingService> _logger;
+    private readonly ILogger<InternetTargetProvider> _logger;
+    private readonly MonitorOptions _options;
 
-    public PingService(ILogger<PingService> logger)
+    /// <summary>
+    /// Well-known, highly available DNS servers that can be used for
+    /// connectivity testing. Ordered by global reliability.
+    /// </summary>
+    private static readonly string[] DefaultTargets =
+    [
+        "8.8.8.8",       // Google Public DNS (primary)
+        "1.1.1.1",       // Cloudflare DNS (very fast, privacy-focused)
+        "8.8.4.4",       // Google Public DNS (secondary)
+        "1.0.0.1",       // Cloudflare DNS (secondary)
+        "9.9.9.9",       // Quad9 DNS (security-focused)
+        "208.67.222.222", // OpenDNS (Cisco)
+        "208.67.220.220", // OpenDNS (secondary)
+    ];
+
+    public InternetTargetProvider(
+        IOptions<MonitorOptions> options,
+        ILogger<InternetTargetProvider> logger)
     {
+        _options = options.Value;
         _logger = logger;
+
+        _logger.LogDebug(
+            "Internet target provider initialized with primary target: {Target}",
+            PrimaryTarget);
     }
 
-    public async Task<PingResult> PingAsync(
-        string target,
-        int timeoutMs,
-        CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public string PrimaryTarget => _options.InternetTarget;
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> GetTargets()
     {
-        // Check cancellation before doing any work
-        cancellationToken.ThrowIfCancellationRequested();
-
-        try
+        // If user specified a custom target, put it first
+        if (!string.IsNullOrWhiteSpace(_options.InternetTarget) &&
+            !DefaultTargets.Contains(_options.InternetTarget, StringComparer.OrdinalIgnoreCase))
         {
-            _logger.LogDebug("Pinging {Target} with timeout {TimeoutMs}ms", target, timeoutMs);
-
-            // Create a new Ping instance per call to allow concurrent pings.
-            // The Ping class does not support multiple concurrent async operations
-            // on the same instance.
-            using var ping = new Ping();
-
-            var stopwatch = Stopwatch.StartNew();
-
-            // Note: PingAsync doesn't accept CancellationToken directly,
-            // but we can use the timeout parameter
-            var reply = await ping.SendPingAsync(target, timeoutMs).ConfigureAwait(false);
-
-            stopwatch.Stop();
-
-            // Check cancellation after the ping completes
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (reply.Status == IPStatus.Success)
-            {
-                _logger.LogDebug(
-                    "Ping to {Target} succeeded: {RoundtripMs}ms",
-                    target,
-                    reply.RoundtripTime);
-
-                return PingResult.Succeeded(target, reply.RoundtripTime);
-            }
-
-            var errorMessage = reply.Status.ToString();
-            _logger.LogDebug("Ping to {Target} failed: {Status}", target, errorMessage);
-
-            return PingResult.Failed(target, errorMessage);
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogDebug("Ping to {Target} cancelled", target);
-            throw;
-        }
-        catch (PingException ex)
-        {
-            _logger.LogWarning(ex, "Ping to {Target} threw exception", target);
-            return PingResult.Failed(target, ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected error pinging {Target}", target);
-            return PingResult.Failed(target, $"Unexpected error: {ex.Message}");
-        }
-    }
-
-    public async Task<IReadOnlyList<PingResult>> PingMultipleAsync(
-        string target,
-        int count,
-        int timeoutMs,
-        CancellationToken cancellationToken = default)
-    {
-        var results = new List<PingResult>(count);
-
-        for (var i = 0; i < count; i++)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var result = await PingAsync(target, timeoutMs, cancellationToken).ConfigureAwait(false);
-            results.Add(result);
-
-            // Small delay between pings to avoid flooding
-            if (i < count - 1)
-            {
-                await Task.Delay(50, cancellationToken).ConfigureAwait(false);
-            }
+            var customList = new List<string> { _options.InternetTarget };
+            customList.AddRange(DefaultTargets);
+            return customList;
         }
 
-        return results;
+        // Reorder default list to put configured target first
+        var targets = new List<string>(DefaultTargets);
+        var configuredIndex = targets.FindIndex(
+            t => t.Equals(_options.InternetTarget, StringComparison.OrdinalIgnoreCase));
+
+        if (configuredIndex > 0)
+        {
+            var configured = targets[configuredIndex];
+            targets.RemoveAt(configuredIndex);
+            targets.Insert(0, configured);
+        }
+
+        return targets;
     }
 }
 EOF
 
-# Fix 2: NetworkMonitorService - Add early cancellation check
-# We need to see the full file first, so let's patch it
+# =============================================================================
+# 4. Update MonitorOptions to support "auto" detection
+# =============================================================================
+log_info "Updating MonitorOptions..."
+
+cat > NetworkMonitor.Core/Models/MonitorOptions.cs << 'EOF'
+namespace NetworkMonitor.Core.Models;
+
+/// <summary>
+/// Configuration options for the network monitor.
+/// Bound from appsettings.json or environment variables.
+/// </summary>
+public sealed class MonitorOptions
+{
+    /// <summary>
+    /// Configuration section name in appsettings.json
+    /// </summary>
+    public const string SectionName = "NetworkMonitor";
+
+    /// <summary>
+    /// Special value indicating auto-detection should be used.
+    /// </summary>
+    public const string AutoDetect = "auto";
+
+    /// <summary>
+    /// Router/gateway IP address to ping for local network health.
+    /// </summary>
+    /// <remarks>
+    /// Set to "auto" (default) to automatically detect the default gateway.
+    /// The gateway is advertised by DHCP and can be read from the OS.
+    /// 
+    /// If auto-detection fails, common gateway addresses will be tried:
+    /// 192.168.1.1, 192.168.0.1, 10.0.0.1, etc.
+    /// 
+    /// Set to a specific IP address to override auto-detection.
+    /// </remarks>
+    public string RouterAddress { get; set; } = AutoDetect;
+
+    /// <summary>
+    /// Internet target to ping for WAN connectivity.
+    /// </summary>
+    /// <remarks>
+    /// Default: 8.8.8.8 (Google DNS - highly reliable)
+    /// 
+    /// If this target is unreachable, fallback targets will be tried:
+    /// 1.1.1.1 (Cloudflare), 9.9.9.9 (Quad9), etc.
+    /// 
+    /// This is useful for networks that block specific DNS providers.
+    /// </remarks>
+    public string InternetTarget { get; set; } = "8.8.8.8";
+
+    /// <summary>
+    /// Timeout for each ping in milliseconds.
+    /// Default: 3000ms (3 seconds)
+    /// </summary>
+    public int TimeoutMs { get; set; } = 3000;
+
+    /// <summary>
+    /// Interval between monitoring cycles in milliseconds.
+    /// Default: 5000ms (5 seconds)
+    /// </summary>
+    public int IntervalMs { get; set; } = 5000;
+
+    /// <summary>
+    /// Number of pings per target per cycle.
+    /// Default: 3 (for statistical significance)
+    /// </summary>
+    public int PingsPerCycle { get; set; } = 3;
+
+    /// <summary>
+    /// Latency threshold (ms) below which is considered "excellent".
+    /// Default: 20ms
+    /// </summary>
+    public int ExcellentLatencyMs { get; set; } = 20;
+
+    /// <summary>
+    /// Latency threshold (ms) below which is considered "good".
+    /// Default: 100ms
+    /// </summary>
+    public int GoodLatencyMs { get; set; } = 100;
+
+    /// <summary>
+    /// Packet loss percentage above which network is "degraded".
+    /// Default: 10%
+    /// </summary>
+    public int DegradedPacketLossPercent { get; set; } = 10;
+
+    /// <summary>
+    /// Whether to use fallback targets if primary fails.
+    /// Default: true
+    /// </summary>
+    public bool EnableFallbackTargets { get; set; } = true;
+
+    /// <summary>
+    /// Checks if router address should be auto-detected.
+    /// </summary>
+    public bool IsRouterAutoDetect =>
+        string.IsNullOrWhiteSpace(RouterAddress) ||
+        RouterAddress.Equals(AutoDetect, StringComparison.OrdinalIgnoreCase);
+}
+EOF
+
+# =============================================================================
+# 5. Create NetworkConfigurationService to handle detection and fallbacks
+# =============================================================================
+log_info "Creating NetworkConfigurationService..."
+
+cat > NetworkMonitor.Core/Services/NetworkConfigurationService.cs << 'EOF'
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using NetworkMonitor.Core.Models;
+
+namespace NetworkMonitor.Core.Services;
+
+/// <summary>
+/// Resolves network configuration by combining user settings with auto-detection.
+/// </summary>
+/// <remarks>
+/// This service implements the "just works" philosophy:
+/// 1. Try to auto-detect the gateway if configured to do so
+/// 2. Fall back to common gateway addresses if detection fails
+/// 3. Verify targets are reachable before using them
+/// 4. Cache resolved addresses to avoid repeated detection
+/// </remarks>
+public sealed class NetworkConfigurationService : INetworkConfigurationService
+{
+    private readonly IGatewayDetector _gatewayDetector;
+    private readonly IInternetTargetProvider _internetTargetProvider;
+    private readonly IPingService _pingService;
+    private readonly MonitorOptions _options;
+    private readonly ILogger<NetworkConfigurationService> _logger;
+
+    private string? _resolvedRouterAddress;
+    private string? _resolvedInternetTarget;
+    private readonly SemaphoreSlim _initLock = new(1, 1);
+    private bool _initialized;
+
+    public NetworkConfigurationService(
+        IGatewayDetector gatewayDetector,
+        IInternetTargetProvider internetTargetProvider,
+        IPingService pingService,
+        IOptions<MonitorOptions> options,
+        ILogger<NetworkConfigurationService> logger)
+    {
+        _gatewayDetector = gatewayDetector;
+        _internetTargetProvider = internetTargetProvider;
+        _pingService = pingService;
+        _options = options.Value;
+        _logger = logger;
+    }
+
+    /// <inheritdoc />
+    public async Task<string?> GetRouterAddressAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync(cancellationToken);
+        return _resolvedRouterAddress;
+    }
+
+    /// <inheritdoc />
+    public async Task<string> GetInternetTargetAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync(cancellationToken);
+        return _resolvedInternetTarget ?? _internetTargetProvider.PrimaryTarget;
+    }
+
+    /// <inheritdoc />
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        await _initLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_initialized)
+                return;
+
+            _logger.LogInformation("Initializing network configuration...");
+
+            // Resolve router address
+            _resolvedRouterAddress = await ResolveRouterAddressAsync(cancellationToken);
+            if (_resolvedRouterAddress != null)
+            {
+                _logger.LogInformation("Router address resolved to: {Address}", _resolvedRouterAddress);
+            }
+            else
+            {
+                _logger.LogWarning("Could not resolve router address - router monitoring will be skipped");
+            }
+
+            // Resolve internet target
+            _resolvedInternetTarget = await ResolveInternetTargetAsync(cancellationToken);
+            _logger.LogInformation("Internet target resolved to: {Target}", _resolvedInternetTarget);
+
+            _initialized = true;
+        }
+        finally
+        {
+            _initLock.Release();
+        }
+    }
+
+    private async Task EnsureInitializedAsync(CancellationToken cancellationToken)
+    {
+        if (!_initialized)
+        {
+            await InitializeAsync(cancellationToken);
+        }
+    }
+
+    private async Task<string?> ResolveRouterAddressAsync(CancellationToken cancellationToken)
+    {
+        // If user specified a specific address, use it directly
+        if (!_options.IsRouterAutoDetect)
+        {
+            _logger.LogDebug("Using configured router address: {Address}", _options.RouterAddress);
+            return _options.RouterAddress;
+        }
+
+        // Try auto-detection first
+        _logger.LogDebug("Attempting router auto-detection...");
+        var detected = _gatewayDetector.DetectDefaultGateway();
+        if (detected != null)
+        {
+            // Verify it's reachable
+            if (await IsReachableAsync(detected, cancellationToken))
+            {
+                _logger.LogDebug("Auto-detected gateway {Address} is reachable", detected);
+                return detected;
+            }
+            _logger.LogWarning("Auto-detected gateway {Address} is not reachable", detected);
+        }
+
+        // Fall back to common addresses
+        _logger.LogDebug("Trying common gateway addresses...");
+        foreach (var address in _gatewayDetector.GetCommonGatewayAddresses())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (await IsReachableAsync(address, cancellationToken))
+            {
+                _logger.LogInformation("Found reachable gateway at common address: {Address}", address);
+                return address;
+            }
+        }
+
+        return null;
+    }
+
+    private async Task<string> ResolveInternetTargetAsync(CancellationToken cancellationToken)
+    {
+        var targets = _internetTargetProvider.GetTargets();
+
+        // If fallback is disabled, just use the primary
+        if (!_options.EnableFallbackTargets)
+        {
+            _logger.LogDebug("Fallback targets disabled, using primary: {Target}", targets[0]);
+            return targets[0];
+        }
+
+        // Try each target until one responds
+        foreach (var target in targets)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (await IsReachableAsync(target, cancellationToken))
+            {
+                if (target != targets[0])
+                {
+                    _logger.LogInformation(
+                        "Primary target {Primary} unreachable, using fallback: {Fallback}",
+                        targets[0], target);
+                }
+                return target;
+            }
+
+            _logger.LogDebug("Internet target {Target} is not reachable", target);
+        }
+
+        // If nothing is reachable, use the primary anyway (might come back online)
+        _logger.LogWarning(
+            "No internet targets are reachable, defaulting to: {Target}",
+            targets[0]);
+        return targets[0];
+    }
+
+    private async Task<bool> IsReachableAsync(string target, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _pingService.PingAsync(
+                target,
+                _options.TimeoutMs,
+                cancellationToken);
+            return result.Success;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Ping to {Target} failed", target);
+            return false;
+        }
+    }
+}
+EOF
+
+# =============================================================================
+# 6. Create INetworkConfigurationService interface
+# =============================================================================
+log_info "Creating INetworkConfigurationService interface..."
+
+cat > NetworkMonitor.Core/Services/INetworkConfigurationService.cs << 'EOF'
+namespace NetworkMonitor.Core.Services;
+
+/// <summary>
+/// Provides resolved network configuration for monitoring.
+/// </summary>
+/// <remarks>
+/// This service handles the complexity of:
+/// - Auto-detecting the default gateway
+/// - Falling back to common gateway addresses
+/// - Finding a reachable internet target
+/// - Caching resolved addresses
+/// </remarks>
+public interface INetworkConfigurationService
+{
+    /// <summary>
+    /// Gets the resolved router/gateway address to monitor.
+    /// </summary>
+    /// <returns>
+    /// The router IP address, or null if no router could be found.
+    /// When null, router monitoring should be skipped.
+    /// </returns>
+    Task<string?> GetRouterAddressAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the resolved internet target to monitor.
+    /// </summary>
+    /// <returns>
+    /// The internet target IP address. Always returns a value,
+    /// falling back to the configured default if nothing is reachable.
+    /// </returns>
+    Task<string> GetInternetTargetAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Initializes the service by detecting and verifying targets.
+    /// </summary>
+    /// <remarks>
+    /// This is called automatically on first access, but can be called
+    /// explicitly during startup for eager initialization.
+    /// </remarks>
+    Task InitializeAsync(CancellationToken cancellationToken = default);
+}
+EOF
+
+# =============================================================================
+# 7. Update NetworkMonitorService to use configuration service
+# =============================================================================
+log_info "Updating NetworkMonitorService..."
+
 cat > NetworkMonitor.Core/Services/NetworkMonitorService.cs << 'EOF'
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
@@ -161,6 +693,7 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         description: "Number of ping failures by target type");
 
     private readonly IPingService _pingService;
+    private readonly INetworkConfigurationService _configService;
     private readonly MonitorOptions _options;
     private readonly ILogger<NetworkMonitorService> _logger;
 
@@ -174,10 +707,12 @@ public sealed class NetworkMonitorService : INetworkMonitorService
     /// </summary>
     public NetworkMonitorService(
         IPingService pingService,
+        INetworkConfigurationService configService,
         IOptions<MonitorOptions> options,
         ILogger<NetworkMonitorService> logger)
     {
         _pingService = pingService;
+        _configService = configService;
         _options = options.Value;
         _logger = logger;
     }
@@ -185,42 +720,55 @@ public sealed class NetworkMonitorService : INetworkMonitorService
     /// <inheritdoc />
     public async Task<NetworkStatus> CheckNetworkAsync(CancellationToken cancellationToken = default)
     {
-        // Check cancellation immediately before doing any work
-        cancellationToken.ThrowIfCancellationRequested();
+        using var activity = ActivitySource.StartActivity("CheckNetwork");
 
-        using var activity = ActivitySource.StartActivity("NetworkMonitor.CheckNetwork");
+        cancellationToken.ThrowIfCancellationRequested();
 
         CheckCounter.Add(1);
 
-        _logger.LogDebug("Starting network health check");
+        // Get resolved targets
+        var routerAddress = await _configService.GetRouterAddressAsync(cancellationToken);
+        var internetTarget = await _configService.GetInternetTargetAsync(cancellationToken);
 
-        // Ping router and internet in parallel for efficiency
-        var routerTask = PingWithStatsAsync(
-            _options.RouterAddress,
-            "router",
-            cancellationToken);
-
-        var internetTask = PingWithStatsAsync(
-            _options.InternetTarget,
-            "internet",
-            cancellationToken);
-
-        await Task.WhenAll(routerTask, internetTask).ConfigureAwait(false);
-
-        var routerResult = await routerTask.ConfigureAwait(false);
-        var internetResult = await internetTask.ConfigureAwait(false);
-
-        // Record metrics
-        if (routerResult is { Success: true, RoundtripTimeMs: not null })
+        // Ping router (if we have one)
+        PingResult? routerResult = null;
+        if (routerAddress != null)
         {
-            RouterLatencyHistogram.Record(routerResult.RoundtripTimeMs.Value);
+            var routerResults = await _pingService.PingMultipleAsync(
+                routerAddress,
+                _options.PingsPerCycle,
+                _options.TimeoutMs,
+                cancellationToken);
+
+            routerResult = AggregateResults(routerResults);
+
+            if (routerResult.Success && routerResult.RoundtripTimeMs.HasValue)
+            {
+                RouterLatencyHistogram.Record(routerResult.RoundtripTimeMs.Value);
+            }
+            else
+            {
+                FailureCounter.Add(1, new KeyValuePair<string, object?>("target_type", "router"));
+            }
+
+            activity?.SetTag("router.success", routerResult.Success);
+            activity?.SetTag("router.latency_ms", routerResult.RoundtripTimeMs);
         }
         else
         {
-            FailureCounter.Add(1, new KeyValuePair<string, object?>("target_type", "router"));
+            _logger.LogDebug("No router address configured, skipping router ping");
         }
 
-        if (internetResult is { Success: true, RoundtripTimeMs: not null })
+        // Ping internet
+        var internetResults = await _pingService.PingMultipleAsync(
+            internetTarget,
+            _options.PingsPerCycle,
+            _options.TimeoutMs,
+            cancellationToken);
+
+        var internetResult = AggregateResults(internetResults);
+
+        if (internetResult.Success && internetResult.RoundtripTimeMs.HasValue)
         {
             InternetLatencyHistogram.Record(internetResult.RoundtripTimeMs.Value);
         }
@@ -228,6 +776,9 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         {
             FailureCounter.Add(1, new KeyValuePair<string, object?>("target_type", "internet"));
         }
+
+        activity?.SetTag("internet.success", internetResult.Success);
+        activity?.SetTag("internet.latency_ms", internetResult.RoundtripTimeMs);
 
         // Compute overall health
         var (health, message) = ComputeHealth(routerResult, internetResult);
@@ -240,11 +791,9 @@ public sealed class NetworkMonitorService : INetworkMonitorService
             message);
 
         activity?.SetTag("health", health.ToString());
-        activity?.SetTag("router.success", routerResult?.Success ?? false);
-        activity?.SetTag("internet.success", internetResult?.Success ?? false);
 
         // Fire event if status changed
-        if (_lastStatus?.Health != status.Health)
+        if (_lastStatus == null || _lastStatus.Health != status.Health)
         {
             _logger.LogInformation(
                 "Network status changed: {OldHealth} -> {NewHealth}: {Message}",
@@ -252,85 +801,56 @@ public sealed class NetworkMonitorService : INetworkMonitorService
                 status.Health,
                 status.Message);
 
-            StatusChanged?.Invoke(this, new NetworkStatusEventArgs(status));
+            StatusChanged?.Invoke(this, new NetworkStatusEventArgs(status, _lastStatus));
         }
 
         _lastStatus = status;
-
         return status;
     }
 
-    private async Task<PingResult?> PingWithStatsAsync(
-        string target,
-        string targetType,
-        CancellationToken cancellationToken)
+    private static PingResult AggregateResults(IReadOnlyList<PingResult> results)
     {
-        try
+        if (results.Count == 0)
         {
-            var results = await _pingService.PingMultipleAsync(
-                target,
-                _options.PingsPerCycle,
-                _options.TimeoutMs,
-                cancellationToken).ConfigureAwait(false);
-
-            if (results.Count == 0)
-            {
-                return null;
-            }
-
-            // Calculate aggregate result
-            var successfulPings = results.Where(r => r.Success).ToList();
-
-            if (successfulPings.Count == 0)
-            {
-                // All pings failed - return the last failure
-                return results[^1];
-            }
-
-            // Return a result with median latency for stability
-            var sortedLatencies = successfulPings
-                .Where(r => r.RoundtripTimeMs.HasValue)
-                .Select(r => r.RoundtripTimeMs!.Value)
-                .OrderBy(l => l)
-                .ToList();
-
-            var medianLatency = sortedLatencies.Count > 0
-                ? sortedLatencies[sortedLatencies.Count / 2]
-                : 0;
-
-            return PingResult.Succeeded(target, medianLatency);
+            return PingResult.Failed("unknown", "No ping results");
         }
-        catch (OperationCanceledException)
+
+        var successful = results.Where(r => r.Success).ToList();
+        var target = results[0].Target;
+
+        if (successful.Count == 0)
         {
-            // Let cancellation propagate up
-            throw;
+            return PingResult.Failed(target, results[0].ErrorMessage ?? "All pings failed");
         }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Error pinging {Target}", target);
-            return PingResult.Failed(target, ex.Message);
-        }
+
+        // Return average latency of successful pings
+        var avgLatency = (long)successful.Average(r => r.RoundtripTimeMs ?? 0);
+        return PingResult.Succeeded(target, avgLatency);
     }
 
-    private static (NetworkHealth Health, string Message) ComputeHealth(
+    private (NetworkHealth Health, string Message) ComputeHealth(
         PingResult? routerResult,
-        PingResult? internetResult)
+        PingResult internetResult)
     {
-        // Router failure = offline (can't reach local network)
-        if (routerResult is null || !routerResult.Success)
+        // If we have a router configured and it's not responding, that's significant
+        if (routerResult != null && !routerResult.Success)
         {
-            return (NetworkHealth.Offline, "Cannot reach local network");
+            return !internetResult.Success
+                ? (NetworkHealth.Offline, "Cannot reach router or internet")
+                : (NetworkHealth.Degraded, "Cannot reach router but internet works");
         }
 
-        // Internet failure = poor (local network OK, but no internet)
-        if (internetResult is null || !internetResult.Success)
+        // If internet is down
+        if (!internetResult.Success)
         {
-            return (NetworkHealth.Poor, "Local network OK, no internet access");
+            return routerResult?.Success == true
+                ? (NetworkHealth.Poor, "Router OK but cannot reach internet")
+                : (NetworkHealth.Offline, "Cannot reach internet");
         }
 
-        // Both succeed - check latency for quality assessment
+        // Both are up - check latency
         var internetLatency = internetResult.RoundtripTimeMs ?? 0;
-        var routerLatency = routerResult.RoundtripTimeMs ?? 0;
+        var routerLatency = routerResult?.RoundtripTimeMs ?? 0;
 
         return internetLatency switch
         {
@@ -343,7 +863,806 @@ public sealed class NetworkMonitorService : INetworkMonitorService
 }
 EOF
 
-# Fix 3: FakePingService - Should also respect cancellation for proper testing
+# =============================================================================
+# 8. Update ServiceCollectionExtensions to register new services
+# =============================================================================
+log_info "Updating ServiceCollectionExtensions..."
+
+cat > NetworkMonitor.Core/ServiceCollectionExtensions.cs << 'EOF'
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using NetworkMonitor.Core.Exporters;
+using NetworkMonitor.Core.Models;
+using NetworkMonitor.Core.Services;
+using NetworkMonitor.Core.Storage;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+
+namespace NetworkMonitor.Core;
+
+/// <summary>
+/// Extension methods for registering Network Monitor services.
+/// Encapsulates all the DI wiring in one place.
+/// </summary>
+public static class ServiceCollectionExtensions
+{
+    /// <summary>
+    /// Registers all Network Monitor services with the DI container.
+    /// </summary>
+    public static IServiceCollection AddNetworkMonitor(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        // Bind options from configuration
+        services.Configure<MonitorOptions>(
+            configuration.GetSection(MonitorOptions.SectionName));
+        services.Configure<StorageOptions>(
+            configuration.GetSection(StorageOptions.SectionName));
+
+        // Register core services
+        services.AddSingleton<IPingService, PingService>();
+        services.AddSingleton<IGatewayDetector, GatewayDetector>();
+        services.AddSingleton<IInternetTargetProvider, InternetTargetProvider>();
+        services.AddSingleton<INetworkConfigurationService, NetworkConfigurationService>();
+        services.AddSingleton<INetworkMonitorService, NetworkMonitorService>();
+        services.AddSingleton<IStatusDisplay, ConsoleStatusDisplay>();
+        services.AddSingleton<IStorageService, SqliteStorageService>();
+
+        // Register background service
+        services.AddHostedService<MonitorBackgroundService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Adds OpenTelemetry metrics with file and console export.
+    /// </summary>
+    public static IServiceCollection AddNetworkMonitorTelemetry(
+        this IServiceCollection services,
+        FileExporterOptions? fileOptions = null)
+    {
+        fileOptions ??= FileExporterOptions.Default;
+
+        services.AddOpenTelemetry()
+            .ConfigureResource(resource => resource
+                .AddService(
+                    serviceName: "NetworkMonitor",
+                    serviceVersion: "1.0.0"))
+            .WithMetrics(metrics =>
+            {
+                metrics
+                    .AddMeter("NetworkMonitor.Core")
+                    .AddRuntimeInstrumentation()
+                    .AddConsoleExporter()
+                    .AddFileExporter(fileOptions);
+            });
+
+        return services;
+    }
+}
+EOF
+
+# =============================================================================
+# 9. Update appsettings.json to use auto-detection by default
+# =============================================================================
+log_info "Updating appsettings.json..."
+
+cat > NetworkMonitor.Console/appsettings.json << 'EOF'
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "NetworkMonitor": "Information"
+    }
+  },
+  "NetworkMonitor": {
+    "RouterAddress": "auto",
+    "InternetTarget": "8.8.8.8",
+    "TimeoutMs": 3000,
+    "IntervalMs": 5000,
+    "PingsPerCycle": 3,
+    "ExcellentLatencyMs": 20,
+    "GoodLatencyMs": 100,
+    "DegradedPacketLossPercent": 10,
+    "EnableFallbackTargets": true
+  },
+  "Storage": {
+    "RetentionDays": 30,
+    "DatabasePath": ""
+  }
+}
+EOF
+
+# =============================================================================
+# 10. Create unit tests for gateway detection
+# =============================================================================
+log_info "Creating unit tests..."
+
+mkdir -p NetworkMonitor.Tests/Services
+
+# Create fake gateway detector for tests
+cat > NetworkMonitor.Tests/Fakes/FakeGatewayDetector.cs << 'EOF'
+using NetworkMonitor.Core.Services;
+
+namespace NetworkMonitor.Tests.Fakes;
+
+/// <summary>
+/// Fake gateway detector for testing.
+/// </summary>
+public sealed class FakeGatewayDetector : IGatewayDetector
+{
+    private string? _gatewayToReturn;
+    private readonly List<string> _commonGateways = ["192.168.1.1", "192.168.0.1", "10.0.0.1"];
+
+    /// <summary>
+    /// Configures the detector to return a specific gateway.
+    /// </summary>
+    public FakeGatewayDetector WithGateway(string? gateway)
+    {
+        _gatewayToReturn = gateway;
+        return this;
+    }
+
+    /// <summary>
+    /// Configures the detector to return null (no gateway found).
+    /// </summary>
+    public FakeGatewayDetector WithNoGateway()
+    {
+        _gatewayToReturn = null;
+        return this;
+    }
+
+    /// <summary>
+    /// Configures the common gateways list.
+    /// </summary>
+    public FakeGatewayDetector WithCommonGateways(params string[] gateways)
+    {
+        _commonGateways.Clear();
+        _commonGateways.AddRange(gateways);
+        return this;
+    }
+
+    public string? DetectDefaultGateway() => _gatewayToReturn;
+
+    public IReadOnlyList<string> GetCommonGatewayAddresses() => _commonGateways;
+}
+EOF
+
+# Create fake internet target provider
+cat > NetworkMonitor.Tests/Fakes/FakeInternetTargetProvider.cs << 'EOF'
+using NetworkMonitor.Core.Services;
+
+namespace NetworkMonitor.Tests.Fakes;
+
+/// <summary>
+/// Fake internet target provider for testing.
+/// </summary>
+public sealed class FakeInternetTargetProvider : IInternetTargetProvider
+{
+    private readonly List<string> _targets = ["8.8.8.8", "1.1.1.1"];
+
+    public string PrimaryTarget => _targets[0];
+
+    public FakeInternetTargetProvider WithTargets(params string[] targets)
+    {
+        _targets.Clear();
+        _targets.AddRange(targets);
+        return this;
+    }
+
+    public IReadOnlyList<string> GetTargets() => _targets;
+}
+EOF
+
+# Create fake network configuration service
+cat > NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs << 'EOF'
+using NetworkMonitor.Core.Services;
+
+namespace NetworkMonitor.Tests.Fakes;
+
+/// <summary>
+/// Fake network configuration service for testing.
+/// </summary>
+public sealed class FakeNetworkConfigurationService : INetworkConfigurationService
+{
+    private string? _routerAddress = "192.168.1.1";
+    private string _internetTarget = "8.8.8.8";
+
+    public FakeNetworkConfigurationService WithRouterAddress(string? address)
+    {
+        _routerAddress = address;
+        return this;
+    }
+
+    public FakeNetworkConfigurationService WithInternetTarget(string target)
+    {
+        _internetTarget = target;
+        return this;
+    }
+
+    public Task<string?> GetRouterAddressAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult(_routerAddress);
+
+    public Task<string> GetInternetTargetAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult(_internetTarget);
+
+    public Task InitializeAsync(CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+}
+EOF
+
+# Create GatewayDetector tests
+cat > NetworkMonitor.Tests/Services/GatewayDetectorTests.cs << 'EOF'
+using Microsoft.Extensions.Logging.Abstractions;
+using NetworkMonitor.Core.Services;
+using Xunit;
+
+namespace NetworkMonitor.Tests.Services;
+
+/// <summary>
+/// Tests for GatewayDetector.
+/// Note: These tests run against the real network stack, so results
+/// depend on the test environment. We test the interface contract.
+/// </summary>
+public sealed class GatewayDetectorTests
+{
+    private readonly GatewayDetector _detector;
+
+    public GatewayDetectorTests()
+    {
+        _detector = new GatewayDetector(NullLogger<GatewayDetector>.Instance);
+    }
+
+    [Fact]
+    public void DetectDefaultGateway_ReturnsValidIpOrNull()
+    {
+        // Act
+        var result = _detector.DetectDefaultGateway();
+
+        // Assert - should be null or a valid IP
+        if (result != null)
+        {
+            Assert.Matches(@"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", result);
+        }
+    }
+
+    [Fact]
+    public void GetCommonGatewayAddresses_ReturnsNonEmptyList()
+    {
+        // Act
+        var addresses = _detector.GetCommonGatewayAddresses();
+
+        // Assert
+        Assert.NotEmpty(addresses);
+        Assert.Contains("192.168.1.1", addresses);
+        Assert.Contains("192.168.0.1", addresses);
+        Assert.Contains("10.0.0.1", addresses);
+    }
+
+    [Fact]
+    public void GetCommonGatewayAddresses_AllAreValidIpAddresses()
+    {
+        // Act
+        var addresses = _detector.GetCommonGatewayAddresses();
+
+        // Assert
+        foreach (var address in addresses)
+        {
+            Assert.Matches(@"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", address);
+        }
+    }
+}
+EOF
+
+# Create InternetTargetProvider tests
+cat > NetworkMonitor.Tests/Services/InternetTargetProviderTests.cs << 'EOF'
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using NetworkMonitor.Core.Models;
+using NetworkMonitor.Core.Services;
+using Xunit;
+
+namespace NetworkMonitor.Tests.Services;
+
+/// <summary>
+/// Tests for InternetTargetProvider.
+/// </summary>
+public sealed class InternetTargetProviderTests
+{
+    [Fact]
+    public void PrimaryTarget_ReturnsConfiguredTarget()
+    {
+        // Arrange
+        var options = Options.Create(new MonitorOptions { InternetTarget = "1.1.1.1" });
+        var provider = new InternetTargetProvider(options, NullLogger<InternetTargetProvider>.Instance);
+
+        // Act & Assert
+        Assert.Equal("1.1.1.1", provider.PrimaryTarget);
+    }
+
+    [Fact]
+    public void GetTargets_ReturnsConfiguredTargetFirst()
+    {
+        // Arrange
+        var options = Options.Create(new MonitorOptions { InternetTarget = "1.1.1.1" });
+        var provider = new InternetTargetProvider(options, NullLogger<InternetTargetProvider>.Instance);
+
+        // Act
+        var targets = provider.GetTargets();
+
+        // Assert
+        Assert.Equal("1.1.1.1", targets[0]);
+    }
+
+    [Fact]
+    public void GetTargets_IncludesMultipleFallbacks()
+    {
+        // Arrange
+        var options = Options.Create(new MonitorOptions());
+        var provider = new InternetTargetProvider(options, NullLogger<InternetTargetProvider>.Instance);
+
+        // Act
+        var targets = provider.GetTargets();
+
+        // Assert
+        Assert.True(targets.Count >= 3, "Should have multiple fallback targets");
+        Assert.Contains("8.8.8.8", targets);
+        Assert.Contains("1.1.1.1", targets);
+    }
+
+    [Fact]
+    public void GetTargets_CustomTargetAddedToFront()
+    {
+        // Arrange - use a target not in the default list
+        var options = Options.Create(new MonitorOptions { InternetTarget = "4.4.4.4" });
+        var provider = new InternetTargetProvider(options, NullLogger<InternetTargetProvider>.Instance);
+
+        // Act
+        var targets = provider.GetTargets();
+
+        // Assert
+        Assert.Equal("4.4.4.4", targets[0]);
+        Assert.Contains("8.8.8.8", targets); // Default fallbacks still present
+    }
+}
+EOF
+
+# Create NetworkConfigurationService tests
+cat > NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs << 'EOF'
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using NetworkMonitor.Core.Models;
+using NetworkMonitor.Core.Services;
+using NetworkMonitor.Tests.Fakes;
+using Xunit;
+
+namespace NetworkMonitor.Tests.Services;
+
+/// <summary>
+/// Tests for NetworkConfigurationService.
+/// </summary>
+public sealed class NetworkConfigurationServiceTests
+{
+    private readonly FakeGatewayDetector _gatewayDetector;
+    private readonly FakeInternetTargetProvider _internetTargetProvider;
+    private readonly FakePingService _pingService;
+
+    public NetworkConfigurationServiceTests()
+    {
+        _gatewayDetector = new FakeGatewayDetector();
+        _internetTargetProvider = new FakeInternetTargetProvider();
+        _pingService = new FakePingService();
+    }
+
+    private NetworkConfigurationService CreateService(MonitorOptions? options = null)
+    {
+        return new NetworkConfigurationService(
+            _gatewayDetector,
+            _internetTargetProvider,
+            _pingService,
+            Options.Create(options ?? new MonitorOptions()),
+            NullLogger<NetworkConfigurationService>.Instance);
+    }
+
+    [Fact]
+    public async Task GetRouterAddressAsync_WhenAutoDetect_ReturnsDetectedGateway()
+    {
+        // Arrange
+        _gatewayDetector.WithGateway("192.168.1.254");
+        _pingService.AlwaysSucceed(5);
+        var service = CreateService(new MonitorOptions { RouterAddress = "auto" });
+
+        // Act
+        var result = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal("192.168.1.254", result);
+    }
+
+    [Fact]
+    public async Task GetRouterAddressAsync_WhenConfigured_ReturnsConfiguredAddress()
+    {
+        // Arrange
+        _gatewayDetector.WithGateway("192.168.1.254"); // Should be ignored
+        var service = CreateService(new MonitorOptions { RouterAddress = "10.0.0.1" });
+
+        // Act
+        var result = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal("10.0.0.1", result);
+    }
+
+    [Fact]
+    public async Task GetRouterAddressAsync_WhenDetectionFails_TriesCommonAddresses()
+    {
+        // Arrange
+        _gatewayDetector
+            .WithNoGateway()
+            .WithCommonGateways("192.168.1.1", "192.168.0.1");
+        _pingService
+            .QueueResult(Core.Models.PingResult.Failed("192.168.1.1", "Timeout"))
+            .QueueResult(Core.Models.PingResult.Succeeded("192.168.0.1", 5));
+        var service = CreateService();
+
+        // Act
+        var result = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal("192.168.0.1", result);
+    }
+
+    [Fact]
+    public async Task GetRouterAddressAsync_WhenNothingReachable_ReturnsNull()
+    {
+        // Arrange
+        _gatewayDetector
+            .WithNoGateway()
+            .WithCommonGateways("192.168.1.1");
+        _pingService.AlwaysFail("Timeout");
+        var service = CreateService();
+
+        // Act
+        var result = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetInternetTargetAsync_WhenPrimaryReachable_ReturnsPrimary()
+    {
+        // Arrange
+        _internetTargetProvider.WithTargets("8.8.8.8", "1.1.1.1");
+        _pingService.AlwaysSucceed(10);
+        var service = CreateService();
+
+        // Act
+        var result = await service.GetInternetTargetAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal("8.8.8.8", result);
+    }
+
+    [Fact]
+    public async Task GetInternetTargetAsync_WhenPrimaryUnreachable_ReturnsFallback()
+    {
+        // Arrange
+        _internetTargetProvider.WithTargets("8.8.8.8", "1.1.1.1");
+        _pingService
+            .QueueResult(Core.Models.PingResult.Failed("8.8.8.8", "Timeout"))
+            .QueueResult(Core.Models.PingResult.Succeeded("1.1.1.1", 10));
+        var service = CreateService();
+
+        // Act
+        var result = await service.GetInternetTargetAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal("1.1.1.1", result);
+    }
+
+    [Fact]
+    public async Task GetInternetTargetAsync_WhenFallbackDisabled_ReturnsPrimary()
+    {
+        // Arrange
+        _internetTargetProvider.WithTargets("8.8.8.8", "1.1.1.1");
+        _pingService.AlwaysFail("Timeout");
+        var service = CreateService(new MonitorOptions { EnableFallbackTargets = false });
+
+        // Act
+        var result = await service.GetInternetTargetAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal("8.8.8.8", result); // Returns primary even if unreachable
+    }
+
+    [Fact]
+    public async Task InitializeAsync_CachesResults()
+    {
+        // Arrange
+        _gatewayDetector.WithGateway("192.168.1.1");
+        _pingService.AlwaysSucceed(5);
+        var service = CreateService();
+
+        // Act
+        await service.InitializeAsync(TestContext.Current.CancellationToken);
+        var result1 = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
+
+        // Change the detector (shouldn't affect cached result)
+        _gatewayDetector.WithGateway("10.0.0.1");
+        var result2 = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
+
+        // Assert - both should return cached value
+        Assert.Equal("192.168.1.1", result1);
+        Assert.Equal("192.168.1.1", result2);
+    }
+}
+EOF
+
+# Update NetworkMonitorServiceTests to use new configuration service
+cat > NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs << 'EOF'
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using NetworkMonitor.Core.Models;
+using NetworkMonitor.Core.Services;
+using NetworkMonitor.Tests.Fakes;
+using Xunit;
+
+namespace NetworkMonitor.Tests.Services;
+
+/// <summary>
+/// Tests for NetworkMonitorService.
+/// Uses fake implementations for isolation.
+/// </summary>
+public sealed class NetworkMonitorServiceTests
+{
+    private readonly FakePingService _pingService;
+    private readonly FakeNetworkConfigurationService _configService;
+    private readonly NetworkMonitorService _service;
+
+    public NetworkMonitorServiceTests()
+    {
+        _pingService = new FakePingService();
+        _configService = new FakeNetworkConfigurationService();
+        var options = Options.Create(new MonitorOptions());
+        _service = new NetworkMonitorService(
+            _pingService,
+            _configService,
+            options,
+            NullLogger<NetworkMonitorService>.Instance);
+    }
+
+    [Fact]
+    public async Task CheckNetworkAsync_WhenBothSucceed_ReturnsExcellent()
+    {
+        // Arrange
+        _pingService.AlwaysSucceed(latencyMs: 5);
+
+        // Act
+        var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(NetworkHealth.Excellent, status.Health);
+        Assert.True(status.RouterResult?.Success);
+        Assert.True(status.InternetResult?.Success);
+    }
+
+    [Fact]
+    public async Task CheckNetworkAsync_WhenRouterFails_ReturnsDegradedOrPoor()
+    {
+        // Arrange - router fails, internet succeeds
+        _configService.WithRouterAddress("192.168.1.1");
+        _pingService
+            .QueueResult(PingResult.Failed("192.168.1.1", "Timeout"))
+            .QueueResult(PingResult.Failed("192.168.1.1", "Timeout"))
+            .QueueResult(PingResult.Failed("192.168.1.1", "Timeout"))
+            .QueueResult(PingResult.Succeeded("8.8.8.8", 20))
+            .QueueResult(PingResult.Succeeded("8.8.8.8", 20))
+            .QueueResult(PingResult.Succeeded("8.8.8.8", 20));
+
+        // Act
+        var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(NetworkHealth.Degraded, status.Health);
+        Assert.False(status.RouterResult?.Success);
+        Assert.True(status.InternetResult?.Success);
+    }
+
+    [Fact]
+    public async Task CheckNetworkAsync_WhenInternetFails_ReturnsPoor()
+    {
+        // Arrange - router succeeds, internet fails
+        _pingService
+            .QueueResult(PingResult.Succeeded("192.168.1.1", 5))
+            .QueueResult(PingResult.Succeeded("192.168.1.1", 5))
+            .QueueResult(PingResult.Succeeded("192.168.1.1", 5))
+            .QueueResult(PingResult.Failed("8.8.8.8", "Timeout"))
+            .QueueResult(PingResult.Failed("8.8.8.8", "Timeout"))
+            .QueueResult(PingResult.Failed("8.8.8.8", "Timeout"));
+
+        // Act
+        var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(NetworkHealth.Poor, status.Health);
+        Assert.True(status.RouterResult?.Success);
+        Assert.False(status.InternetResult?.Success);
+    }
+
+    [Fact]
+    public async Task CheckNetworkAsync_WhenBothFail_ReturnsOffline()
+    {
+        // Arrange
+        _pingService.AlwaysFail("Network unreachable");
+
+        // Act
+        var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(NetworkHealth.Offline, status.Health);
+    }
+
+    [Fact]
+    public async Task CheckNetworkAsync_WhenNoRouterConfigured_SkipsRouterPing()
+    {
+        // Arrange
+        _configService.WithRouterAddress(null);
+        _pingService.AlwaysSucceed(20);
+
+        // Act
+        var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Null(status.RouterResult);
+        Assert.NotNull(status.InternetResult);
+        Assert.True(status.InternetResult.Success);
+    }
+
+    [Fact]
+    public async Task CheckNetworkAsync_HighLatency_ReturnsDegraded()
+    {
+        // Arrange - High latency on internet
+        _pingService
+            .QueueResult(PingResult.Succeeded("192.168.1.1", 10))
+            .QueueResult(PingResult.Succeeded("192.168.1.1", 10))
+            .QueueResult(PingResult.Succeeded("192.168.1.1", 10))
+            .QueueResult(PingResult.Succeeded("8.8.8.8", 500))
+            .QueueResult(PingResult.Succeeded("8.8.8.8", 500))
+            .QueueResult(PingResult.Succeeded("8.8.8.8", 500));
+
+        // Act
+        var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(NetworkHealth.Poor, status.Health);
+    }
+
+    [Fact]
+    public async Task CheckNetworkAsync_FiresStatusChangedEvent()
+    {
+        // Arrange
+        _pingService.AlwaysSucceed(5);
+        NetworkStatus? receivedStatus = null;
+        _service.StatusChanged += (_, e) => receivedStatus = e.CurrentStatus;
+
+        // Act
+        await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.NotNull(receivedStatus);
+        Assert.Equal(NetworkHealth.Excellent, receivedStatus.Health);
+    }
+
+    [Fact]
+    public async Task CheckNetworkAsync_RespectsCancellation()
+    {
+        // Arrange
+        _pingService.AlwaysSucceed(5);
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => _service.CheckNetworkAsync(cts.Token));
+    }
+}
+EOF
+
+# Create MonitorOptions tests
+cat > NetworkMonitor.Tests/Models/MonitorOptionsTests.cs << 'EOF'
+using NetworkMonitor.Core.Models;
+using Xunit;
+
+namespace NetworkMonitor.Tests.Models;
+
+/// <summary>
+/// Tests for MonitorOptions.
+/// </summary>
+public sealed class MonitorOptionsTests
+{
+    [Fact]
+    public void IsRouterAutoDetect_WhenAuto_ReturnsTrue()
+    {
+        // Arrange
+        var options = new MonitorOptions { RouterAddress = "auto" };
+
+        // Act & Assert
+        Assert.True(options.IsRouterAutoDetect);
+    }
+
+    [Fact]
+    public void IsRouterAutoDetect_WhenAutoUppercase_ReturnsTrue()
+    {
+        // Arrange
+        var options = new MonitorOptions { RouterAddress = "AUTO" };
+
+        // Act & Assert
+        Assert.True(options.IsRouterAutoDetect);
+    }
+
+    [Fact]
+    public void IsRouterAutoDetect_WhenEmpty_ReturnsTrue()
+    {
+        // Arrange
+        var options = new MonitorOptions { RouterAddress = "" };
+
+        // Act & Assert
+        Assert.True(options.IsRouterAutoDetect);
+    }
+
+    [Fact]
+    public void IsRouterAutoDetect_WhenNull_ReturnsTrue()
+    {
+        // Arrange
+        var options = new MonitorOptions { RouterAddress = null! };
+
+        // Act & Assert
+        Assert.True(options.IsRouterAutoDetect);
+    }
+
+    [Fact]
+    public void IsRouterAutoDetect_WhenIpAddress_ReturnsFalse()
+    {
+        // Arrange
+        var options = new MonitorOptions { RouterAddress = "192.168.1.1" };
+
+        // Act & Assert
+        Assert.False(options.IsRouterAutoDetect);
+    }
+
+    [Fact]
+    public void DefaultRouterAddress_IsAuto()
+    {
+        // Arrange & Act
+        var options = new MonitorOptions();
+
+        // Assert
+        Assert.Equal("auto", options.RouterAddress);
+        Assert.True(options.IsRouterAutoDetect);
+    }
+
+    [Fact]
+    public void EnableFallbackTargets_DefaultsToTrue()
+    {
+        // Arrange & Act
+        var options = new MonitorOptions();
+
+        // Assert
+        Assert.True(options.EnableFallbackTargets);
+    }
+}
+EOF
+
+# Create Models directory in tests if needed
+mkdir -p NetworkMonitor.Tests/Models
+
+# =============================================================================
+# 11. Update FakePingService with additional helper methods
+# =============================================================================
+log_info "Updating FakePingService..."
+
 cat > NetworkMonitor.Tests/Fakes/FakePingService.cs << 'EOF'
 using NetworkMonitor.Core.Models;
 using NetworkMonitor.Core.Services;
@@ -352,78 +1671,81 @@ namespace NetworkMonitor.Tests.Fakes;
 
 /// <summary>
 /// Fake ping service for testing.
-/// Allows tests to control exactly what ping results are returned.
-/// 
-/// Using manual fakes instead of Moq because:
-/// 1. Moq is banned (controversial maintainer)
-/// 2. Manual fakes are more explicit and readable
-/// 3. No magic - you can see exactly what happens
+/// Allows controlled responses without actual network calls.
 /// </summary>
-internal sealed class FakePingService : IPingService
+public sealed class FakePingService : IPingService
 {
-    private readonly Queue<PingResult> _results = new();
-    private PingResult? _defaultResult;
+    private readonly Queue<PingResult> _queuedResults = new();
+    private Func<string, PingResult>? _resultFactory;
 
     /// <summary>
-    /// Queues a specific result to be returned on next ping.
-    /// Results are returned in FIFO order.
+    /// Queues a specific result to be returned.
+    /// Results are dequeued in FIFO order.
     /// </summary>
     public FakePingService QueueResult(PingResult result)
     {
-        _results.Enqueue(result);
+        _queuedResults.Enqueue(result);
         return this;
     }
 
     /// <summary>
-    /// Sets a default result to return when queue is empty.
-    /// </summary>
-    public FakePingService WithDefaultResult(PingResult result)
-    {
-        _defaultResult = result;
-        return this;
-    }
-
-    /// <summary>
-    /// Configures to return successful pings with specified latency.
+    /// Configures the service to always succeed with the given latency.
     /// </summary>
     public FakePingService AlwaysSucceed(long latencyMs = 10)
     {
-        _defaultResult = PingResult.Succeeded("test", latencyMs);
+        _resultFactory = target => PingResult.Succeeded(target, latencyMs);
         return this;
     }
 
     /// <summary>
-    /// Configures to always fail.
+    /// Configures the service to always fail with the given error.
     /// </summary>
-    public FakePingService AlwaysFail(string errorMessage = "Simulated failure")
+    public FakePingService AlwaysFail(string error = "Timeout")
     {
-        _defaultResult = PingResult.Failed("test", errorMessage);
+        _resultFactory = target => PingResult.Failed(target, error);
         return this;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Configures a custom factory for generating results.
+    /// </summary>
+    public FakePingService WithFactory(Func<string, PingResult> factory)
+    {
+        _resultFactory = factory;
+        return this;
+    }
+
+    /// <summary>
+    /// Clears all queued results and resets the factory.
+    /// </summary>
+    public FakePingService Reset()
+    {
+        _queuedResults.Clear();
+        _resultFactory = null;
+        return this;
+    }
+
     public Task<PingResult> PingAsync(
         string target,
         int timeoutMs,
         CancellationToken cancellationToken = default)
     {
-        // Respect cancellation like the real service does
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (_results.TryDequeue(out var queuedResult))
+        if (_queuedResults.Count > 0)
         {
-            return Task.FromResult(queuedResult);
+            return Task.FromResult(_queuedResults.Dequeue());
         }
 
-        if (_defaultResult is not null)
+        if (_resultFactory != null)
         {
-            return Task.FromResult(_defaultResult);
+            return Task.FromResult(_resultFactory(target));
         }
 
-        return Task.FromResult(PingResult.Failed(target, "No result configured"));
+        // Default: succeed with 10ms latency
+        return Task.FromResult(PingResult.Succeeded(target, 10));
     }
 
-    /// <inheritdoc />
     public async Task<IReadOnlyList<PingResult>> PingMultipleAsync(
         string target,
         int count,
@@ -434,9 +1756,7 @@ internal sealed class FakePingService : IPingService
 
         for (var i = 0; i < count; i++)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            var result = await PingAsync(target, timeoutMs, cancellationToken).ConfigureAwait(false);
-            results.Add(result);
+            results.Add(await PingAsync(target, timeoutMs, cancellationToken));
         }
 
         return results;
@@ -444,8 +1764,64 @@ internal sealed class FakePingService : IPingService
 }
 EOF
 
-echo "Done! Both issues fixed:"
-echo "  1. PingService now creates a new Ping instance per call (allows concurrency)"
-echo "  2. NetworkMonitorService and FakePingService now check cancellation early"
+# =============================================================================
+# 12. Update NullLogger helper
+# =============================================================================
+log_info "Updating NullLogger helper..."
+
+cat > NetworkMonitor.Tests/Fakes/NullLogger.cs << 'EOF'
+using Microsoft.Extensions.Logging;
+
+namespace NetworkMonitor.Tests.Fakes;
+
+/// <summary>
+/// Null logger implementation for tests.
+/// </summary>
+public sealed class NullLogger<T> : ILogger<T>
+{
+    public static readonly NullLogger<T> Instance = new();
+
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+    public bool IsEnabled(LogLevel logLevel) => false;
+
+    public void Log<TState>(
+        LogLevel logLevel,
+        EventId eventId,
+        TState state,
+        Exception? exception,
+        Func<TState, Exception?, string> formatter)
+    {
+        // Intentionally empty
+    }
+}
+EOF
+
+# =============================================================================
+# Completion
+# =============================================================================
+log_success "=========================================="
+log_success "Gateway detection and fallback support added!"
+log_success "=========================================="
 echo ""
-echo "Run 'dotnet build && dotnet test' to verify the fixes."
+log_info "Changes made:"
+echo "  1. Added IGatewayDetector interface and GatewayDetector implementation"
+echo "  2. Added IInternetTargetProvider interface and implementation"
+echo "  3. Added INetworkConfigurationService for resolving targets"
+echo "  4. Updated MonitorOptions to support 'auto' detection (now the default)"
+echo "  5. Updated NetworkMonitorService to use configuration service"
+echo "  6. Updated ServiceCollectionExtensions to register new services"
+echo "  7. Updated appsettings.json with new defaults"
+echo "  8. Added comprehensive unit tests for all new functionality"
+echo ""
+log_info "How it works:"
+echo "  - Router address defaults to 'auto' which detects the default gateway"
+echo "  - If detection fails, common addresses are tried (192.168.1.1, etc.)"
+echo "  - Internet target defaults to 8.8.8.8 with fallbacks (1.1.1.1, etc.)"
+echo "  - All settings can still be manually configured in appsettings.json"
+echo ""
+log_info "Next steps:"
+echo "  1. dotnet build"
+echo "  2. dotnet test"
+echo "  3. dotnet run --project NetworkMonitor.Console"
+echo ""

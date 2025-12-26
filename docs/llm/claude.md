@@ -552,3 +552,49 @@ if you are connected to any lan, isn't the router ip address explicitly advertis
 "RouterAddress": "192.168.1.1"
 I mean it is good that we allow the users to configure this setting or even to allow configuring something other than 8.8.8.8 for the Internet because maybe someone lives in a place that prohibits google dot com or some weird network topology but for most people, we should be able to get this router address from code, right? and also we should be able to try different defaults like 1.1.1.1 if 8.8.8.8 is unavailable? we should absolutely make things configurable but why make people think if we can make things work out of the box? 
 if we can make things work out of the box by automatically detecting 192.168.1.1 or 192.168.0.1 or 10.0.0.1 or something like that we should detect that. If it is not possible to automatically detect, we should use the setting from app settings. What do you think? Can you please generate the shell script that makes all the necessary changes to the code as well as tests to make this happen? 
+
+You're absolutely right! The default gateway (router IP) is indeed advertised and can be programmatically detected. Let me search the project knowledge to understand the current implementation and then create the improvements.Now I have a good understanding of the project structure. Let me search for the test structure as well.Now let me search for the project structure to understand the file layout.Now I have a comprehensive understanding of the project. Let me create the shell script that implements auto-detection of the default gateway and fallback internet targets.
+
+I've created a comprehensive shell script that adds auto-detection of the default gateway and fallback internet targets. Here's a summary of what the script does:
+
+## Summary of Changes
+
+### New Services Added
+
+| Service | Purpose |
+|---------|---------|
+| `IGatewayDetector` / `GatewayDetector` | Detects the default gateway from the OS routing table using `System.Net.NetworkInformation` |
+| `IInternetTargetProvider` / `InternetTargetProvider` | Provides ordered list of internet targets with fallbacks |
+| `INetworkConfigurationService` / `NetworkConfigurationService` | Orchestrates detection and verification of targets |
+
+### Key Design Decisions
+
+1. **Auto-detection first**: The `RouterAddress` now defaults to `"auto"` instead of `"192.168.1.1"`. The system will:
+   - Query the OS for the default gateway (works on Windows, macOS, Linux)
+   - If detection fails, try common gateway addresses in order of popularity
+   - Verify each address is reachable before using it
+
+2. **Fallback internet targets**: If `8.8.8.8` is unreachable (blocked in some countries/networks), the system automatically tries:
+   - `1.1.1.1` (Cloudflare)
+   - `8.8.4.4` (Google secondary)
+   - `9.9.9.9` (Quad9)
+   - etc.
+
+3. **Caching**: Once targets are resolved, they're cached for the session to avoid repeated detection overhead.
+
+4. **Full configurability preserved**: Users can still set specific IPs in `appsettings.json` to override auto-detection.
+
+### To Apply the Changes
+
+```bash
+cd ~/src/dotnet/network-monitor/src
+chmod +x add-gateway-detection.sh
+./add-gateway-detection.sh
+dotnet build
+dotnet test
+```
+
+The application will now work out of the box on most networks without requiring users to know their router IP!
+
+
+
