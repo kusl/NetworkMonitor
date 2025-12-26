@@ -126,6 +126,7 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
         // Arrange
         _internetTargetProvider.WithTargets("8.8.8.8", "1.1.1.1");
         // First target fails, second succeeds
+        _pingService.Reset();
         _pingService.QueueResult(PingResult.Failed("8.8.8.8", "Timeout"));
         _pingService.QueueResult(PingResult.Succeeded("1.1.1.1", 10));
         var options = new MonitorOptions { EnableFallbackTargets = true };

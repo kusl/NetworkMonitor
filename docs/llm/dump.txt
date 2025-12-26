@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Fri Dec 26 12:33:34 PM CST 2025
+Generated: Fri Dec 26 12:40:10 PM CST 2025
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -3179,8 +3179,8 @@ public sealed class FakeGatewayDetector : IGatewayDetector
 
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Fakes/FakeInternetTargetProvider.cs
-SIZE: 1.03 KB
-MODIFIED: 2025-12-26 12:33:27
+SIZE: 1.01 KB
+MODIFIED: 2025-12-26 12:33:40
 ================================================================================
 
 using NetworkMonitor.Core.Services;
@@ -3200,13 +3200,13 @@ public sealed class FakeInternetTargetProvider : IInternetTargetProvider
     public FakeInternetTargetProvider WithPrimaryTarget(string target)
     {
         _primaryTarget = target;
-        
+
         // Remove the target if it exists (no need to check Contains first)
         _targets.Remove(target);
-        
+
         // Now insert it at the start
         _targets.Insert(0, target);
-        
+
         return this;
     }
 
@@ -4116,7 +4116,7 @@ public sealed class InternetTargetProviderTests
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs
 SIZE: 5.96 KB
-MODIFIED: 2025-12-26 12:27:18
+MODIFIED: 2025-12-26 12:40:05
 ================================================================================
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -4550,7 +4550,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
 
 
 ===============================================================================
-EXPORT COMPLETED: Fri Dec 26 12:33:34 PM CST 2025
+EXPORT COMPLETED: Fri Dec 26 12:40:11 PM CST 2025
 Total Files Exported: 51
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
