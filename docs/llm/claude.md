@@ -933,4 +933,64 @@ public sealed class NetworkHealthTests
     }
 }
 ```
-Something like this? Lets find out I guess... 
+I have three test failures after this change. 
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.1)
+[xUnit.net 00:00:00.13]   Discovering: NetworkMonitor.Tests
+[xUnit.net 00:00:00.31]   Discovered:  NetworkMonitor.Tests
+[xUnit.net 00:00:00.46]   Starting:    NetworkMonitor.Tests
+[xUnit.net 00:00:00.58]     NetworkMonitor.Tests.Services.NetworkConfigurationServiceTests.GetInternetTargetAsync_ReturnsPrimaryTarget [FAIL]
+[xUnit.net 00:00:00.58]       Assert.Equal() Failure: Strings differ
+[xUnit.net 00:00:00.58]                  ↓ (pos 0)
+[xUnit.net 00:00:00.58]       Expected: "1.1.1.1"
+[xUnit.net 00:00:00.58]       Actual:   "8.8.8.8"
+[xUnit.net 00:00:00.58]                  ↑ (pos 0)
+[xUnit.net 00:00:00.58]       Stack Trace:
+[xUnit.net 00:00:00.58]         /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs(117,0): at NetworkMonitor.Tests.Services.NetworkConfigurationServiceTests.GetInternetTargetAsync_ReturnsPrimaryTarget()
+[xUnit.net 00:00:00.58]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.58]     NetworkMonitor.Tests.Models.NetworkHealthTests.NetworkHealth_CanCompare [FAIL]
+[xUnit.net 00:00:00.58]       Assert.True() Failure
+[xUnit.net 00:00:00.58]       Expected: True
+[xUnit.net 00:00:00.58]       Actual:   False
+[xUnit.net 00:00:00.58]       Stack Trace:
+[xUnit.net 00:00:00.58]         /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs(26,0): at NetworkMonitor.Tests.Models.NetworkHealthTests.NetworkHealth_CanCompare()
+[xUnit.net 00:00:00.58]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+[xUnit.net 00:00:00.58]            at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:00.58]     NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_WhenInternetFails_ReturnsDegradedOrPoor [FAIL]
+[xUnit.net 00:00:00.58]       Assert.True() Failure
+[xUnit.net 00:00:00.58]       Expected: True
+[xUnit.net 00:00:00.58]       Actual:   False
+[xUnit.net 00:00:00.58]       Stack Trace:
+[xUnit.net 00:00:00.58]         /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(84,0): at NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_WhenInternetFails_ReturnsDegradedOrPoor()
+[xUnit.net 00:00:00.58]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.58]   Finished:    NetworkMonitor.Tests (ID = '2e8f57cd5826539fc7a5cd3a97d27721fcb9a15ff7c496b1112166f6757858fe')
+  NetworkMonitor.Tests test net10.0 failed with 3 error(s) (1.1s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs(117): error TESTERROR: 
+      NetworkMonitor.Tests.Services.NetworkConfigurationServiceTests.GetInternetTargetAsync_ReturnsPrimaryTarget (24ms): Error Message: Assert.Equal() Failure: Strings differ
+                 ↓ (pos 0)
+      Expected: "1.1.1.1"
+      Actual:   "8.8.8.8"
+                 ↑ (pos 0)
+      Stack Trace:
+         at NetworkMonitor.Tests.Services.NetworkConfigurationServiceTests.GetInternetTargetAsync_ReturnsPrimaryTarget() in /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkConfigu
+      rationServiceTests.cs:line 117
+      --- End of stack trace from previous location ---
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs(26): error TESTERROR: 
+      NetworkMonitor.Tests.Models.NetworkHealthTests.NetworkHealth_CanCompare (15ms): Error Message: Assert.True() Failure
+      Expected: True
+      Actual:   False
+      Stack Trace:
+         at NetworkMonitor.Tests.Models.NetworkHealthTests.NetworkHealth_CanCompare() in /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs:line 26
+         at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+         at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(84): error TESTERROR: 
+      NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_WhenInternetFails_ReturnsDegradedOrPoor (< 1ms): Error Message: Assert.True() Failure
+      Expected: True
+      Actual:   False
+      Stack Trace:
+         at NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_WhenInternetFails_ReturnsDegradedOrPoor() in /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/Networ
+      kMonitorServiceTests.cs:line 84
+      --- End of stack trace from previous location ---
+
+Test summary: total: 55, failed: 3, succeeded: 52, skipped: 0, duration: 1.1s
+Build failed with 3 error(s) in 1.8s
+Can you please look at `dump.txt` for the latest code and resolve these errors? Also please review to make sure we have a good test coverage and generate me a single shell script that addresses all the concerns. Please and thank you. 
