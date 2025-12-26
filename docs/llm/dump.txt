@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Fri Dec 26 10:07:03 AM CST 2025
+Generated: Fri Dec 26 10:11:30 AM CST 2025
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -308,7 +308,7 @@ MODIFIED: 2025-12-26 07:26:48
 ================================================================================
 FILE: src/Directory.Packages.props
 SIZE: 2.11 KB
-MODIFIED: 2025-12-26 07:26:48
+MODIFIED: 2025-12-26 10:11:10
 ================================================================================
 
 <Project>
@@ -337,14 +337,14 @@ MODIFIED: 2025-12-26 07:26:48
   
   <ItemGroup>
     <!-- Microsoft.Extensions.* - Core DI and hosting (MIT License) -->
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.1" />
     
     <!-- SQLite - Official Microsoft package (MIT License) -->
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.1" />
     
     <!-- OpenTelemetry - Official packages (Apache 2.0 License) -->
     <PackageVersion Include="OpenTelemetry" Version="1.14.0" />
@@ -353,8 +353,8 @@ MODIFIED: 2025-12-26 07:26:48
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.14.0" />
     
     <!-- Testing - xUnit 3 (Apache 2.0 License) -->
-    <PackageVersion Include="xunit.v3" Version="1.1.0" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.1" />
+    <PackageVersion Include="xunit.v3" Version="3.2.1" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
   </ItemGroup>
 </Project>
@@ -2840,7 +2840,7 @@ public sealed class NetworkMonitorServiceTests
 
 
 ===============================================================================
-EXPORT COMPLETED: Fri Dec 26 10:07:03 AM CST 2025
+EXPORT COMPLETED: Fri Dec 26 10:11:30 AM CST 2025
 Total Files Exported: 36
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
