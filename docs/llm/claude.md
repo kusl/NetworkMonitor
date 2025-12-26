@@ -233,3 +233,12 @@ win-x64
             artifact-name: network-monitor-win-x64
           - os: windows-latest
             rid:
+we have made some really good progress. as always, the latest output.txt and dump.txt are in project context. 
+you should definitely look at dump.txt and base your work off of that because dotnet format has changed your code. 
+however, you don't need to look at output.txt and hopefully it will save you time and tokens as I will include the three errors below 
+  NetworkMonitor.Core net10.0 failed with 3 error(s) (0.1s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Models/StorageOptions.cs(62,25): error CA1305: The behavior of 'DateTime.ToString(string)' could vary based on the current user's locale settings. Replace this call in 'StorageOptions.GetDataDirectory()' with a call to 'DateTime.ToString(string, IFormatProvider)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(29,9): error CA1513: Use 'ObjectDisposedException.ThrowIf' instead of explicitly throwing a new exception instance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1513)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(231,50): error CA1859: Change return type of method 'AggregateByGranularity' from 'System.Collections.Generic.IReadOnlyList<NetworkMonitor.Core.Models.HistoricalData>' to 'System.Collections.Generic.List<NetworkMonitor.Core.Models.HistoricalData>' for improved performance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1859)
+Build failed with 3 error(s) in 0.7s
+please generate a new script to replace the existing script and once again, the script only needs to do what we need to do next, we put everything in git so no need to repeat yourself with code that has not changed. 
