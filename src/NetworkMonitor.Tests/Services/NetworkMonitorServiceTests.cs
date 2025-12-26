@@ -140,7 +140,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
 
         // Act - first check establishes baseline
         await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
-        
+
         // Change to failing
         _pingService.AlwaysFail("Network error");
         await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
@@ -160,7 +160,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
 
         // Act - first check
         await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
-        
+
         // Second check - should have previous
         _pingService.AlwaysFail("Timeout");
         await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);

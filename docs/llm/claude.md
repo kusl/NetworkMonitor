@@ -778,3 +778,23 @@ The script will:
 
 
 
+When I ran that script, I got this error 
+[INFO] Building solution...
+/home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs(9,55): error CS0535: 'FakeNetworkConfigurationService' does not implement interface member 'INetworkConfigurationService.InitializeAsync(CancellationToken)'
+[ERROR] Build failed!
+so I added this code to fake 
+```csharp
+public Task InitializeAsync(CancellationToken cancellationToken = default)
+    => Task.FromResult();
+```
+which made things worse. now I have four errors. 
+  NetworkMonitor.Core net10.0 succeeded (0.2s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Tests net10.0 failed with 4 error(s) (0.1s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs(33,17): error CS7036: There is no argument given that corresponds to the required parameter 'result' of 'Task.FromResult<TResult>(TResult)'
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/PingResultTests.cs(20,33): error CS1061: 'PingResult' does not contain a definition for 'LatencyMs' and no accessible extension method 'LatencyMs' accepting a first argument of type 'PingResult' could be found (are you missing a using directive or an assembly reference?)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/PingResultTests.cs(33,28): error CS1061: 'PingResult' does not contain a definition for 'LatencyMs' and no accessible extension method 'LatencyMs' accepting a first argument of type 'PingResult' could be found (are you missing a using directive or an assembly reference?)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/PingResultTests.cs(60,32): error CS1061: 'PingResult' does not contain a definition for 'LatencyMs' and no accessible extension method 'LatencyMs' accepting a first argument of type 'PingResult' could be found (are you missing a using directive or an assembly reference?)
+  NetworkMonitor.Console net10.0 succeeded (0.3s) → NetworkMonitor.Console/bin/Debug/net10.0/NetworkMonitor.Console.dll
+Build failed with 4 error(s) in 1.1s
+Can you please look at `dump.txt` for the latest code and resolve these errors? Also please review to make sure we have a good test coverage and generate me a single shell script that addresses all the concerns. Please and thank you. 
+
