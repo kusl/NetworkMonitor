@@ -354,3 +354,27 @@ fail: NetworkMonitor.Core.Services.PingService[0]
          at NetworkMonitor.Core.Services.PingService.PingAsync(String target, Int32 timeoutMs, CancellationToken cancellationToken) in /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs:line 44
 you still need to look at the full `dump.txt` for the latest code as dotnet format may have edited your code. 
 please generate the updated shell script that fixes these issues. please do not hallucinate. 
+
+
+
+
+Now let me search for the full PingService implementation and understand how to fix both issues:Now I understand both issues:
+
+1. **Runtime Exception**: The `Ping` class cannot have multiple concurrent async calls. When `NetworkMonitorService.CheckNetworkAsync` calls `Task.WhenAll(routerTask, internetTask)`, it runs pings in parallel, but the shared `_ping` instance doesn't support that.
+
+2. **Test Failure**: The `CheckNetworkAsync` method doesn't check cancellation at the start - it goes straight to pinging. The `FakePingService` returns results immediately without checking cancellation, so no exception is thrown.I've created a fix script that addresses both issues:
+
+**Issue 1: Runtime Exception - "An asynchronous call is already in progress"**
+The `System.Net.NetworkInformation.Ping` class cannot handle concurrent async operations on the same instance. When `NetworkMonitorService.CheckNetworkAsync` calls `Task.WhenAll(routerTask, internetTask)`, it runs both pings in parallel, but the shared `_ping` instance throws. The fix creates a new `Ping` instance per call using `using var ping = new Ping()`.
+
+**Issue 2: Test Failure - CheckNetworkAsync_RespectsCancellation**
+The test expects `OperationCanceledException` when a pre-cancelled token is passed, but neither the service nor the fake was checking cancellation early. The fix adds `cancellationToken.ThrowIfCancellationRequested()` at the start of `CheckNetworkAsync`, `PingAsync`, and the fake's implementation.
+
+Run it with:
+```bash
+bash fix-ping-issues.sh
+```
+
+
+
+
