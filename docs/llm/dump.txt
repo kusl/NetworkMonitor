@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Fri Dec 26 12:54:33 PM CST 2025
+Generated: Fri Dec 26 12:58:37 PM CST 2025
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -76,7 +76,9 @@ DIRECTORY STRUCTURE:
     │   │   ├── InternetTargetProviderTests.cs
     │   │   ├── NetworkConfigurationServiceTests.cs
     │   │   └── NetworkMonitorServiceTests.cs
-    │   └── Storage
+    │   ├── Storage
+    │   └── TestResults
+    │       └── c7dbc15d-3aad-4a45-89b4-93094d7edd67
     └── run.sh
 
 
@@ -4555,7 +4557,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
 
 
 ===============================================================================
-EXPORT COMPLETED: Fri Dec 26 12:54:34 PM CST 2025
+EXPORT COMPLETED: Fri Dec 26 12:58:38 PM CST 2025
 Total Files Exported: 51
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
