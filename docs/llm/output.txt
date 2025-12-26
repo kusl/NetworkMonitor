@@ -6410,4 +6410,4 @@ real	1m21.197s
 user	0m3.567s
 sys	0m0.531s
 kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ 
-
+kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet --info; time dotnet format; time dotnet restore; time dotnet clean; time dotnet build; time dotnet test; time bash run.sh;
