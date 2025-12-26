@@ -228,3 +228,8 @@ dotnet test
 
 
 
+I am assuming the following text at the end of the script is a mistake. I removed it and ran the script again 
+win-x64
+            artifact-name: network-monitor-win-x64
+          - os: windows-latest
+            rid:

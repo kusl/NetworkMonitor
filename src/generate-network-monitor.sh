@@ -1831,8 +1831,4 @@ echo "  2. dotnet restore"
 echo "  3. dotnet build"
 echo "  4. dotnet test"
 echo ""
-log_warn "If there are still errors, check output.txt and run this script again." win-x64
-            artifact-name: network-monitor-win-x64
-          - os: windows-latest
-            rid:
-
+log_warn "If there are still errors, check output.txt and run this script again." 

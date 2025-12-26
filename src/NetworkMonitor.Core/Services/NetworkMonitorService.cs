@@ -15,35 +15,35 @@ public sealed class NetworkMonitorService : INetworkMonitorService
 {
     private static readonly ActivitySource ActivitySource = new("NetworkMonitor.Core");
     private static readonly Meter Meter = new("NetworkMonitor.Core");
-
+    
     // Metrics
     private static readonly Counter<long> CheckCounter = Meter.CreateCounter<long>(
         "network_monitor.checks",
         description: "Number of network health checks performed");
-
+    
     private static readonly Histogram<double> RouterLatencyHistogram = Meter.CreateHistogram<double>(
         "network_monitor.router_latency_ms",
         unit: "ms",
         description: "Router ping latency distribution");
-
+    
     private static readonly Histogram<double> InternetLatencyHistogram = Meter.CreateHistogram<double>(
         "network_monitor.internet_latency_ms",
         unit: "ms",
         description: "Internet ping latency distribution");
-
+    
     private static readonly Counter<long> FailureCounter = Meter.CreateCounter<long>(
         "network_monitor.failures",
         description: "Number of ping failures by target type");
-
+    
     private readonly IPingService _pingService;
     private readonly MonitorOptions _options;
     private readonly ILogger<NetworkMonitorService> _logger;
-
+    
     private NetworkStatus? _lastStatus;
-
+    
     /// <inheritdoc />
     public event EventHandler<NetworkStatusEventArgs>? StatusChanged;
-
+    
     /// <summary>
     /// Creates a new network monitor service.
     /// </summary>
@@ -56,32 +56,32 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         _options = options.Value;
         _logger = logger;
     }
-
+    
     /// <inheritdoc />
     public async Task<NetworkStatus> CheckNetworkAsync(CancellationToken cancellationToken = default)
     {
         using var activity = ActivitySource.StartActivity("NetworkMonitor.CheckNetwork");
-
+        
         CheckCounter.Add(1);
-
+        
         _logger.LogDebug("Starting network health check");
-
+        
         // Ping router and internet in parallel for efficiency
         var routerTask = PingWithStatsAsync(
-            _options.RouterAddress,
+            _options.RouterAddress, 
             "router",
             cancellationToken);
-
+            
         var internetTask = PingWithStatsAsync(
             _options.InternetTarget,
-            "internet",
+            "internet", 
             cancellationToken);
-
+        
         await Task.WhenAll(routerTask, internetTask);
-
+        
         var routerResult = await routerTask;
         var internetResult = await internetTask;
-
+        
         // Record metrics
         if (routerResult is { Success: true, RoundtripTimeMs: not null })
         {
@@ -91,7 +91,7 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         {
             FailureCounter.Add(1, new KeyValuePair<string, object?>("target_type", "router"));
         }
-
+        
         if (internetResult is { Success: true, RoundtripTimeMs: not null })
         {
             InternetLatencyHistogram.Record(internetResult.RoundtripTimeMs.Value);
@@ -100,21 +100,21 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         {
             FailureCounter.Add(1, new KeyValuePair<string, object?>("target_type", "internet"));
         }
-
+        
         // Compute overall health
         var (health, message) = ComputeHealth(routerResult, internetResult);
-
+        
         var status = new NetworkStatus(
             health,
             routerResult,
             internetResult,
             DateTimeOffset.UtcNow,
             message);
-
+        
         activity?.SetTag("health", health.ToString());
         activity?.SetTag("router.success", routerResult?.Success ?? false);
         activity?.SetTag("internet.success", internetResult?.Success ?? false);
-
+        
         // Fire event if status changed
         if (_lastStatus?.Health != status.Health)
         {
@@ -123,15 +123,15 @@ public sealed class NetworkMonitorService : INetworkMonitorService
                 _lastStatus?.Health.ToString() ?? "Unknown",
                 status.Health,
                 status.Message);
-
+                
             StatusChanged?.Invoke(this, new NetworkStatusEventArgs(status));
         }
-
+        
         _lastStatus = status;
-
+        
         return status;
     }
-
+    
     private async Task<PingResult?> PingWithStatsAsync(
         string target,
         string targetType,
@@ -144,32 +144,32 @@ public sealed class NetworkMonitorService : INetworkMonitorService
                 _options.PingsPerCycle,
                 _options.TimeoutMs,
                 cancellationToken);
-
+            
             if (results.Count == 0)
             {
                 return null;
             }
-
+            
             // Calculate aggregate result
             var successfulPings = results.Where(r => r.Success).ToList();
-
+            
             if (successfulPings.Count == 0)
             {
                 // All pings failed - return the last failure
                 return results[^1];
             }
-
+            
             // Return a result with median latency for stability
             var sortedLatencies = successfulPings
                 .Where(r => r.RoundtripTimeMs.HasValue)
                 .Select(r => r.RoundtripTimeMs!.Value)
                 .OrderBy(l => l)
                 .ToList();
-
-            var medianLatency = sortedLatencies.Count > 0
-                ? sortedLatencies[sortedLatencies.Count / 2]
+            
+            var medianLatency = sortedLatencies.Count > 0 
+                ? sortedLatencies[sortedLatencies.Count / 2] 
                 : 0;
-
+            
             return PingResult.Succeeded(target, medianLatency);
         }
         catch (Exception ex)
@@ -178,7 +178,7 @@ public sealed class NetworkMonitorService : INetworkMonitorService
             return PingResult.Failed(target, ex.Message);
         }
     }
-
+    
     private (NetworkHealth Health, string Message) ComputeHealth(
         PingResult? routerResult,
         PingResult? internetResult)
@@ -186,43 +186,43 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         // Priority 1: Check if we can reach the router (local network)
         if (routerResult is not { Success: true })
         {
-            return (NetworkHealth.Offline,
+            return (NetworkHealth.Offline, 
                 "Cannot reach local network - check WiFi/Ethernet connection");
         }
-
+        
         // Priority 2: Check if we can reach the internet
         if (internetResult is not { Success: true })
         {
-            return (NetworkHealth.Poor,
+            return (NetworkHealth.Poor, 
                 $"Local network OK (router: {routerResult.RoundtripTimeMs}ms) but no internet access");
         }
-
+        
         // Both connected - evaluate latency
         var routerLatency = routerResult.RoundtripTimeMs!.Value;
         var internetLatency = internetResult.RoundtripTimeMs!.Value;
-
-        if (routerLatency <= _options.ExcellentLatencyMs &&
+        
+        if (routerLatency <= _options.ExcellentLatencyMs && 
             internetLatency <= _options.ExcellentLatencyMs)
         {
-            return (NetworkHealth.Excellent,
+            return (NetworkHealth.Excellent, 
                 $"Excellent - Router: {routerLatency}ms, Internet: {internetLatency}ms");
         }
-
-        if (routerLatency <= _options.GoodLatencyMs &&
+        
+        if (routerLatency <= _options.GoodLatencyMs && 
             internetLatency <= _options.GoodLatencyMs)
         {
-            return (NetworkHealth.Good,
+            return (NetworkHealth.Good, 
                 $"Good - Router: {routerLatency}ms, Internet: {internetLatency}ms");
         }
-
+        
         // High latency somewhere
         if (routerLatency > _options.GoodLatencyMs)
         {
-            return (NetworkHealth.Degraded,
+            return (NetworkHealth.Degraded, 
                 $"High local latency: Router {routerLatency}ms - possible WiFi interference");
         }
-
-        return (NetworkHealth.Degraded,
+        
+        return (NetworkHealth.Degraded, 
             $"High internet latency: {internetLatency}ms - possible ISP issues");
     }
 }
