@@ -61,6 +61,7 @@ jobs:
         run: dotnet restore src/NetworkMonitor.slnx
 
       - name: Build and Publish
+        shell: bash
         run: |
           dotnet publish src/NetworkMonitor.Console/NetworkMonitor.Console.csproj \
             --configuration Release \
