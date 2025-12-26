@@ -6,7 +6,7 @@ namespace NetworkMonitor.Tests;
 /// <summary>
 /// Tests for PingResult model.
 /// </summary>
-internal sealed class PingResultTests
+public sealed class PingResultTests
 {
     [Fact]
     public void Succeeded_CreatesSuccessfulResult()

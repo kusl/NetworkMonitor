@@ -14,7 +14,7 @@ public interface INetworkMonitorService
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Current network status.</returns>
     Task<NetworkStatus> CheckNetworkAsync(CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Event raised when network status changes.
     /// </summary>

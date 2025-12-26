@@ -14,7 +14,7 @@ public sealed class NetworkMonitorServiceTests
 {
     private readonly FakePingService _pingService;
     private readonly NetworkMonitorService _service;
-    
+
     public NetworkMonitorServiceTests()
     {
         _pingService = new FakePingService();
@@ -24,36 +24,36 @@ public sealed class NetworkMonitorServiceTests
             options,
             NullLogger<NetworkMonitorService>.Instance);
     }
-    
+
     [Fact]
     public async Task CheckNetworkAsync_WhenBothSucceed_ReturnsExcellent()
     {
         // Arrange
         _pingService.AlwaysSucceed(latencyMs: 5);
-        
+
         // Act
-        var status = await _service.CheckNetworkAsync();
-        
+        var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+
         // Assert
         Assert.Equal(NetworkHealth.Excellent, status.Health);
         Assert.True(status.RouterResult?.Success);
         Assert.True(status.InternetResult?.Success);
     }
-    
+
     [Fact]
     public async Task CheckNetworkAsync_WhenRouterFails_ReturnsOffline()
     {
         // Arrange
         _pingService.AlwaysFail("No route to host");
-        
+
         // Act
-        var status = await _service.CheckNetworkAsync();
-        
+        var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+
         // Assert
         Assert.Equal(NetworkHealth.Offline, status.Health);
         Assert.Contains("local network", status.Message, StringComparison.OrdinalIgnoreCase);
     }
-    
+
     [Fact]
     public async Task CheckNetworkAsync_WhenInternetFails_ReturnsPoor()
     {
@@ -65,16 +65,16 @@ public sealed class NetworkMonitorServiceTests
             .QueueResult(PingResult.Failed("internet", "Timeout"))
             .QueueResult(PingResult.Failed("internet", "Timeout"))
             .QueueResult(PingResult.Failed("internet", "Timeout"));
-        
+
         // Act
-        var status = await _service.CheckNetworkAsync();
-        
+        var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+
         // Assert
         Assert.Equal(NetworkHealth.Poor, status.Health);
         Assert.True(status.RouterResult?.Success);
         Assert.False(status.InternetResult?.Success);
     }
-    
+
     [Fact]
     public async Task CheckNetworkAsync_HighLatency_ReturnsDegraded()
     {
@@ -86,14 +86,14 @@ public sealed class NetworkMonitorServiceTests
             .QueueResult(PingResult.Succeeded("internet", 500))
             .QueueResult(PingResult.Succeeded("internet", 500))
             .QueueResult(PingResult.Succeeded("internet", 500));
-        
+
         // Act
-        var status = await _service.CheckNetworkAsync();
-        
+        var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+
         // Assert
         Assert.Equal(NetworkHealth.Degraded, status.Health);
     }
-    
+
     [Fact]
     public async Task CheckNetworkAsync_FiresStatusChangedEvent()
     {
@@ -101,15 +101,15 @@ public sealed class NetworkMonitorServiceTests
         _pingService.AlwaysSucceed(5);
         NetworkStatusEventArgs? receivedArgs = null;
         _service.StatusChanged += (_, e) => receivedArgs = e;
-        
+
         // Act
-        await _service.CheckNetworkAsync();
-        
+        await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+
         // Assert
         Assert.NotNull(receivedArgs);
         Assert.Equal(NetworkHealth.Excellent, receivedArgs.Status.Health);
     }
-    
+
     [Fact]
     public async Task CheckNetworkAsync_RespectsCancellation()
     {
@@ -117,7 +117,7 @@ public sealed class NetworkMonitorServiceTests
         _pingService.AlwaysSucceed(5);
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
-        
+
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(
             () => _service.CheckNetworkAsync(cts.Token));

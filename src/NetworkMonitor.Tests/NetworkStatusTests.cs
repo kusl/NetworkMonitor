@@ -6,7 +6,7 @@ namespace NetworkMonitor.Tests;
 /// <summary>
 /// Tests for NetworkStatus model.
 /// </summary>
-internal sealed class NetworkStatusTests
+public sealed class NetworkStatusTests
 {
     [Theory]
     [InlineData(NetworkHealth.Excellent, true)]

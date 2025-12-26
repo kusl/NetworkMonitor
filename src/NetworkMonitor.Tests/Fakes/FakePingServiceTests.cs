@@ -7,7 +7,7 @@ namespace NetworkMonitor.Tests.Fakes;
 /// Tests for the FakePingService itself.
 /// Ensures our test doubles work correctly.
 /// </summary>
-internal sealed class FakePingServiceTests
+public sealed class FakePingServiceTests
 {
     [Fact]
     public async Task AlwaysSucceed_ReturnsSuccessfulPings()
@@ -16,7 +16,7 @@ internal sealed class FakePingServiceTests
         var fake = new FakePingService().AlwaysSucceed(25);
 
         // Act
-        var result = await fake.PingAsync("test", 1000, TestContext.Current.CancellationToken).ConfigureAwait(false);
+        var result = await fake.PingAsync("test", 1000, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Success);
@@ -33,9 +33,9 @@ internal sealed class FakePingServiceTests
             .QueueResult(PingResult.Failed("", "error"));
 
         // Act
-        var r1 = await fake.PingAsync("target", 1000, TestContext.Current.CancellationToken).ConfigureAwait(false);
-        var r2 = await fake.PingAsync("target", 1000, TestContext.Current.CancellationToken).ConfigureAwait(false);
-        var r3 = await fake.PingAsync("target", 1000, TestContext.Current.CancellationToken).ConfigureAwait(false);
+        var r1 = await fake.PingAsync("target", 1000, TestContext.Current.CancellationToken);
+        var r2 = await fake.PingAsync("target", 1000, TestContext.Current.CancellationToken);
+        var r3 = await fake.PingAsync("target", 1000, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(10, r1.RoundtripTimeMs);
@@ -50,7 +50,7 @@ internal sealed class FakePingServiceTests
         var fake = new FakePingService().AlwaysSucceed();
 
         // Act
-        var results = await fake.PingMultipleAsync("test", 5, 1000, TestContext.Current.CancellationToken).ConfigureAwait(false);
+        var results = await fake.PingMultipleAsync("test", 5, 1000, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(5, results.Count);
