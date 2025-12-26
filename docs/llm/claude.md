@@ -994,3 +994,57 @@ I have three test failures after this change.
 Test summary: total: 55, failed: 3, succeeded: 52, skipped: 0, duration: 1.1s
 Build failed with 3 error(s) in 1.8s
 Can you please look at `dump.txt` for the latest code and resolve these errors? Also please review to make sure we have a good test coverage and generate me a single shell script that addresses all the concerns. Please and thank you. 
+
+
+
+
+I'll search for the latest code in the project knowledge to understand the current state and resolve these test failures.Now I have enough information to understand all three failures. Let me search for more specific content about the current test files:Now I have a complete understanding of all three test failures. Let me create a comprehensive fix script:I've created a comprehensive fix script that addresses all three test failures. Here's what was wrong and how each is fixed:
+
+## Root Cause Analysis
+
+### 1. `NetworkHealth_CanCompare` Failure
+**Problem:** The `NetworkHealth` enum was defined with values in wrong order:
+```csharp
+Excellent = 0, Good = 1, Degraded = 2, Poor = 3, Offline = 4
+```
+This meant `Excellent < Good` (0 < 1), which failed the test expecting `Excellent > Good`.
+
+**Fix:** Reversed the enum value ordering:
+```csharp
+Offline = 0, Poor = 1, Degraded = 2, Good = 3, Excellent = 4
+```
+
+### 2. `GetInternetTargetAsync_ReturnsPrimaryTarget` Failure
+**Problem:** The test expected `"1.1.1.1"` but the `FakeInternetTargetProvider` defaults to `"8.8.8.8"`. The test wasn't configuring the fake properly.
+
+**Fix:** Updated the test to configure the fake with the expected primary target:
+```csharp
+_internetTargetProvider.WithPrimaryTarget("1.1.1.1");
+_internetTargetProvider.WithTargets("1.1.1.1", "8.8.8.8");
+```
+
+### 3. `CheckNetworkAsync_WhenInternetFails_ReturnsDegradedOrPoor` Failure  
+**Problem:** The test wasn't properly setting up the ping results. It needs to queue results for both router and internet pings.
+
+**Fix:** Properly queue router success and internet failure:
+```csharp
+_pingService.QueueResult(PingResult.Succeeded("192.168.1.1", 5));
+_pingService.QueueResult(PingResult.Failed("8.8.8.8", "Timeout"));
+```
+
+## How to Run
+
+```bash
+chmod +x fix-test-failures.sh
+./fix-test-failures.sh
+```
+
+The script will update the affected files, build the solution, and run all tests. It also adds additional test coverage including comparison operators and status change event testing.
+
+
+
+
+
+
+
+
