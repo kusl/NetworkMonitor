@@ -1,24 +1,24 @@
-# GitHub Actions Workflow: Build and Test Network Monitor
-# 
-# This workflow:
-# 1. Builds the solution on Linux, Windows, and macOS
-# 2. Runs all unit tests
-# 3. Uploads test results
-#
-# The application is designed to be testable in CI without network access
-# by using fake implementations for all I/O operations.
+# GitHub Actions Workflow: Build and Test
+# Triggers on every push and pull request to any branch
+# Builds and tests on all major platforms
 
 name: Build and Test
 
 on:
   push:
-    branches: ['**']
+    branches:
+      - '**'
   pull_request:
-    branches: ['**']
+    branches:
+      - '**'
+
+permissions:
+  contents: read
 
 jobs:
-  build:
+  build-and-test:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     
@@ -53,3 +53,4 @@ jobs:
           name: test-results-${{ matrix.os }}
           path: '**/test-results.trx'
           if-no-files-found: warn
+          retention-days: 30

@@ -1,0 +1,113 @@
+# GitHub Actions Workflow: Build and Release
+# Triggers on every push to any branch
+# Creates self-contained executables for all platforms
+# Uploads as artifacts (not GitHub releases - those require tags)
+
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - '**'
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-binaries:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux
+          - os: ubuntu-latest
+            rid: linux-x64
+            artifact-name: network-monitor-linux-x64
+          - os: ubuntu-latest
+            rid: linux-arm64
+            artifact-name: network-monitor-linux-arm64
+          - os: ubuntu-latest
+            rid: linux-musl-x64
+            artifact-name: network-monitor-linux-musl-x64
+          # Windows
+          - os: windows-latest
+            rid: win-arm64
+            artifact-name: network-monitor-win-arm64
+          # macOS
+          - os: macos-latest
+            rid: osx-x64
+            artifact-name: network-monitor-osx-x64
+          - os: macos-latest
+            rid: osx-arm64
+            artifact-name: network-monitor-osx-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Restore dependencies
+        run: dotnet restore src/NetworkMonitor.slnx
+
+      - name: Build and Publish
+        run: |
+          dotnet publish src/NetworkMonitor.Console/NetworkMonitor.Console.csproj \
+            --configuration Release \
+            --runtime ${{ matrix.rid }} \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:PublishTrimmed=false \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            --output ./publish/${{ matrix.rid }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ./publish/${{ matrix.rid }}/
+          if-no-files-found: error
+          retention-days: 90
+
+  # Create a combined release artifact with all binaries
+  combine-artifacts:
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./all-artifacts
+
+      - name: Create combined archive
+        run: |
+          cd all-artifacts
+          for dir in */; do
+            name="${dir%/}"
+            if [[ "$name" == *"win"* ]]; then
+              zip -r "../${name}.zip" "$dir"
+            else
+              tar -czvf "../${name}.tar.gz" "$dir"
+            fi
+          done
+
+      - name: Upload combined release
+        uses: actions/upload-artifact@v4
+        with:
+          name: network-monitor-all-platforms-${{ github.sha }}
+          path: |
+            *.zip
+            *.tar.gz
+          if-no-files-found: error
+          retention-days: 90

@@ -8,8 +8,8 @@ namespace NetworkMonitor.Core.Services;
 /// </summary>
 public sealed class ConsoleStatusDisplay : IStatusDisplay
 {
-    private readonly object _lock = new();
-
+    private readonly Lock _lock = new();
+    
     // ANSI color codes
     private const string Reset = "\x1b[0m";
     private const string Bold = "\x1b[1m";
@@ -18,9 +18,12 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
     private const string Red = "\x1b[31m";
     private const string Cyan = "\x1b[36m";
     private const string Magenta = "\x1b[35m";
-
+    
+    /// <inheritdoc />
     public void UpdateStatus(NetworkStatus status)
     {
+        ArgumentNullException.ThrowIfNull(status);
+        
         lock (_lock)
         {
             var (color, symbol) = status.Health switch
@@ -32,10 +35,10 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
                 NetworkHealth.Offline => (Red, "○"),
                 _ => (Reset, "?")
             };
-
+            
             Console.Write($"\r{color}{Bold}{symbol} {status.Health,-10}{Reset} ");
             Console.Write($"{Cyan}Router:{Reset} ");
-
+            
             if (status.RouterResult?.Success == true)
             {
                 Console.Write($"{Green}{status.RouterResult.RoundtripTimeMs,4}ms{Reset} ");
@@ -44,9 +47,9 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
             {
                 Console.Write($"{Red}FAIL{Reset}   ");
             }
-
+            
             Console.Write($"{Cyan}Internet:{Reset} ");
-
+            
             if (status.InternetResult?.Success == true)
             {
                 Console.Write($"{Green}{status.InternetResult.RoundtripTimeMs,4}ms{Reset} ");
@@ -55,14 +58,15 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
             {
                 Console.Write($"{Red}FAIL{Reset}   ");
             }
-
+            
             Console.Write($"{Magenta}[{status.Timestamp:HH:mm:ss}]{Reset}");
-
+            
             // Pad to clear any previous longer text
             Console.Write("          ");
         }
     }
-
+    
+    /// <inheritdoc />
     public void Clear()
     {
         lock (_lock)

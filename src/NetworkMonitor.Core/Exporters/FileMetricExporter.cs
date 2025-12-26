@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using OpenTelemetry;
@@ -13,7 +14,7 @@ namespace NetworkMonitor.Core.Exporters;
 public sealed class FileMetricExporter : BaseExporter<Metric>
 {
     private readonly FileExporterOptions _options;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private StreamWriter? _writer;
     private string _currentFilePath = string.Empty;
     private DateTime _currentDate;
@@ -21,18 +22,23 @@ public sealed class FileMetricExporter : BaseExporter<Metric>
     private int _fileNumber;
     private bool _firstRecord = true;
     private readonly JsonSerializerOptions _jsonOptions;
-
+    
+    /// <summary>
+    /// Creates a new file metric exporter.
+    /// </summary>
+    /// <param name="options">Exporter options.</param>
     public FileMetricExporter(FileExporterOptions? options = null)
     {
         _options = options ?? FileExporterOptions.Default;
-        _jsonOptions = new JsonSerializerOptions
-        {
+        _jsonOptions = new JsonSerializerOptions 
+        { 
             WriteIndented = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
         EnsureDirectory();
     }
-
+    
+    /// <inheritdoc />
     public override ExportResult Export(in Batch<Metric> batch)
     {
         try
@@ -40,7 +46,7 @@ public sealed class FileMetricExporter : BaseExporter<Metric>
             lock (_lock)
             {
                 EnsureWriter();
-
+                
                 foreach (var metric in batch)
                 {
                     foreach (var point in metric.GetMetricPoints())
@@ -50,10 +56,10 @@ public sealed class FileMetricExporter : BaseExporter<Metric>
                         WriteJson(json);
                     }
                 }
-
+                
                 _writer?.Flush();
             }
-
+            
             return ExportResult.Success;
         }
         catch (Exception ex)
@@ -62,15 +68,15 @@ public sealed class FileMetricExporter : BaseExporter<Metric>
             return ExportResult.Failure;
         }
     }
-
-    private object SerializeMetricPoint(Metric metric, MetricPoint point)
+    
+    private static object SerializeMetricPoint(Metric metric, MetricPoint point)
     {
         var tags = new Dictionary<string, string?>();
         foreach (var tag in point.Tags)
         {
             tags[tag.Key] = tag.Value?.ToString();
         }
-
+        
         object? value = metric.MetricType switch
         {
             MetricType.LongSum => point.GetSumLong(),
@@ -84,10 +90,10 @@ public sealed class FileMetricExporter : BaseExporter<Metric>
             },
             _ => null
         };
-
+        
         return new
         {
-            Timestamp = point.EndTime.ToString("O"),
+            Timestamp = point.EndTime.ToString("O", CultureInfo.InvariantCulture),
             Name = metric.Name,
             Description = metric.Description,
             Unit = metric.Unit,
@@ -96,16 +102,16 @@ public sealed class FileMetricExporter : BaseExporter<Metric>
             Value = value
         };
     }
-
+    
     private void WriteJson(string json)
     {
         var bytes = Encoding.UTF8.GetByteCount(json) + 2;
-
+        
         if (ShouldRotate(bytes))
         {
             RotateFile();
         }
-
+        
         if (!_firstRecord)
         {
             _writer!.WriteLine(",");
@@ -114,20 +120,20 @@ public sealed class FileMetricExporter : BaseExporter<Metric>
         {
             _firstRecord = false;
         }
-
+        
         _writer!.Write(json);
         _currentSize += bytes;
     }
-
+    
     private bool ShouldRotate(long bytes) =>
         _currentSize + bytes > _options.MaxFileSizeBytes ||
         _currentDate != DateTime.UtcNow.Date;
-
+    
     private void EnsureDirectory()
     {
         try
         {
-            Directory.CreateDirectory(_options.Directory);
+            System.IO.Directory.CreateDirectory(_options.Directory);
         }
         catch
         {
@@ -135,7 +141,7 @@ public sealed class FileMetricExporter : BaseExporter<Metric>
             _options.Directory = Environment.CurrentDirectory;
         }
     }
-
+    
     private void EnsureWriter()
     {
         if (_writer == null)
@@ -147,28 +153,28 @@ public sealed class FileMetricExporter : BaseExporter<Metric>
             RotateFile();
         }
     }
-
+    
     private void OpenNewFile()
     {
         _currentDate = DateTime.UtcNow.Date;
         _fileNumber = 0;
         _currentFilePath = GetFilePath();
-
+        
         _writer = new StreamWriter(_currentFilePath, append: false, Encoding.UTF8);
         _currentSize = 0;
         _firstRecord = true;
-
+        
         _writer.WriteLine("[");
         _currentSize = 2;
     }
-
+    
     private void RotateFile()
     {
         CloseWriter();
         _fileNumber++;
         OpenNewFile();
     }
-
+    
     private string GetFilePath()
     {
         var fileName = _fileNumber == 0
@@ -176,7 +182,7 @@ public sealed class FileMetricExporter : BaseExporter<Metric>
             : $"metrics_{_options.RunId}_{_fileNumber:D3}.json";
         return Path.Combine(_options.Directory, fileName);
     }
-
+    
     private void CloseWriter()
     {
         if (_writer != null)
@@ -188,7 +194,8 @@ public sealed class FileMetricExporter : BaseExporter<Metric>
             _writer = null;
         }
     }
-
+    
+    /// <inheritdoc />
     protected override bool OnShutdown(int timeoutMilliseconds)
     {
         lock (_lock)

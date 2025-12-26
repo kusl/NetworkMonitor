@@ -14,6 +14,8 @@
     - MassTransit (restrictive license)
     - Moq (controversial maintainer)
     - Any package with "non-commercial only" license
+    
+    LAST UPDATED: 2025-12-26
   -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
@@ -37,7 +39,7 @@
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.14.0" />
     
-    <!-- Testing - xUnit (Apache 2.0 License) -->
+    <!-- Testing - xUnit 3 (Apache 2.0 License) -->
     <PackageVersion Include="xunit.v3" Version="1.1.0" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.1" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
