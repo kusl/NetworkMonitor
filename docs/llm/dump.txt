@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Fri Dec 26 08:45:15 AM CST 2025
+Generated: Fri Dec 26 10:05:54 AM CST 2025
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -13,6 +13,7 @@ DIRECTORY STRUCTURE:
 │   └── workflows
 │       ├── build-and-test.yml
 │       └── release.yml
+├── README.md
 └── src
     ├── Directory.Build.props
     ├── Directory.Packages.props
@@ -132,8 +133,8 @@ jobs:
 
 ================================================================================
 FILE: .github/workflows/release.yml
-SIZE: 3.01 KB
-MODIFIED: 2025-12-26 07:26:48
+SIZE: 3.03 KB
+MODIFIED: 2025-12-26 08:55:21
 ================================================================================
 
 # GitHub Actions Workflow: Build and Release
@@ -199,6 +200,7 @@ jobs:
         run: dotnet restore src/NetworkMonitor.slnx
 
       - name: Build and Publish
+        shell: bash
         run: |
           dotnet publish src/NetworkMonitor.Console/NetworkMonitor.Console.csproj \
             --configuration Release \
@@ -2838,7 +2840,7 @@ public sealed class NetworkMonitorServiceTests
 
 
 ===============================================================================
-EXPORT COMPLETED: Fri Dec 26 08:45:15 AM CST 2025
+EXPORT COMPLETED: Fri Dec 26 10:05:55 AM CST 2025
 Total Files Exported: 36
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
