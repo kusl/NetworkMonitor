@@ -26,3 +26,12 @@ I have created an `src` folder.
 all code including all unit tests and shell scripts live inside this src folder. 
 do not write anything outside this src folder, do not delete anything outside this src folder. 
 be kind and always explain in detail what you are doing and more importantly why for the next person or bot who needs to follow your actions
+use xunit 3 for unit tests. 
+try to keep up with the latest nuget packages. 
+of course, where possible do NOT use packages at all. 
+but it is not always possible. 
+for example, it is probably better to use polly than to write it ourselves. 
+always use and pass cancellation tokens where it makes sense 
+always write async code where it makes sense 
+always follow best practices 
+always write testable code 
