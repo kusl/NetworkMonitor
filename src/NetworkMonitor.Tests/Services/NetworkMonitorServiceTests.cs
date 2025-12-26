@@ -83,9 +83,9 @@ public sealed class NetworkMonitorServiceTests
             .QueueResult(PingResult.Succeeded("router", 10))
             .QueueResult(PingResult.Succeeded("router", 10))
             .QueueResult(PingResult.Succeeded("router", 10))
-            .QueueResult(PingResult.Succeeded("internet", 500))
-            .QueueResult(PingResult.Succeeded("internet", 500))
-            .QueueResult(PingResult.Succeeded("internet", 500));
+            .QueueResult(PingResult.Succeeded("internet", 150))
+            .QueueResult(PingResult.Succeeded("internet", 150))
+            .QueueResult(PingResult.Succeeded("internet", 150));
 
         // Act
         var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
