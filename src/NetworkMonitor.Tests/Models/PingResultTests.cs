@@ -17,7 +17,7 @@ public sealed class PingResultTests
         // Assert
         Assert.True(result.Success);
         Assert.Equal("8.8.8.8", result.Target);
-        Assert.Equal(15, result.LatencyMs);
+        Assert.Equal(15, result.RoundtripTimeMs);
         Assert.Null(result.ErrorMessage);
     }
 
@@ -30,7 +30,7 @@ public sealed class PingResultTests
         // Assert
         Assert.False(result.Success);
         Assert.Equal("8.8.8.8", result.Target);
-        Assert.Null(result.LatencyMs);
+        Assert.Null(result.RoundtripTimeMs);
         Assert.Equal("Request timed out", result.ErrorMessage);
     }
 
@@ -57,6 +57,20 @@ public sealed class PingResultTests
 
         // Assert
         Assert.True(result.Success);
-        Assert.Equal(0, result.LatencyMs);
+        Assert.Equal(0, result.RoundtripTimeMs);
+    }
+
+    [Fact]
+    public void Record_Equality_WorksCorrectly()
+    {
+        // Arrange
+        var timestamp = DateTimeOffset.UtcNow;
+        var result1 = new PingResult("8.8.8.8", true, 10, timestamp);
+        var result2 = new PingResult("8.8.8.8", true, 10, timestamp);
+        var result3 = new PingResult("8.8.8.8", true, 20, timestamp);
+
+        // Assert
+        Assert.Equal(result1, result2);
+        Assert.NotEqual(result1, result3);
     }
 }

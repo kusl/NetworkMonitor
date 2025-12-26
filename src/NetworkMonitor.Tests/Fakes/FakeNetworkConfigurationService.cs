@@ -30,7 +30,7 @@ public sealed class FakeNetworkConfigurationService : INetworkConfigurationServi
         => Task.FromResult(_internetTarget);
 
     public Task InitializeAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult();
+        => Task.CompletedTask;
 
     public void Dispose()
     {
