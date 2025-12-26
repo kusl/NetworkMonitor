@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Fri Dec 26 07:39:23 AM CST 2025
+Generated: Fri Dec 26 07:45:55 AM CST 2025
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -2584,8 +2584,8 @@ internal sealed class NullLogger<T> : ILogger<T>
 
 ================================================================================
 FILE: src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj
-SIZE: 0.73 KB
-MODIFIED: 2025-12-26 07:04:46
+SIZE: 0.95 KB
+MODIFIED: 2025-12-26 07:45:26
 ================================================================================
 
 <Project Sdk="Microsoft.NET.Sdk">
@@ -2598,6 +2598,14 @@ MODIFIED: 2025-12-26 07:04:46
     - Each test class tests one component in isolation
     - Integration tests can test multiple components together
   -->
+  <PropertyGroup>
+    <!-- 
+      CA1707: Identifiers should not contain underscores
+      Disabled because test methods commonly use Method_Scenario_Expected naming.
+    -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />
@@ -2841,7 +2849,7 @@ public sealed class NetworkMonitorServiceTests
 
 
 ===============================================================================
-EXPORT COMPLETED: Fri Dec 26 07:39:23 AM CST 2025
+EXPORT COMPLETED: Fri Dec 26 07:45:56 AM CST 2025
 Total Files Exported: 36
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
