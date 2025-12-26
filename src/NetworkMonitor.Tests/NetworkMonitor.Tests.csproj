@@ -8,6 +8,14 @@
     - Each test class tests one component in isolation
     - Integration tests can test multiple components together
   -->
+  <PropertyGroup>
+    <!-- 
+      CA1707: Identifiers should not contain underscores
+      Disabled because test methods commonly use Method_Scenario_Expected naming.
+    -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />
