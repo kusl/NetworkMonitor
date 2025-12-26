@@ -728,3 +728,53 @@ Can you please look at `dump.txt` for the latest code and resolve these errors? 
 
 
 
+Let me search for more of the test files to understand the full structure:Now I have all the information I need. Let me create a comprehensive shell script that:
+1. Fixes the ambiguous `NullLogger<>` reference by removing the custom one and using Microsoft's
+2. Fixes the CA1001 error by making `NetworkMonitorServiceTests` implement `IDisposable`
+3. Reviews test coverage and ensures everything compilesHere's a shell script that fixes all three build errors and improves test coverage.
+
+## Summary of Fixes
+
+### Error 1 & 2: CS0104 - Ambiguous `NullLogger<>` reference
+The project had two `NullLogger<T>` implementations:
+- `NetworkMonitor.Tests.Fakes.NullLogger<T>` (custom)
+- `Microsoft.Extensions.Logging.Abstractions.NullLogger<T>` (from NuGet)
+
+**Fix**: Delete the custom `NullLogger.cs` file and use Microsoft's version exclusively. This is cleaner since Microsoft's implementation is battle-tested.
+
+### Error 3: CA1001 - `NetworkMonitorServiceTests` owns disposable field
+The test class has a `_configService` field of type `FakeNetworkConfigurationService` which implements `IDisposable`, but the test class itself wasn't disposable.
+
+**Fix**: Make `NetworkMonitorServiceTests` implement `IDisposable` and dispose `_configService` in the `Dispose()` method.
+
+## Test Coverage Improvements
+
+The script also adds several new test files:
+- **NetworkStatusEventArgsTests** - Tests for event args constructors
+- **PingResultTests** - Tests for `PingResult.Succeeded()` and `Failed()` factory methods
+- **NetworkHealthTests** - Tests for enum values and comparison
+
+## To Run
+
+```bash
+chmod +x fix-build-errors.sh
+./fix-build-errors.sh
+```
+
+The script will:
+1. Remove the custom `NullLogger.cs`
+2. Update all affected test files to use Microsoft's `NullLogger<T>`
+3. Make `NetworkMonitorServiceTests` implement `IDisposable`
+4. Add new test files for better coverage
+5. Build the solution
+6. Run all tests
+
+
+
+
+
+
+
+
+
+
