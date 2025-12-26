@@ -12,11 +12,11 @@ public sealed class NetworkHealthTests
     public void NetworkHealth_HasExpectedValues()
     {
         // Assert all expected values exist
-        Assert.True(Enum.IsDefined(typeof(NetworkHealth), NetworkHealth.Offline));
-        Assert.True(Enum.IsDefined(typeof(NetworkHealth), NetworkHealth.Poor));
-        Assert.True(Enum.IsDefined(typeof(NetworkHealth), NetworkHealth.Degraded));
-        Assert.True(Enum.IsDefined(typeof(NetworkHealth), NetworkHealth.Good));
-        Assert.True(Enum.IsDefined(typeof(NetworkHealth), NetworkHealth.Excellent));
+        Assert.True(Enum.IsDefined(<NetworkHealth>(NetworkHealth), NetworkHealth.Offline));
+        Assert.True(Enum.IsDefined(<NetworkHealth>(NetworkHealth), NetworkHealth.Poor));
+        Assert.True(Enum.IsDefined(<NetworkHealth>(NetworkHealth), NetworkHealth.Degraded));
+        Assert.True(Enum.IsDefined(<NetworkHealth>(NetworkHealth), NetworkHealth.Good));
+        Assert.True(Enum.IsDefined(<NetworkHealth>(NetworkHealth), NetworkHealth.Excellent));
     }
 
     [Fact]

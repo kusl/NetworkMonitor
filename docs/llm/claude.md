@@ -828,3 +828,109 @@ chmod +x fix-build-errors.sh
 The script will update all affected files, build the solution, and run the tests.
 
 
+I got this error 
+```
+/home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs(15,21): error CA2263: Prefer the generic overload 'System.Enum.IsDefined<TEnum>(TEnum)' instead of 'System.Enum.IsDefined(System.Type, object)' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2263)
+/home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs(16,21): error CA2263: Prefer the generic overload 'System.Enum.IsDefined<TEnum>(TEnum)' instead of 'System.Enum.IsDefined(System.Type, object)' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2263)
+/home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs(17,21): error CA2263: Prefer the generic overload 'System.Enum.IsDefined<TEnum>(TEnum)' instead of 'System.Enum.IsDefined(System.Type, object)' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2263)
+/home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs(18,21): error CA2263: Prefer the generic overload 'System.Enum.IsDefined<TEnum>(TEnum)' instead of 'System.Enum.IsDefined(System.Type, object)' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2263)
+/home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs(19,21): error CA2263: Prefer the generic overload 'System.Enum.IsDefined<TEnum>(TEnum)' instead of 'System.Enum.IsDefined(System.Type, object)' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2263)
+```
+the article says that instead of 
+```csharp
+int size = Marshal.SizeOf(typeof(bool));
+```
+we should 
+```csharp
+int size = Marshal.SizeOf<bool>();
+```
+which looks pretty straightforward. 
+So instead of 
+```csharp 
+using NetworkMonitor.Core.Models;
+using Xunit;
+
+namespace NetworkMonitor.Tests.Models;
+
+/// <summary>
+/// Tests for NetworkHealth enum values.
+/// </summary>
+public sealed class NetworkHealthTests
+{
+    [Fact]
+    public void NetworkHealth_HasExpectedValues()
+    {
+        // Assert all expected values exist
+        Assert.True(Enum.IsDefined(typeof(NetworkHealth), NetworkHealth.Offline));
+        Assert.True(Enum.IsDefined(typeof(NetworkHealth), NetworkHealth.Poor));
+        Assert.True(Enum.IsDefined(typeof(NetworkHealth), NetworkHealth.Degraded));
+        Assert.True(Enum.IsDefined(typeof(NetworkHealth), NetworkHealth.Good));
+        Assert.True(Enum.IsDefined(typeof(NetworkHealth), NetworkHealth.Excellent));
+    }
+
+    [Fact]
+    public void NetworkHealth_CanCompare()
+    {
+        // Assert ordering works as expected (Excellent > Good > Degraded > Poor > Offline)
+        Assert.True(NetworkHealth.Excellent > NetworkHealth.Good);
+        Assert.True(NetworkHealth.Good > NetworkHealth.Degraded);
+        Assert.True(NetworkHealth.Degraded > NetworkHealth.Poor);
+        Assert.True(NetworkHealth.Poor > NetworkHealth.Offline);
+    }
+
+    [Fact]
+    public void NetworkHealth_ToString_ReturnsName()
+    {
+        Assert.Equal("Excellent", NetworkHealth.Excellent.ToString());
+        Assert.Equal("Good", NetworkHealth.Good.ToString());
+        Assert.Equal("Degraded", NetworkHealth.Degraded.ToString());
+        Assert.Equal("Poor", NetworkHealth.Poor.ToString());
+        Assert.Equal("Offline", NetworkHealth.Offline.ToString());
+    }
+}
+```
+I should 
+```csharp
+using NetworkMonitor.Core.Models;
+using Xunit;
+
+namespace NetworkMonitor.Tests.Models;
+
+/// <summary>
+/// Tests for NetworkHealth enum values.
+/// </summary>
+public sealed class NetworkHealthTests
+{
+    [Fact]
+    public void NetworkHealth_HasExpectedValues()
+    {
+        // Assert all expected values exist
+        Assert.True(Enum.IsDefined(<NetworkHealth>(NetworkHealth), NetworkHealth.Offline));
+        Assert.True(Enum.IsDefined(<NetworkHealth>(NetworkHealth), NetworkHealth.Poor));
+        Assert.True(Enum.IsDefined(<NetworkHealth>(NetworkHealth), NetworkHealth.Degraded));
+        Assert.True(Enum.IsDefined(<NetworkHealth>(NetworkHealth), NetworkHealth.Good));
+        Assert.True(Enum.IsDefined(<NetworkHealth>(NetworkHealth), NetworkHealth.Excellent));
+    }
+
+    [Fact]
+    public void NetworkHealth_CanCompare()
+    {
+        // Assert ordering works as expected (Excellent > Good > Degraded > Poor > Offline)
+        Assert.True(NetworkHealth.Excellent > NetworkHealth.Good);
+        Assert.True(NetworkHealth.Good > NetworkHealth.Degraded);
+        Assert.True(NetworkHealth.Degraded > NetworkHealth.Poor);
+        Assert.True(NetworkHealth.Poor > NetworkHealth.Offline);
+    }
+
+    [Fact]
+    public void NetworkHealth_ToString_ReturnsName()
+    {
+        Assert.Equal("Excellent", NetworkHealth.Excellent.ToString());
+        Assert.Equal("Good", NetworkHealth.Good.ToString());
+        Assert.Equal("Degraded", NetworkHealth.Degraded.ToString());
+        Assert.Equal("Poor", NetworkHealth.Poor.ToString());
+        Assert.Equal("Offline", NetworkHealth.Offline.ToString());
+    }
+}
+```
+Something like this? Lets find out I guess... 
