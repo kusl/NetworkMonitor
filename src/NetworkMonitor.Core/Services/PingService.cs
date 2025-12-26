@@ -26,10 +26,7 @@ public sealed class PingService : IPingService, IDisposable
         int timeoutMs,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(PingService));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         try
         {

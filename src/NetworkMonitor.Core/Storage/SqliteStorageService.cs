@@ -228,7 +228,7 @@ public sealed class SqliteStorageService : IStorageService, IAsyncDisposable
         return AggregateByGranularity(results, granularity);
     }
 
-    private static IReadOnlyList<HistoricalData> AggregateByGranularity(
+    private static List<HistoricalData> AggregateByGranularity(
         List<(long? LatencyMs, DateTimeOffset Timestamp, bool Success)> results,
         TimeGranularity granularity)
     {

@@ -1,3 +1,4 @@
+using System.Globalization;
 namespace NetworkMonitor.Core.Models;
 
 /// <summary>
@@ -59,7 +60,7 @@ public sealed class StorageOptions
         }
 
         // Final fallback: current directory with timestamp subfolder
-        var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+        var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
         return Path.Combine(Environment.CurrentDirectory, $"{ApplicationName}_{timestamp}");
     }
 
