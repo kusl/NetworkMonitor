@@ -95,11 +95,4 @@ public sealed class FakePingService : IPingService
 
         return results;
     }
-    
-    public void Reset() 
-{
-    _queuedResults.Clear();
-    _specificResults.Clear();
-    _alwaysSucceed = false;
-}
 }
