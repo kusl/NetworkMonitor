@@ -3,10 +3,9 @@ using Microsoft.Extensions.Logging;
 namespace NetworkMonitor.Tests.Fakes;
 
 /// <summary>
-/// Logger that discards all log messages.
-/// Useful for tests where we don't care about logging output.
+/// Null logger implementation for tests.
 /// </summary>
-internal sealed class NullLogger<T> : ILogger<T>
+public sealed class NullLogger<T> : ILogger<T>
 {
     public static readonly NullLogger<T> Instance = new();
 
