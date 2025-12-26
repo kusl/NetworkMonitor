@@ -125,11 +125,11 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
     {
         // Arrange
         _internetTargetProvider.WithTargets("8.8.8.8", "1.1.1.1");
-        
+
         // Use a factory to ensure the RIGHT result goes to the RIGHT address
-        _pingService.Reset().WithFactory(target => 
-            target == "8.8.8.8" 
-                ? PingResult.Failed(target, "Timeout") 
+        _pingService.Reset().WithFactory(target =>
+            target == "8.8.8.8"
+                ? PingResult.Failed(target, "Timeout")
                 : PingResult.Succeeded(target, 10)
         );
 

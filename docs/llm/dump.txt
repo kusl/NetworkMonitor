@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Fri Dec 26 12:46:02 PM CST 2025
+Generated: Fri Dec 26 12:50:09 PM CST 2025
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -4115,8 +4115,8 @@ public sealed class InternetTargetProviderTests
 
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs
-SIZE: 5.99 KB
-MODIFIED: 2025-12-26 12:43:57
+SIZE: 6.06 KB
+MODIFIED: 2025-12-26 12:48:46
 ================================================================================
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -4246,10 +4246,14 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
     {
         // Arrange
         _internetTargetProvider.WithTargets("8.8.8.8", "1.1.1.1");
-        // First target fails, second succeeds
-        _pingService.Reset();
-        _pingService.QueueResult(PingResult.Failed("8.8.8.8", "Timeout"));
-        _pingService.QueueResult(PingResult.Succeeded("1.1.1.1", 10));
+        
+        // Use a factory to ensure the RIGHT result goes to the RIGHT address
+        _pingService.Reset().WithFactory(target => 
+            target == "8.8.8.8" 
+                ? PingResult.Failed(target, "Timeout") 
+                : PingResult.Succeeded(target, 10)
+        );
+
         var options = new MonitorOptions { EnableFallbackTargets = true };
         var service = CreateService(options);
 
@@ -4551,7 +4555,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
 
 
 ===============================================================================
-EXPORT COMPLETED: Fri Dec 26 12:46:02 PM CST 2025
+EXPORT COMPLETED: Fri Dec 26 12:50:09 PM CST 2025
 Total Files Exported: 51
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
