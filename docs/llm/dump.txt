@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Fri Dec 26 11:54:33 AM CST 2025
+Generated: Fri Dec 26 12:10:38 PM CST 2025
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -3176,7 +3176,7 @@ public sealed class FakeGatewayDetector : IGatewayDetector
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Fakes/FakeInternetTargetProvider.cs
 SIZE: 0.93 KB
-MODIFIED: 2025-12-26 11:49:19
+MODIFIED: 2025-12-26 12:04:18
 ================================================================================
 
 using NetworkMonitor.Core.Services;
@@ -3220,7 +3220,7 @@ public sealed class FakeInternetTargetProvider : IInternetTargetProvider
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs
 SIZE: 1.16 KB
-MODIFIED: 2025-12-26 11:53:32
+MODIFIED: 2025-12-26 12:04:18
 ================================================================================
 
 using NetworkMonitor.Core.Services;
@@ -3255,7 +3255,7 @@ public sealed class FakeNetworkConfigurationService : INetworkConfigurationServi
         => Task.FromResult(_internetTarget);
 
     public Task InitializeAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult();
+        => Task.CompletedTask;
 
     public void Dispose()
     {
@@ -3506,7 +3506,7 @@ internal sealed class FakeStorageService : IStorageService
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Models/MonitorOptionsTests.cs
 SIZE: 1.86 KB
-MODIFIED: 2025-12-26 11:16:05
+MODIFIED: 2025-12-26 12:04:18
 ================================================================================
 
 using NetworkMonitor.Core.Models;
@@ -3594,8 +3594,8 @@ public sealed class MonitorOptionsTests
 
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs
-SIZE: 0.93 KB
-MODIFIED: 2025-12-26 11:49:19
+SIZE: 1.48 KB
+MODIFIED: 2025-12-26 12:10:19
 ================================================================================
 
 using NetworkMonitor.Core.Models;
@@ -3612,21 +3612,31 @@ public sealed class NetworkHealthTests
     public void NetworkHealth_HasExpectedValues()
     {
         // Assert all expected values exist
-        Assert.Equal(0, (int)NetworkHealth.Offline);
-        Assert.Equal(1, (int)NetworkHealth.Poor);
-        Assert.Equal(2, (int)NetworkHealth.Degraded);
-        Assert.Equal(3, (int)NetworkHealth.Good);
-        Assert.Equal(4, (int)NetworkHealth.Excellent);
+        Assert.True(Enum.IsDefined(NetworkHealth, NetworkHealth.Offline));
+        Assert.True(Enum.IsDefined(NetworkHealth, NetworkHealth.Poor));
+        Assert.True(Enum.IsDefined(NetworkHealth, NetworkHealth.Degraded));
+        Assert.True(Enum.IsDefined(NetworkHealth, NetworkHealth.Good));
+        Assert.True(Enum.IsDefined(NetworkHealth, NetworkHealth.Excellent));
     }
 
     [Fact]
     public void NetworkHealth_CanCompare()
     {
-        // Assert ordering works as expected
+        // Assert ordering works as expected (Excellent > Good > Degraded > Poor > Offline)
         Assert.True(NetworkHealth.Excellent > NetworkHealth.Good);
         Assert.True(NetworkHealth.Good > NetworkHealth.Degraded);
         Assert.True(NetworkHealth.Degraded > NetworkHealth.Poor);
         Assert.True(NetworkHealth.Poor > NetworkHealth.Offline);
+    }
+
+    [Fact]
+    public void NetworkHealth_ToString_ReturnsName()
+    {
+        Assert.Equal("Excellent", NetworkHealth.Excellent.ToString());
+        Assert.Equal("Good", NetworkHealth.Good.ToString());
+        Assert.Equal("Degraded", NetworkHealth.Degraded.ToString());
+        Assert.Equal("Poor", NetworkHealth.Poor.ToString());
+        Assert.Equal("Offline", NetworkHealth.Offline.ToString());
     }
 }
 
@@ -3634,7 +3644,7 @@ public sealed class NetworkHealthTests
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Models/NetworkStatusEventArgsTests.cs
 SIZE: 1.79 KB
-MODIFIED: 2025-12-26 11:49:19
+MODIFIED: 2025-12-26 12:04:18
 ================================================================================
 
 using NetworkMonitor.Core.Models;
@@ -3709,8 +3719,8 @@ public sealed class NetworkStatusEventArgsTests
 
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Models/PingResultTests.cs
-SIZE: 1.47 KB
-MODIFIED: 2025-12-26 11:49:19
+SIZE: 1.92 KB
+MODIFIED: 2025-12-26 12:04:18
 ================================================================================
 
 using NetworkMonitor.Core.Models;
@@ -3732,7 +3742,7 @@ public sealed class PingResultTests
         // Assert
         Assert.True(result.Success);
         Assert.Equal("8.8.8.8", result.Target);
-        Assert.Equal(15, result.LatencyMs);
+        Assert.Equal(15, result.RoundtripTimeMs);
         Assert.Null(result.ErrorMessage);
     }
 
@@ -3745,7 +3755,7 @@ public sealed class PingResultTests
         // Assert
         Assert.False(result.Success);
         Assert.Equal("8.8.8.8", result.Target);
-        Assert.Null(result.LatencyMs);
+        Assert.Null(result.RoundtripTimeMs);
         Assert.Equal("Request timed out", result.ErrorMessage);
     }
 
@@ -3772,7 +3782,21 @@ public sealed class PingResultTests
 
         // Assert
         Assert.True(result.Success);
-        Assert.Equal(0, result.LatencyMs);
+        Assert.Equal(0, result.RoundtripTimeMs);
+    }
+
+    [Fact]
+    public void Record_Equality_WorksCorrectly()
+    {
+        // Arrange
+        var timestamp = DateTimeOffset.UtcNow;
+        var result1 = new PingResult("8.8.8.8", true, 10, timestamp);
+        var result2 = new PingResult("8.8.8.8", true, 10, timestamp);
+        var result3 = new PingResult("8.8.8.8", true, 20, timestamp);
+
+        // Assert
+        Assert.Equal(result1, result2);
+        Assert.NotEqual(result1, result3);
     }
 }
 
@@ -3980,7 +4004,7 @@ public sealed class GatewayDetectorTests
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Services/InternetTargetProviderTests.cs
 SIZE: 2.12 KB
-MODIFIED: 2025-12-26 11:49:19
+MODIFIED: 2025-12-26 12:04:18
 ================================================================================
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -4056,8 +4080,8 @@ public sealed class InternetTargetProviderTests
 
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs
-SIZE: 5.50 KB
-MODIFIED: 2025-12-26 11:49:19
+SIZE: 5.49 KB
+MODIFIED: 2025-12-26 12:09:27
 ================================================================================
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -4190,7 +4214,7 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
 
         // Act - call twice
         var result1 = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
-        
+
         // Change the gateway - should not affect second call due to caching
         _gatewayDetector.WithGateway("10.0.0.1");
         var result2 = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
@@ -4241,8 +4265,8 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
 
 ================================================================================
 FILE: src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs
-SIZE: 6.16 KB
-MODIFIED: 2025-12-26 11:49:19
+SIZE: 6.14 KB
+MODIFIED: 2025-12-26 12:09:27
 ================================================================================
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -4387,7 +4411,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
 
         // Act - first check establishes baseline
         await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
-        
+
         // Change to failing
         _pingService.AlwaysFail("Network error");
         await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
@@ -4407,7 +4431,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
 
         // Act - first check
         await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
-        
+
         // Second check - should have previous
         _pingService.AlwaysFail("Timeout");
         await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
@@ -4436,7 +4460,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
 
 
 ===============================================================================
-EXPORT COMPLETED: Fri Dec 26 11:54:34 AM CST 2025
+EXPORT COMPLETED: Fri Dec 26 12:10:39 PM CST 2025
 Total Files Exported: 51
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================

@@ -128,7 +128,7 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
 
         // Act - call twice
         var result1 = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
-        
+
         // Change the gateway - should not affect second call due to caching
         _gatewayDetector.WithGateway("10.0.0.1");
         var result2 = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
