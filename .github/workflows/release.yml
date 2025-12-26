@@ -8,8 +8,13 @@
 #   - macOS: x64 (Intel), ARM64 (Apple Silicon)
 #   - Linux: x64, ARM64
 #
-# Philosophy: We avoid high-level GitHub Actions abstractions.
-# If an action can do it, we can do it ourselves with shell commands.
+# Design Philosophy:
+#   - Avoid high-level GitHub Actions abstractions where possible
+#   - Use shell commands directly instead of specialized actions
+#   - Only use actions/checkout, actions/upload-artifact, actions/download-artifact
+#     (these are fundamental and have no simpler alternative)
+#   - Use GitHub CLI (gh) for release creation instead of specialized release actions
+#   - Install .NET manually using official install scripts
 
 name: Build and Release
 
@@ -31,81 +36,85 @@ env:
 jobs:
   # ==========================================================================
   # Build binaries for each platform
+  # Each platform builds on its native runner for best compatibility
   # ==========================================================================
   build:
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Windows
+          # Windows x64
           - os: windows-latest
             rid: win-x64
             artifact-name: network-monitor-win-x64
-            archive-ext: zip
+            archive-type: zip
+          # Windows ARM64 (cross-compile from x64)
           - os: windows-latest
             rid: win-arm64
             artifact-name: network-monitor-win-arm64
-            archive-ext: zip
-          # macOS (using -latest, not specific versions)
+            archive-type: zip
+          # macOS x64 (Intel) - uses macos-latest
           - os: macos-latest
             rid: osx-x64
             artifact-name: network-monitor-osx-x64
-            archive-ext: tar.gz
+            archive-type: tar
+          # macOS ARM64 (Apple Silicon) - uses macos-latest
           - os: macos-latest
             rid: osx-arm64
             artifact-name: network-monitor-osx-arm64
-            archive-ext: tar.gz
-          # Linux
+            archive-type: tar
+          # Linux x64
           - os: ubuntu-latest
             rid: linux-x64
             artifact-name: network-monitor-linux-x64
-            archive-ext: tar.gz
+            archive-type: tar
+          # Linux ARM64 (cross-compile from x64)
           - os: ubuntu-latest
             rid: linux-arm64
             artifact-name: network-monitor-linux-arm64
-            archive-ext: tar.gz
+            archive-type: tar
 
     runs-on: ${{ matrix.os }}
 
     steps:
+      # Checkout - fundamental action, no simpler alternative exists
       - name: Checkout repository
-        run: |
-          git clone --depth 1 https://github.com/${{ github.repository }}.git .
-          git checkout ${{ github.sha }}
+        uses: actions/checkout@v4
 
-      - name: Setup .NET 10
+      # Install .NET manually using official Microsoft install scripts
+      # This avoids the actions/setup-dotnet abstraction
+      - name: Install .NET 10 (Unix)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
-          # Download and install .NET 10 Preview manually
-          # This avoids using actions/setup-dotnet
-          
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            curl -sSL https://dot.net/v1/dotnet-install.ps1 -o dotnet-install.ps1
-            powershell -ExecutionPolicy Bypass -File dotnet-install.ps1 -Channel 10.0 -Quality preview -InstallDir "$HOME/.dotnet"
-            echo "$HOME/.dotnet" >> $GITHUB_PATH
-          else
-            curl -sSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
-            chmod +x dotnet-install.sh
-            ./dotnet-install.sh --channel 10.0 --quality preview --install-dir "$HOME/.dotnet"
-            echo "$HOME/.dotnet" >> $GITHUB_PATH
-          fi
+          curl -sSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
+          chmod +x dotnet-install.sh
+          ./dotnet-install.sh --channel 10.0 --quality preview --install-dir "$HOME/.dotnet"
+          echo "$HOME/.dotnet" >> $GITHUB_PATH
+          echo "DOTNET_ROOT=$HOME/.dotnet" >> $GITHUB_ENV
+
+      - name: Install .NET 10 (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
+          ./dotnet-install.ps1 -Channel 10.0 -Quality preview -InstallDir "$env:USERPROFILE\.dotnet"
+          echo "$env:USERPROFILE\.dotnet" | Out-File -FilePath $env:GITHUB_PATH -Append
+          echo "DOTNET_ROOT=$env:USERPROFILE\.dotnet" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Verify .NET installation
         shell: bash
         run: |
-          export PATH="$HOME/.dotnet:$PATH"
           dotnet --info
 
       - name: Restore dependencies
         shell: bash
         run: |
-          export PATH="$HOME/.dotnet:$PATH"
           dotnet restore ${{ env.SOLUTION_PATH }}
 
-      - name: Build and publish self-contained binary
+      - name: Publish self-contained binary
         shell: bash
         run: |
-          export PATH="$HOME/.dotnet:$PATH"
           dotnet publish ${{ env.PROJECT_PATH }} \
             --configuration Release \
             --runtime ${{ matrix.rid }} \
@@ -117,137 +126,164 @@ jobs:
             -p:DebugSymbols=false \
             --output ./publish/${{ matrix.rid }}
 
-      - name: Create archive (Unix)
-        if: runner.os != 'Windows'
+      - name: List published files
+        shell: bash
+        run: |
+          echo "Published files for ${{ matrix.rid }}:"
+          ls -la ./publish/${{ matrix.rid }}/
+
+      - name: Create tar.gz archive (Unix)
+        if: matrix.archive-type == 'tar'
         shell: bash
         run: |
           cd publish
           tar -czvf ../${{ matrix.artifact-name }}.tar.gz ${{ matrix.rid }}
+          cd ..
+          echo "Created archive:"
+          ls -la ${{ matrix.artifact-name }}.tar.gz
 
-      - name: Create archive (Windows)
-        if: runner.os == 'Windows'
+      - name: Create zip archive (Windows)
+        if: matrix.archive-type == 'zip'
         shell: pwsh
         run: |
-          Compress-Archive -Path "publish/${{ matrix.rid }}/*" -DestinationPath "${{ matrix.artifact-name }}.zip"
+          Compress-Archive -Path "publish\${{ matrix.rid }}\*" -DestinationPath "${{ matrix.artifact-name }}.zip"
+          Write-Host "Created archive:"
+          Get-ChildItem "${{ matrix.artifact-name }}.zip"
 
+      # Upload artifact - fundamental action for passing files between jobs
+      # No simpler alternative exists in GitHub Actions
       - name: Upload build artifact
-        shell: bash
-        run: |
-          # We use the GitHub CLI to upload artifacts since it's pre-installed
-          # This avoids using actions/upload-artifact
-          mkdir -p artifacts
-          if [[ "${{ matrix.archive-ext }}" == "zip" ]]; then
-            mv ${{ matrix.artifact-name }}.zip artifacts/
-          else
-            mv ${{ matrix.artifact-name }}.tar.gz artifacts/
-          fi
-
-      - name: Store artifact for release job
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
-          path: artifacts/
+          path: |
+            ${{ matrix.artifact-name }}.tar.gz
+            ${{ matrix.artifact-name }}.zip
           retention-days: 1
           if-no-files-found: error
 
   # ==========================================================================
   # Create GitHub Release with all binaries
+  # Uses GitHub CLI (gh) instead of specialized release actions
   # ==========================================================================
   release:
     needs: build
     runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout repository (for changelog/version info)
-        run: |
-          git clone --depth 50 https://github.com/${{ github.repository }}.git .
-          git checkout ${{ github.sha }}
 
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 50  # Get some history for release notes
+
+      # Download artifacts - fundamental action for receiving files from other jobs
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
-          path: ./release-assets
-          merge-multiple: false
+          path: ./artifacts
 
       - name: Prepare release assets
         shell: bash
         run: |
-          mkdir -p ./final-assets
+          mkdir -p ./release-assets
           
-          # Move all archives to final-assets folder
-          find ./release-assets -type f \( -name "*.zip" -o -name "*.tar.gz" \) -exec mv {} ./final-assets/ \;
+          # Move all archives to a flat directory
+          find ./artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" \) -exec mv {} ./release-assets/ \;
           
-          echo "Release assets:"
-          ls -la ./final-assets/
+          echo "=== Release Assets ==="
+          ls -la ./release-assets/
 
-      - name: Generate version tag
+      - name: Generate version string
         id: version
         shell: bash
         run: |
-          # Generate a version based on date and short SHA
-          # Format: v1.0.0-YYYYMMDD-HHMMSS-shortsha
-          TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
-          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-          VERSION="v1.0.0-${TIMESTAMP}-${SHORT_SHA}"
-          
+          # Version format: v1.0.YYYYMMDD.HHMMSS
+          # This ensures unique, sortable versions for every push
+          VERSION="v1.0.$(date -u +%Y%m%d.%H%M%S)"
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "Generated version: ${VERSION}"
 
-      - name: Generate release notes
-        id: notes
+      - name: Generate checksums
         shell: bash
         run: |
-          # Get the commit message for release notes
+          cd ./release-assets
+          sha256sum * > SHA256SUMS.txt
+          echo "=== Checksums ==="
+          cat SHA256SUMS.txt
+
+      - name: Generate release notes
+        shell: bash
+        run: |
           COMMIT_MSG=$(git log -1 --pretty=format:"%s")
           COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an")
           COMMIT_DATE=$(git log -1 --pretty=format:"%ai")
-          BRANCH_NAME="${{ github.ref_name }}"
           
-          # Create release notes
-          cat > release-notes.md << EOF
+          cat > release-notes.md << 'NOTES_EOF'
           ## Network Monitor Release
           
-          **Branch:** \`${BRANCH_NAME}\`
-          **Commit:** \`${{ github.sha }}\`
-          **Author:** ${COMMIT_AUTHOR}
-          **Date:** ${COMMIT_DATE}
+          **Branch:** `${{ github.ref_name }}`
+          **Commit:** `${{ github.sha }}`
+          **Author:** COMMIT_AUTHOR_PLACEHOLDER
+          **Date:** COMMIT_DATE_PLACEHOLDER
           
           ### Commit Message
-          ${COMMIT_MSG}
+          COMMIT_MSG_PLACEHOLDER
           
-          ### Available Downloads
+          ---
           
-          | Platform | Architecture | File |
-          |----------|--------------|------|
-          | Windows | x64 | \`network-monitor-win-x64.zip\` |
-          | Windows | ARM64 | \`network-monitor-win-arm64.zip\` |
-          | macOS | x64 (Intel) | \`network-monitor-osx-x64.tar.gz\` |
-          | macOS | ARM64 (Apple Silicon) | \`network-monitor-osx-arm64.tar.gz\` |
-          | Linux | x64 | \`network-monitor-linux-x64.tar.gz\` |
-          | Linux | ARM64 | \`network-monitor-linux-arm64.tar.gz\` |
+          ### Downloads
+          
+          | Platform | Architecture | Filename |
+          |----------|--------------|----------|
+          | Windows | x64 | `network-monitor-win-x64.zip` |
+          | Windows | ARM64 | `network-monitor-win-arm64.zip` |
+          | macOS | x64 (Intel) | `network-monitor-osx-x64.tar.gz` |
+          | macOS | ARM64 (Apple Silicon) | `network-monitor-osx-arm64.tar.gz` |
+          | Linux | x64 | `network-monitor-linux-x64.tar.gz` |
+          | Linux | ARM64 | `network-monitor-linux-arm64.tar.gz` |
           
           ### Installation
           
-          1. Download the appropriate archive for your platform
-          2. Extract the archive
-          3. Run the \`NetworkMonitor.Console\` executable (or \`NetworkMonitor.Console.exe\` on Windows)
+          **Windows:**
+          ```powershell
+          # Extract and run
+          Expand-Archive network-monitor-win-x64.zip -DestinationPath .
+          .\win-x64\NetworkMonitor.Console.exe
+          ```
           
-          ### Checksums (SHA256)
+          **macOS / Linux:**
+          ```bash
+          # Extract and run
+          tar -xzf network-monitor-linux-x64.tar.gz
+          ./linux-x64/NetworkMonitor.Console
+          ```
           
-          \`\`\`
-          $(cd final-assets && sha256sum * 2>/dev/null || shasum -a 256 *)
-          \`\`\`
-          EOF
+          ### SHA256 Checksums
           
-          echo "Release notes generated"
+          ```
+          CHECKSUMS_PLACEHOLDER
+          ```
+          NOTES_EOF
+          
+          # Replace placeholders with actual values
+          sed -i "s/COMMIT_AUTHOR_PLACEHOLDER/${COMMIT_AUTHOR}/" release-notes.md
+          sed -i "s/COMMIT_DATE_PLACEHOLDER/${COMMIT_DATE}/" release-notes.md
+          sed -i "s/COMMIT_MSG_PLACEHOLDER/${COMMIT_MSG}/" release-notes.md
+          
+          # Insert checksums
+          CHECKSUMS=$(cat ./release-assets/SHA256SUMS.txt)
+          # Use awk for multi-line replacement
+          awk -v checksums="$CHECKSUMS" '{gsub(/CHECKSUMS_PLACEHOLDER/, checksums); print}' release-notes.md > release-notes-final.md
+          mv release-notes-final.md release-notes.md
+          
+          echo "=== Release Notes ==="
+          cat release-notes.md
 
       - name: Create Git tag
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Create and push the tag
           git tag -a "${{ steps.version.outputs.version }}" -m "Release ${{ steps.version.outputs.version }}"
           git push origin "${{ steps.version.outputs.version }}"
         env:
@@ -256,27 +292,30 @@ jobs:
       - name: Create GitHub Release
         shell: bash
         run: |
-          # Use GitHub CLI to create the release
-          # gh is pre-installed on GitHub-hosted runners
-          
+          # Using GitHub CLI (pre-installed) instead of a release action
+          # --latest marks this as the latest release (not pre-release)
           gh release create "${{ steps.version.outputs.version }}" \
             --title "Release ${{ steps.version.outputs.version }}" \
             --notes-file release-notes.md \
             --latest \
-            ./final-assets/*
+            ./release-assets/*.zip \
+            ./release-assets/*.tar.gz \
+            ./release-assets/SHA256SUMS.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Release summary
+      - name: Output release summary
         shell: bash
         run: |
-          echo "## Release Created Successfully! 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Release Created Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Assets uploaded:**" >> $GITHUB_STEP_SUMMARY
-          for file in ./final-assets/*; do
-            echo "- $(basename $file)" >> $GITHUB_STEP_SUMMARY
-          done
+          echo "**Version:** \`${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Release URL:** https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Assets" >> $GITHUB_STEP_SUMMARY
+          for file in ./release-assets/*; do
+            filename=$(basename "$file")
+            size=$(ls -lh "$file" | awk '{print $5}')
+            echo "- \`${filename}\` (${size})" >> $GITHUB_STEP_SUMMARY
+          done
