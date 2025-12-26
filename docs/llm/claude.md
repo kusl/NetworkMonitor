@@ -598,3 +598,13 @@ The application will now work out of the box on most networks without requiring 
 
 
 
+This is good progress. I got three errors that need to be resolved but I like that we are making things better and easier for the users. 
+Restore complete (0.4s)
+  NetworkMonitor.Core net10.0 failed with 3 error(s) (0.1s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(147,45): error CS1729: 'NetworkStatusEventArgs' does not contain a constructor that takes 2 arguments
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(17,21): error CA1001: Type 'NetworkConfigurationService' owns disposable field(s) '_initLock' but is not disposable (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1001)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(174,52): error CA1822: Member 'ComputeHealth' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822)
+Build failed with 3 error(s) in 0.7s
+Can you please look at `dump.txt` for the latest code and resolve these errors? Also please review to make sure we have a good test coverage and generate me a single shell script that addresses all the concerns. Please and thank you. 
+
+
