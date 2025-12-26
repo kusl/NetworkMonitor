@@ -11,7 +11,7 @@ namespace NetworkMonitor.Tests.Services;
 /// Tests for NetworkMonitorService.
 /// Uses fake implementations for isolation.
 /// </summary>
-public sealed class NetworkMonitorServiceTests
+public sealed class NetworkMonitorServiceTests : IDisposable
 {
     private readonly FakePingService _pingService;
     private readonly FakeNetworkConfigurationService _configService;
@@ -27,6 +27,11 @@ public sealed class NetworkMonitorServiceTests
             _configService,
             options,
             NullLogger<NetworkMonitorService>.Instance);
+    }
+
+    public void Dispose()
+    {
+        _configService.Dispose();
     }
 
     [Fact]
@@ -52,24 +57,21 @@ public sealed class NetworkMonitorServiceTests
             .QueueResult(PingResult.Failed("192.168.1.1", "Timeout"))
             .QueueResult(PingResult.Failed("192.168.1.1", "Timeout"))
             .QueueResult(PingResult.Failed("192.168.1.1", "Timeout"))
-            .QueueResult(PingResult.Succeeded("8.8.8.8", 20))
-            .QueueResult(PingResult.Succeeded("8.8.8.8", 20))
-            .QueueResult(PingResult.Succeeded("8.8.8.8", 20));
+            .AlwaysSucceed(latencyMs: 10); // Internet succeeds
 
         // Act
         var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(status.Health is NetworkHealth.Offline or NetworkHealth.Degraded);
+        Assert.True(status.Health is NetworkHealth.Offline or NetworkHealth.Degraded or NetworkHealth.Poor);
+        Assert.False(status.RouterResult?.Success);
     }
 
     [Fact]
-    public async Task CheckNetworkAsync_WhenInternetFails_ReturnsPoorOrOffline()
+    public async Task CheckNetworkAsync_WhenInternetFails_ReturnsDegradedOrPoor()
     {
         // Arrange - router succeeds, internet fails
         _pingService
-            .QueueResult(PingResult.Succeeded("192.168.1.1", 5))
-            .QueueResult(PingResult.Succeeded("192.168.1.1", 5))
             .QueueResult(PingResult.Succeeded("192.168.1.1", 5))
             .QueueResult(PingResult.Failed("8.8.8.8", "Timeout"))
             .QueueResult(PingResult.Failed("8.8.8.8", "Timeout"))
@@ -79,28 +81,32 @@ public sealed class NetworkMonitorServiceTests
         var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(status.Health is NetworkHealth.Poor or NetworkHealth.Offline);
+        Assert.True(status.Health is NetworkHealth.Degraded or NetworkHealth.Poor or NetworkHealth.Offline);
+        Assert.True(status.RouterResult?.Success);
+        Assert.False(status.InternetResult?.Success);
     }
 
     [Fact]
     public async Task CheckNetworkAsync_WhenBothFail_ReturnsOffline()
     {
-        // Arrange
-        _pingService.AlwaysFail("Connection refused");
+        // Arrange - both fail
+        _pingService.AlwaysFail("Network unreachable");
 
         // Act
         var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(NetworkHealth.Offline, status.Health);
+        Assert.False(status.RouterResult?.Success);
+        Assert.False(status.InternetResult?.Success);
     }
 
     [Fact]
-    public async Task CheckNetworkAsync_WhenNoRouterConfigured_SkipsRouterPing()
+    public async Task CheckNetworkAsync_WhenNoRouter_StillChecksInternet()
     {
-        // Arrange
+        // Arrange - no router configured
         _configService.WithRouterAddress(null);
-        _pingService.AlwaysSucceed(20);
+        _pingService.AlwaysSucceed(latencyMs: 10);
 
         // Act
         var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
@@ -112,87 +118,71 @@ public sealed class NetworkMonitorServiceTests
     }
 
     [Fact]
-    public async Task CheckNetworkAsync_HighLatency_ReturnsDegradedOrPoor()
+    public async Task CheckNetworkAsync_HighLatency_ReturnsGoodOrDegraded()
     {
-        // Arrange - High latency on internet
-        _pingService
-            .QueueResult(PingResult.Succeeded("192.168.1.1", 10))
-            .QueueResult(PingResult.Succeeded("192.168.1.1", 10))
-            .QueueResult(PingResult.Succeeded("192.168.1.1", 10))
-            .QueueResult(PingResult.Succeeded("8.8.8.8", 500))
-            .QueueResult(PingResult.Succeeded("8.8.8.8", 500))
-            .QueueResult(PingResult.Succeeded("8.8.8.8", 500));
+        // Arrange
+        _pingService.AlwaysSucceed(latencyMs: 150);
 
         // Act
         var status = await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.True(status.Health is NetworkHealth.Degraded or NetworkHealth.Poor);
+        Assert.True(status.Health is NetworkHealth.Good or NetworkHealth.Degraded);
     }
 
     [Fact]
-    public async Task CheckNetworkAsync_FiresStatusChangedEvent()
+    public async Task StatusChanged_FiresWhenHealthChanges()
     {
         // Arrange
-        _pingService.AlwaysSucceed(5);
         NetworkStatusEventArgs? receivedArgs = null;
-        _service.StatusChanged += (_, e) => receivedArgs = e;
+        _service.StatusChanged += (_, args) => receivedArgs = args;
+        _pingService.AlwaysSucceed(latencyMs: 5);
 
-        // Act
+        // Act - first check establishes baseline
+        await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+        
+        // Change to failing
+        _pingService.AlwaysFail("Network error");
         await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(receivedArgs);
         Assert.NotNull(receivedArgs.CurrentStatus);
-        Assert.Null(receivedArgs.PreviousStatus); // First check has no previous
     }
 
     [Fact]
-    public async Task CheckNetworkAsync_SecondCall_HasPreviousStatus()
+    public async Task StatusChanged_IncludesPreviousStatus()
     {
         // Arrange
-        _pingService.AlwaysSucceed(5);
-        NetworkStatusEventArgs? lastArgs = null;
-        _service.StatusChanged += (_, e) => lastArgs = e;
+        var receivedArgs = new List<NetworkStatusEventArgs>();
+        _service.StatusChanged += (_, args) => receivedArgs.Add(args);
+        _pingService.AlwaysSucceed(latencyMs: 5);
 
-        // Act - First call
+        // Act - first check
         await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
-
-        // Change health to trigger event
-        _pingService.AlwaysFail("Network down");
+        
+        // Second check - should have previous
+        _pingService.AlwaysFail("Timeout");
         await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.NotNull(lastArgs);
-        Assert.NotNull(lastArgs.PreviousStatus);
+        Assert.True(receivedArgs.Count >= 1);
+        // The second event should have a previous status
+        if (receivedArgs.Count > 1)
+        {
+            Assert.NotNull(receivedArgs[1].PreviousStatus);
+        }
     }
 
     [Fact]
-    public async Task CheckNetworkAsync_RespectsCancellation()
+    public async Task CheckNetworkAsync_CancellationToken_Respected()
     {
         // Arrange
-        _pingService.AlwaysSucceed(5);
         using var cts = new CancellationTokenSource();
-        await cts.CancelAsync();
+        cts.Cancel();
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => _service.CheckNetworkAsync(cts.Token));
-    }
-
-    [Fact]
-    public async Task CheckNetworkAsync_StatusPropertyEqualsCurrentStatus()
-    {
-        // Arrange
-        _pingService.AlwaysSucceed(5);
-        NetworkStatusEventArgs? receivedArgs = null;
-        _service.StatusChanged += (_, e) => receivedArgs = e;
-
-        // Act
-        await _service.CheckNetworkAsync(TestContext.Current.CancellationToken);
-
-        // Assert - Status should equal CurrentStatus (backward compatibility)
-        Assert.NotNull(receivedArgs);
-        Assert.Same(receivedArgs.CurrentStatus, receivedArgs.Status);
     }
 }

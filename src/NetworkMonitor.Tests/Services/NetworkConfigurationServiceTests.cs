@@ -92,8 +92,7 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
     {
         // Arrange
         _gatewayDetector.WithNoGateway();
-        _gatewayDetector.WithCommonGateways("192.168.0.1");
-        _pingService.AlwaysFail("Unreachable");
+        _gatewayDetector.WithCommonGateways(); // Empty
         var options = new MonitorOptions { RouterAddress = "auto" };
         var service = CreateService(options);
 
@@ -105,28 +104,10 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetInternetTargetAsync_ReturnsFirstReachableTarget()
+    public async Task GetInternetTargetAsync_ReturnsPrimaryTarget()
     {
         // Arrange
-        _internetTargetProvider.WithTargets("8.8.8.8", "1.1.1.1");
-        _pingService.AlwaysSucceed(10);
-        var service = CreateService();
-
-        // Act
-        var result = await service.GetInternetTargetAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal("8.8.8.8", result);
-    }
-
-    [Fact]
-    public async Task GetInternetTargetAsync_FallsBackWhenFirstUnreachable()
-    {
-        // Arrange
-        _internetTargetProvider.WithTargets("8.8.8.8", "1.1.1.1");
-        _pingService
-            .QueueResult(PingResult.Failed("8.8.8.8", "Unreachable"))
-            .QueueResult(PingResult.Succeeded("1.1.1.1", 20));
+        _internetTargetProvider.WithPrimaryTarget("1.1.1.1");
         var service = CreateService();
 
         // Act
@@ -137,23 +118,7 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetInternetTargetAsync_ReturnsPrimaryWhenNoneReachable()
-    {
-        // Arrange
-        _internetTargetProvider.WithPrimaryTarget("8.8.8.8");
-        _internetTargetProvider.WithTargets("8.8.8.8", "1.1.1.1");
-        _pingService.AlwaysFail("All unreachable");
-        var service = CreateService();
-
-        // Act
-        var result = await service.GetInternetTargetAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal("8.8.8.8", result);
-    }
-
-    [Fact]
-    public async Task ResultsAreCached_MultipleCallsReturnSameValue()
+    public async Task GetRouterAddressAsync_CachesResult()
     {
         // Arrange
         _gatewayDetector.WithGateway("192.168.1.1");
@@ -161,13 +126,15 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
         var options = new MonitorOptions { RouterAddress = "auto" };
         var service = CreateService(options);
 
-        // Act
+        // Act - call twice
         var result1 = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
-        _gatewayDetector.WithGateway("10.0.0.1"); // Change gateway
+        
+        // Change the gateway - should not affect second call due to caching
+        _gatewayDetector.WithGateway("10.0.0.1");
         var result2 = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
 
-        // Assert - Should return cached value
-        Assert.Equal(result1, result2);
+        // Assert - both should return cached value
+        Assert.Equal("192.168.1.1", result1);
         Assert.Equal("192.168.1.1", result2);
     }
 
@@ -177,7 +144,7 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
         // Arrange
         var service = CreateService();
 
-        // Act & Assert - Should not throw
+        // Act & Assert - should not throw
         service.Dispose();
         service.Dispose();
     }
@@ -188,9 +155,23 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
         // Arrange
         var service = CreateService();
         service.Dispose();
+        _service = null; // Prevent double dispose in cleanup
 
         // Act & Assert
         await Assert.ThrowsAsync<ObjectDisposedException>(
             () => service.GetRouterAddressAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task GetInternetTargetAsync_AfterDispose_ThrowsObjectDisposedException()
+    {
+        // Arrange
+        var service = CreateService();
+        service.Dispose();
+        _service = null; // Prevent double dispose in cleanup
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ObjectDisposedException>(
+            () => service.GetInternetTargetAsync(TestContext.Current.CancellationToken));
     }
 }

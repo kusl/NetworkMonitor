@@ -4,6 +4,7 @@ namespace NetworkMonitor.Tests.Fakes;
 
 /// <summary>
 /// Fake network configuration service for testing.
+/// Returns configurable addresses without actual network operations.
 /// </summary>
 public sealed class FakeNetworkConfigurationService : INetworkConfigurationService, IDisposable
 {
@@ -31,10 +32,5 @@ public sealed class FakeNetworkConfigurationService : INetworkConfigurationServi
     public void Dispose()
     {
         // Nothing to dispose in fake
-    }
-
-    public Task InitializeAsync(CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
     }
 }
