@@ -4649,4 +4649,1765 @@ Value: Sum: 124 Count: 12 Min: 7 Max: 12
 real	1m2.456s
 user	0m3.481s
 sys	0m0.559s
+kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet --info; time dotnet format; time dotnet restore; time dotnet clean; time dotnet build; time dotnet test; time bash run.sh;
+Starting project export...
+Project Path: /home/kushal/src/dotnet/network-monitor
+Output File: docs/llm/dump.txt
+Generating directory structure...
+Collecting files...
+Found 36 files to export
+Processing (1/36): .github/workflows/build-and-test.yml
+Processing (2/36): .github/workflows/release.yml
+Processing (3/36): src/Directory.Build.props
+Processing (4/36): src/Directory.Packages.props
+Processing (5/36): src/NetworkMonitor.Console/appsettings.json
+Processing (6/36): src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
+Processing (7/36): src/NetworkMonitor.Console/Program.cs
+Processing (8/36): src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs
+Processing (9/36): src/NetworkMonitor.Core/Exporters/FileExporterOptions.cs
+Processing (10/36): src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs
+Processing (11/36): src/NetworkMonitor.Core/Models/HistoricalData.cs
+Processing (12/36): src/NetworkMonitor.Core/Models/MonitorOptions.cs
+Processing (13/36): src/NetworkMonitor.Core/Models/NetworkStatus.cs
+Processing (14/36): src/NetworkMonitor.Core/Models/NetworkStatusEventArgs.cs
+Processing (15/36): src/NetworkMonitor.Core/Models/PingResult.cs
+Processing (16/36): src/NetworkMonitor.Core/Models/StorageOptions.cs
+Processing (17/36): src/NetworkMonitor.Core/NetworkMonitor.Core.csproj
+Processing (18/36): src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
+Processing (19/36): src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs
+Processing (20/36): src/NetworkMonitor.Core/Services/INetworkMonitorService.cs
+Processing (21/36): src/NetworkMonitor.Core/Services/IPingService.cs
+Processing (22/36): src/NetworkMonitor.Core/Services/IStatusDisplay.cs
+Processing (23/36): src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs
+Processing (24/36): src/NetworkMonitor.Core/Services/NetworkMonitorService.cs
+Processing (25/36): src/NetworkMonitor.Core/Services/PingService.cs
+Processing (26/36): src/NetworkMonitor.Core/Storage/IStorageService.cs
+Processing (27/36): src/NetworkMonitor.Core/Storage/SqliteStorageService.cs
+Processing (28/36): src/NetworkMonitor.slnx
+Processing (29/36): src/NetworkMonitor.Tests/Fakes/FakePingService.cs
+Processing (30/36): src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs
+Processing (31/36): src/NetworkMonitor.Tests/Fakes/FakeStorageService.cs
+Processing (32/36): src/NetworkMonitor.Tests/Fakes/NullLogger.cs
+Processing (33/36): src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj
+Processing (34/36): src/NetworkMonitor.Tests/NetworkStatusTests.cs
+Processing (35/36): src/NetworkMonitor.Tests/PingResultTests.cs
+Processing (36/36): src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs
+
+Export completed successfully!
+Output file: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
+Total files exported: 36
+Output file size: 0.09 MB
+
+real	0m0.321s
+user	0m0.180s
+sys	0m0.210s
+.NET SDK:
+ Version:           10.0.101
+ Commit:            fad253f51b
+ Workload version:  10.0.101.1
+ MSBuild version:   18.0.6+fad253f51
+
+Runtime Environment:
+ OS Name:     fedora
+ OS Version:  43
+ OS Platform: Linux
+ RID:         fedora.43-x64
+ Base Path:   /usr/lib64/dotnet/sdk/10.0.101/
+
+.NET workloads installed:
+ [android]
+   Installation Source: SDK 10.0.100
+   Manifest Version:    36.1.2/10.0.100
+   Manifest Path:       /home/kushal/.dotnet/sdk-manifests/10.0.100/microsoft.net.sdk.android/36.1.2/WorkloadManifest.json
+   Install Type:        FileBased
+
+Configured to use workload sets when installing new manifests.
+
+Host:
+  Version:      10.0.1
+  Architecture: x64
+  Commit:       fad253f51b
+
+.NET SDKs installed:
+  10.0.101 [/usr/lib64/dotnet/sdk]
+
+.NET runtimes installed:
+  Microsoft.AspNetCore.App 10.0.1 [/usr/lib64/dotnet/shared/Microsoft.AspNetCore.App]
+  Microsoft.NETCore.App 10.0.1 [/usr/lib64/dotnet/shared/Microsoft.NETCore.App]
+
+Other architectures found:
+  None
+
+Environment variables:
+  DOTNET_BUNDLE_EXTRACT_BASE_DIR           [/home/kushal/.cache/dotnet_bundle_extract]
+  DOTNET_ROOT                              [/usr/lib64/dotnet]
+
+global.json file:
+  Not found
+
+Learn more:
+  https://aka.ms/dotnet/info
+
+Download .NET:
+  https://aka.ms/dotnet/download
+
+real	0m0.149s
+user	0m0.121s
+sys	0m0.028s
+
+real	0m5.355s
+user	0m6.973s
+sys	0m0.631s
+Restore complete (0.4s)
+
+Build succeeded in 0.5s
+
+real	0m0.632s
+user	0m0.661s
+sys	0m0.109s
+
+Build succeeded in 0.4s
+
+real	0m0.527s
+user	0m0.516s
+sys	0m0.117s
+Restore complete (0.4s)
+  NetworkMonitor.Core net10.0 succeeded (0.1s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Tests net10.0 succeeded (0.1s) → NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll
+  NetworkMonitor.Console net10.0 succeeded (0.3s) → NetworkMonitor.Console/bin/Debug/net10.0/NetworkMonitor.Console.dll
+
+Build succeeded in 0.9s
+
+real	0m1.057s
+user	0m1.150s
+sys	0m0.205s
+Restore complete (0.4s)
+  NetworkMonitor.Core net10.0 succeeded (0.0s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Tests net10.0 succeeded (0.1s) → NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.1+bf6400fd51 (64-bit .NET 10.0.1)
+[xUnit.net 00:00:00.11]   Discovering: NetworkMonitor.Tests
+[xUnit.net 00:00:00.24]   Discovered:  NetworkMonitor.Tests
+[xUnit.net 00:00:00.37]   Starting:    NetworkMonitor.Tests
+[xUnit.net 00:00:00.46]     NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_HighLatency_ReturnsDegraded [FAIL]
+[xUnit.net 00:00:00.46]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:00.46]       Expected: Degraded
+[xUnit.net 00:00:00.46]       Actual:   Poor
+[xUnit.net 00:00:00.46]       Stack Trace:
+[xUnit.net 00:00:00.46]         /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(94,0): at NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_HighLatency_ReturnsDegraded()
+[xUnit.net 00:00:00.46]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.47]   Finished:    NetworkMonitor.Tests
+  NetworkMonitor.Tests test net10.0 failed with 1 error(s) (0.9s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs(94): error TESTERROR: 
+      NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_HighLatency_ReturnsDegraded (1ms): Error Message: Assert.Equal() Failure: Values differ
+      Expected: Degraded
+      Actual:   Poor
+      Stack Trace:
+         at NetworkMonitor.Tests.Services.NetworkMonitorServiceTests.CheckNetworkAsync_HighLatency_ReturnsDegraded() in /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkMonitorServ
+      iceTests.cs:line 94
+      --- End of stack trace from previous location ---
+
+Test summary: total: 17, failed: 1, succeeded: 16, skipped: 0, duration: 0.9s
+Build failed with 1 error(s) in 1.5s
+
+real	0m1.679s
+user	0m0.925s
+sys	0m0.179s
+Building and running...
+Restore complete (0.4s)
+  NetworkMonitor.Core net10.0 succeeded (0.0s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Tests net10.0 succeeded (0.0s) → NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll
+  NetworkMonitor.Console net10.0 succeeded (0.2s) → NetworkMonitor.Console/bin/Debug/net10.0/NetworkMonitor.Console.dll
+
+Build succeeded in 0.8s
+╔══════════════════════════════════════════════════════════════╗
+║           Network Monitor - Cross-Platform Edition           ║
+║                  Press Ctrl+C to stop                        ║
+╚══════════════════════════════════════════════════════════════╝
+
+📁 Telemetry: /home/kushal/.local/share/NetworkMonitor/telemetry
+🆔 Run ID: 20251226_135626
+
+info: NetworkMonitor.Core.Storage.SqliteStorageService[0]
+      SQLite database path: /home/kushal/.local/share/NetworkMonitor/network-monitor.db
+info: NetworkMonitor.Core.Services.MonitorBackgroundService[0]
+      Network Monitor starting. Interval: 5000ms, Router: 192.168.1.1, Internet: 8.8.8.8
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Unknown -> Excellent: Network is excellent
+● Excellent  Router:    2ms Internet:   13ms [13:56:32]          Resource associated with Metrics:
+	service.name: NetworkMonitor
+	service.version: 1.0.0
+	service.instance.id: c10e6895-78a3-483d-ba32-edf53dc3b74a
+	telemetry.sdk.name: opentelemetry
+	telemetry.sdk.language: dotnet
+	telemetry.sdk.version: 1.14.0
+
+Metric Name: dotnet.gc.collections, Description: The number of garbage collections that have occurred since the process has started., Unit: {collection}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:56:36.7753997Z] gc.heap.generation: gen2
+Value: 1
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:56:36.7753997Z] gc.heap.generation: gen1
+Value: 0
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:56:36.7753997Z] gc.heap.generation: gen0
+Value: 0
+
+Metric Name: dotnet.process.memory.working_set, Description: The number of bytes of physical memory mapped to the process context., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961416Z, 2025-12-26T13:56:36.7754003Z]  
+Value: 70008832
+
+Metric Name: dotnet.gc.heap.total_allocated, Description: The approximate number of bytes allocated on the managed GC heap since the process has started. The returned value does not include any native allocations., Unit: By, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961701Z, 2025-12-26T13:56:36.7754007Z]  
+Value: 10049528
+
+Metric Name: dotnet.gc.last_collection.memory.committed_size, Description: The amount of committed virtual memory in use by the .NET GC, as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961931Z, 2025-12-26T13:56:36.7754010Z]  
+Value: 5357568
+
+Metric Name: dotnet.gc.last_collection.heap.size, Description: The managed GC heap size (including fragmentation), as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:56:36.7754015Z] gc.heap.generation: gen0
+Value: 157824
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:56:36.7754015Z] gc.heap.generation: gen1
+Value: 758904
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:56:36.7754015Z] gc.heap.generation: gen2
+Value: 0
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:56:36.7754015Z] gc.heap.generation: loh
+Value: 3172400
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:56:36.7754015Z] gc.heap.generation: poh
+Value: 9232
+
+Metric Name: dotnet.gc.last_collection.heap.fragmentation.size, Description: The heap fragmentation, as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:56:36.7754019Z] gc.heap.generation: gen0
+Value: 149504
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:56:36.7754019Z] gc.heap.generation: gen1
+Value: 6744
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:56:36.7754019Z] gc.heap.generation: gen2
+Value: 0
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:56:36.7754019Z] gc.heap.generation: loh
+Value: 704
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:56:36.7754019Z] gc.heap.generation: poh
+Value: 0
+
+Metric Name: dotnet.gc.pause.time, Description: The total amount of time paused in GC since the process has started., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965026Z, 2025-12-26T13:56:36.7754022Z]  
+Value: 0.002189
+
+Metric Name: dotnet.jit.compiled_il.size, Description: Count of bytes of intermediate language that have been compiled since the process has started., Unit: By, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965414Z, 2025-12-26T13:56:36.7754028Z]  
+Value: 188013
+
+Metric Name: dotnet.jit.compiled_methods, Description: The number of times the JIT compiler (re)compiled methods since the process has started., Unit: {method}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965617Z, 2025-12-26T13:56:36.7754031Z]  
+Value: 2841
+
+Metric Name: dotnet.jit.compilation.time, Description: The number of times the JIT compiler (re)compiled methods since the process has started., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965834Z, 2025-12-26T13:56:36.7754033Z]  
+Value: 0.274016
+
+Metric Name: dotnet.monitor.lock_contentions, Description: The number of times there was contention when trying to acquire a monitor lock since the process has started., Unit: {contention}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7966033Z, 2025-12-26T13:56:36.7754036Z]  
+Value: 0
+
+Metric Name: dotnet.thread_pool.thread.count, Description: The number of thread pool threads that currently exist., Unit: {thread}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7988533Z, 2025-12-26T13:56:36.7754039Z]  
+Value: 3
+
+Metric Name: dotnet.thread_pool.work_item.count, Description: The number of work items that the thread pool has completed since the process has started., Unit: {work_item}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7988897Z, 2025-12-26T13:56:36.7754043Z]  
+Value: 41
+
+Metric Name: dotnet.thread_pool.queue.length, Description: The number of work items that are currently queued to be processed by the thread pool., Unit: {work_item}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989074Z, 2025-12-26T13:56:36.7754048Z]  
+Value: 0
+
+Metric Name: dotnet.timer.count, Description: The number of timer instances that are currently active. An active timer is registered to tick at some point in the future and has not yet been canceled., Unit: {timer}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989241Z, 2025-12-26T13:56:36.7754051Z]  
+Value: 4
+
+Metric Name: dotnet.assembly.count, Description: The number of .NET assemblies that are currently loaded., Unit: {assembly}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989424Z, 2025-12-26T13:56:36.7754054Z]  
+Value: 78
+
+Metric Name: dotnet.exceptions, Description: The number of exceptions that have been thrown in managed code., Unit: {exception}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989604Z, 2025-12-26T13:56:36.7754062Z] error.type: SocketException
+Value: 1
+
+Metric Name: dotnet.process.cpu.count, Description: The number of processors available to the process., Unit: {cpu}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989770Z, 2025-12-26T13:56:36.7754067Z]  
+Value: 16
+
+Metric Name: dotnet.process.cpu.time, Description: CPU time used by the process., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989977Z, 2025-12-26T13:56:36.7754070Z] cpu.mode: user
+Value: 0.358737
+(2025-12-26T13:56:26.7989977Z, 2025-12-26T13:56:36.7754070Z] cpu.mode: system
+Value: 0.037978
+
+Metric Name: network_monitor.checks, Description: Number of network health checks performed, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8088980Z, 2025-12-26T13:56:36.7754076Z]  
+Value: 2
+
+Metric Name: network_monitor.router_latency_ms, Description: Router ping latency distribution, Unit: ms, Metric Type: Histogram
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8095943Z, 2025-12-26T13:56:36.7754097Z]  
+Value: Sum: 4 Count: 2 Min: 2 Max: 2 
+(-Infinity,0]:0
+(0,5]:2
+(5,10]:0
+(10,25]:0
+(25,50]:0
+(50,75]:0
+(75,100]:0
+(100,250]:0
+(250,500]:0
+(500,750]:0
+(750,1000]:0
+(1000,2500]:0
+(2500,5000]:0
+(5000,7500]:0
+(7500,10000]:0
+(10000,+Infinity]:0
+
+
+Metric Name: network_monitor.internet_latency_ms, Description: Internet ping latency distribution, Unit: ms, Metric Type: Histogram
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8096211Z, 2025-12-26T13:56:36.7754112Z]  
+Value: Sum: 23 Count: 2 Min: 10 Max: 13 
+(-Infinity,0]:0
+(0,5]:0
+(5,10]:1
+(10,25]:1
+(25,50]:0
+(50,75]:0
+(75,100]:0
+(100,250]:0
+(250,500]:0
+(500,750]:0
+(750,1000]:0
+(1000,2500]:0
+(2500,5000]:0
+(5000,7500]:0
+(7500,10000]:0
+(10000,+Infinity]:0
+
+○ Good       Router:   13ms Internet: info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Network is good
+  11ms [13:56:37]          info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Network is excellent
+● Excellent  Router:    2ms Internet:   11ms [13:56:42]          Resource associated with Metrics:
+	service.name: NetworkMonitor
+	service.version: 1.0.0
+	service.instance.id: c10e6895-78a3-483d-ba32-edf53dc3b74a
+	telemetry.sdk.name: opentelemetry
+	telemetry.sdk.language: dotnet
+	telemetry.sdk.version: 1.14.0
+
+Metric Name: dotnet.gc.collections, Description: The number of garbage collections that have occurred since the process has started., Unit: {collection}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:56:46.7739311Z] gc.heap.generation: gen2
+Value: 1
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:56:46.7739311Z] gc.heap.generation: gen1
+Value: 0
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:56:46.7739311Z] gc.heap.generation: gen0
+Value: 0
+
+Metric Name: dotnet.process.memory.working_set, Description: The number of bytes of physical memory mapped to the process context., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961416Z, 2025-12-26T13:56:46.7739316Z]  
+Value: 76095488
+
+Metric Name: dotnet.gc.heap.total_allocated, Description: The approximate number of bytes allocated on the managed GC heap since the process has started. The returned value does not include any native allocations., Unit: By, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961701Z, 2025-12-26T13:56:46.7739320Z]  
+Value: 11074064
+
+Metric Name: dotnet.gc.last_collection.memory.committed_size, Description: The amount of committed virtual memory in use by the .NET GC, as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961931Z, 2025-12-26T13:56:46.7739322Z]  
+Value: 5357568
+
+Metric Name: dotnet.gc.last_collection.heap.size, Description: The managed GC heap size (including fragmentation), as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:56:46.7739330Z] gc.heap.generation: gen0
+Value: 157824
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:56:46.7739330Z] gc.heap.generation: gen1
+Value: 758904
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:56:46.7739330Z] gc.heap.generation: gen2
+Value: 0
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:56:46.7739330Z] gc.heap.generation: loh
+Value: 3172400
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:56:46.7739330Z] gc.heap.generation: poh
+Value: 9232
+
+Metric Name: dotnet.gc.last_collection.heap.fragmentation.size, Description: The heap fragmentation, as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:56:46.7739333Z] gc.heap.generation: gen0
+Value: 149504
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:56:46.7739333Z] gc.heap.generation: gen1
+Value: 6744
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:56:46.7739333Z] gc.heap.generation: gen2
+Value: 0
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:56:46.7739333Z] gc.heap.generation: loh
+Value: 704
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:56:46.7739333Z] gc.heap.generation: poh
+Value: 0
+
+Metric Name: dotnet.gc.pause.time, Description: The total amount of time paused in GC since the process has started., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965026Z, 2025-12-26T13:56:46.7739344Z]  
+Value: 0.002189
+
+Metric Name: dotnet.jit.compiled_il.size, Description: Count of bytes of intermediate language that have been compiled since the process has started., Unit: By, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965414Z, 2025-12-26T13:56:46.7739351Z]  
+Value: 268531
+
+Metric Name: dotnet.jit.compiled_methods, Description: The number of times the JIT compiler (re)compiled methods since the process has started., Unit: {method}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965617Z, 2025-12-26T13:56:46.7739356Z]  
+Value: 3689
+
+Metric Name: dotnet.jit.compilation.time, Description: The number of times the JIT compiler (re)compiled methods since the process has started., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965834Z, 2025-12-26T13:56:46.7739358Z]  
+Value: 0.5105312
+
+Metric Name: dotnet.monitor.lock_contentions, Description: The number of times there was contention when trying to acquire a monitor lock since the process has started., Unit: {contention}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7966033Z, 2025-12-26T13:56:46.7739360Z]  
+Value: 0
+
+Metric Name: dotnet.thread_pool.thread.count, Description: The number of thread pool threads that currently exist., Unit: {thread}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7988533Z, 2025-12-26T13:56:46.7739362Z]  
+Value: 3
+
+Metric Name: dotnet.thread_pool.work_item.count, Description: The number of work items that the thread pool has completed since the process has started., Unit: {work_item}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7988897Z, 2025-12-26T13:56:46.7739365Z]  
+Value: 79
+
+Metric Name: dotnet.thread_pool.queue.length, Description: The number of work items that are currently queued to be processed by the thread pool., Unit: {work_item}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989074Z, 2025-12-26T13:56:46.7739368Z]  
+Value: 0
+
+Metric Name: dotnet.timer.count, Description: The number of timer instances that are currently active. An active timer is registered to tick at some point in the future and has not yet been canceled., Unit: {timer}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989241Z, 2025-12-26T13:56:46.7739370Z]  
+Value: 4
+
+Metric Name: dotnet.assembly.count, Description: The number of .NET assemblies that are currently loaded., Unit: {assembly}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989424Z, 2025-12-26T13:56:46.7739371Z]  
+Value: 80
+
+Metric Name: dotnet.exceptions, Description: The number of exceptions that have been thrown in managed code., Unit: {exception}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989604Z, 2025-12-26T13:56:46.7739376Z] error.type: SocketException
+Value: 1
+
+Metric Name: dotnet.process.cpu.count, Description: The number of processors available to the process., Unit: {cpu}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989770Z, 2025-12-26T13:56:46.7739377Z]  
+Value: 16
+
+Metric Name: dotnet.process.cpu.time, Description: CPU time used by the process., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989977Z, 2025-12-26T13:56:46.7739380Z] cpu.mode: user
+Value: 0.606448
+(2025-12-26T13:56:26.7989977Z, 2025-12-26T13:56:46.7739380Z] cpu.mode: system
+Value: 0.053082
+
+Metric Name: network_monitor.checks, Description: Number of network health checks performed, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8088980Z, 2025-12-26T13:56:46.7739383Z]  
+Value: 4
+
+Metric Name: network_monitor.router_latency_ms, Description: Router ping latency distribution, Unit: ms, Metric Type: Histogram
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8095943Z, 2025-12-26T13:56:46.7739394Z]  
+Value: Sum: 19 Count: 4 Min: 2 Max: 13 
+(-Infinity,0]:0
+(0,5]:3
+(5,10]:0
+(10,25]:1
+(25,50]:0
+(50,75]:0
+(75,100]:0
+(100,250]:0
+(250,500]:0
+(500,750]:0
+(750,1000]:0
+(1000,2500]:0
+(2500,5000]:0
+(5000,7500]:0
+(7500,10000]:0
+(10000,+Infinity]:0
+
+
+Metric Name: network_monitor.internet_latency_ms, Description: Internet ping latency distribution, Unit: ms, Metric Type: Histogram
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8096211Z, 2025-12-26T13:56:46.7739401Z]  
+Value: Sum: 45 Count: 4 Min: 10 Max: 13 
+(-Infinity,0]:0
+(0,5]:0
+(5,10]:1
+(10,25]:3
+(25,50]:0
+(50,75]:0
+(75,100]:0
+(100,250]:0
+(250,500]:0
+(500,750]:0
+(750,1000]:0
+(1000,2500]:0
+(2500,5000]:0
+(5000,7500]:0
+(7500,10000]:0
+(10000,+Infinity]:0
+
+● Excellent  Router:   10ms Internet:   20ms [13:56:52]          Resource associated with Metrics:
+	service.name: NetworkMonitor
+	service.version: 1.0.0
+	service.instance.id: c10e6895-78a3-483d-ba32-edf53dc3b74a
+	telemetry.sdk.name: opentelemetry
+	telemetry.sdk.language: dotnet
+	telemetry.sdk.version: 1.14.0
+
+Metric Name: dotnet.gc.collections, Description: The number of garbage collections that have occurred since the process has started., Unit: {collection}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:56:56.7739221Z] gc.heap.generation: gen2
+Value: 1
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:56:56.7739221Z] gc.heap.generation: gen1
+Value: 0
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:56:56.7739221Z] gc.heap.generation: gen0
+Value: 0
+
+Metric Name: dotnet.process.memory.working_set, Description: The number of bytes of physical memory mapped to the process context., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961416Z, 2025-12-26T13:56:56.7739225Z]  
+Value: 80240640
+
+Metric Name: dotnet.gc.heap.total_allocated, Description: The approximate number of bytes allocated on the managed GC heap since the process has started. The returned value does not include any native allocations., Unit: By, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961701Z, 2025-12-26T13:56:56.7739227Z]  
+Value: 12093128
+
+Metric Name: dotnet.gc.last_collection.memory.committed_size, Description: The amount of committed virtual memory in use by the .NET GC, as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961931Z, 2025-12-26T13:56:56.7739229Z]  
+Value: 5357568
+
+Metric Name: dotnet.gc.last_collection.heap.size, Description: The managed GC heap size (including fragmentation), as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:56:56.7739239Z] gc.heap.generation: gen0
+Value: 157824
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:56:56.7739239Z] gc.heap.generation: gen1
+Value: 758904
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:56:56.7739239Z] gc.heap.generation: gen2
+Value: 0
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:56:56.7739239Z] gc.heap.generation: loh
+Value: 3172400
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:56:56.7739239Z] gc.heap.generation: poh
+Value: 9232
+
+Metric Name: dotnet.gc.last_collection.heap.fragmentation.size, Description: The heap fragmentation, as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:56:56.7739242Z] gc.heap.generation: gen0
+Value: 149504
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:56:56.7739242Z] gc.heap.generation: gen1
+Value: 6744
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:56:56.7739242Z] gc.heap.generation: gen2
+Value: 0
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:56:56.7739242Z] gc.heap.generation: loh
+Value: 704
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:56:56.7739242Z] gc.heap.generation: poh
+Value: 0
+
+Metric Name: dotnet.gc.pause.time, Description: The total amount of time paused in GC since the process has started., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965026Z, 2025-12-26T13:56:56.7739262Z]  
+Value: 0.002189
+
+Metric Name: dotnet.jit.compiled_il.size, Description: Count of bytes of intermediate language that have been compiled since the process has started., Unit: By, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965414Z, 2025-12-26T13:56:56.7739271Z]  
+Value: 346152
+
+Metric Name: dotnet.jit.compiled_methods, Description: The number of times the JIT compiler (re)compiled methods since the process has started., Unit: {method}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965617Z, 2025-12-26T13:56:56.7739273Z]  
+Value: 4498
+
+Metric Name: dotnet.jit.compilation.time, Description: The number of times the JIT compiler (re)compiled methods since the process has started., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965834Z, 2025-12-26T13:56:56.7739274Z]  
+Value: 0.827302
+
+Metric Name: dotnet.monitor.lock_contentions, Description: The number of times there was contention when trying to acquire a monitor lock since the process has started., Unit: {contention}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7966033Z, 2025-12-26T13:56:56.7739276Z]  
+Value: 0
+
+Metric Name: dotnet.thread_pool.thread.count, Description: The number of thread pool threads that currently exist., Unit: {thread}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7988533Z, 2025-12-26T13:56:56.7739278Z]  
+Value: 3
+
+Metric Name: dotnet.thread_pool.work_item.count, Description: The number of work items that the thread pool has completed since the process has started., Unit: {work_item}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7988897Z, 2025-12-26T13:56:56.7739280Z]  
+Value: 117
+
+Metric Name: dotnet.thread_pool.queue.length, Description: The number of work items that are currently queued to be processed by the thread pool., Unit: {work_item}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989074Z, 2025-12-26T13:56:56.7739282Z]  
+Value: 0
+
+Metric Name: dotnet.timer.count, Description: The number of timer instances that are currently active. An active timer is registered to tick at some point in the future and has not yet been canceled., Unit: {timer}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989241Z, 2025-12-26T13:56:56.7739284Z]  
+Value: 4
+
+Metric Name: dotnet.assembly.count, Description: The number of .NET assemblies that are currently loaded., Unit: {assembly}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989424Z, 2025-12-26T13:56:56.7739286Z]  
+Value: 80
+
+Metric Name: dotnet.exceptions, Description: The number of exceptions that have been thrown in managed code., Unit: {exception}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989604Z, 2025-12-26T13:56:56.7739290Z] error.type: SocketException
+Value: 1
+
+Metric Name: dotnet.process.cpu.count, Description: The number of processors available to the process., Unit: {cpu}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989770Z, 2025-12-26T13:56:56.7739292Z]  
+Value: 16
+
+Metric Name: dotnet.process.cpu.time, Description: CPU time used by the process., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989977Z, 2025-12-26T13:56:56.7739294Z] cpu.mode: user
+Value: 0.930011
+(2025-12-26T13:56:26.7989977Z, 2025-12-26T13:56:56.7739294Z] cpu.mode: system
+Value: 0.067777
+
+Metric Name: network_monitor.checks, Description: Number of network health checks performed, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8088980Z, 2025-12-26T13:56:56.7739298Z]  
+Value: 6
+
+Metric Name: network_monitor.router_latency_ms, Description: Router ping latency distribution, Unit: ms, Metric Type: Histogram
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8095943Z, 2025-12-26T13:56:56.7739308Z]  
+Value: Sum: 31 Count: 6 Min: 2 Max: 13 
+(-Infinity,0]:0
+(0,5]:4
+(5,10]:1
+(10,25]:1
+(25,50]:0
+(50,75]:0
+(75,100]:0
+(100,250]:0
+(250,500]:0
+(500,750]:0
+(750,1000]:0
+(1000,2500]:0
+(2500,5000]:0
+(5000,7500]:0
+(7500,10000]:0
+(10000,+Infinity]:0
+
+
+Metric Name: network_monitor.internet_latency_ms, Description: Internet ping latency distribution, Unit: ms, Metric Type: Histogram
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8096211Z, 2025-12-26T13:56:56.7739315Z]  
+Value: Sum: 73 Count: 6 Min: 8 Max: 20 
+(-Infinity,0]:0
+(0,5]:0
+(5,10]:2
+(10,25]:4
+(25,50]:0
+(50,75]:0
+(75,100]:0
+(100,250]:0
+(250,500]:0
+(500,750]:0
+(750,1000]:0
+(1000,2500]:0
+(2500,5000]:0
+(5000,7500]:0
+(7500,10000]:0
+(10000,+Infinity]:0
+
+● Excellent  Router:    2ms Internet:    8ms [13:57:03]          Resource associated with Metrics:
+	service.name: NetworkMonitor
+	service.version: 1.0.0
+	service.instance.id: c10e6895-78a3-483d-ba32-edf53dc3b74a
+	telemetry.sdk.name: opentelemetry
+	telemetry.sdk.language: dotnet
+	telemetry.sdk.version: 1.14.0
+
+Metric Name: dotnet.gc.collections, Description: The number of garbage collections that have occurred since the process has started., Unit: {collection}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:57:06.7739437Z] gc.heap.generation: gen2
+Value: 1
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:57:06.7739437Z] gc.heap.generation: gen1
+Value: 0
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:57:06.7739437Z] gc.heap.generation: gen0
+Value: 0
+
+Metric Name: dotnet.process.memory.working_set, Description: The number of bytes of physical memory mapped to the process context., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961416Z, 2025-12-26T13:57:06.7739441Z]  
+Value: 81801216
+
+Metric Name: dotnet.gc.heap.total_allocated, Description: The approximate number of bytes allocated on the managed GC heap since the process has started. The returned value does not include any native allocations., Unit: By, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961701Z, 2025-12-26T13:57:06.7739444Z]  
+Value: 13121704
+
+Metric Name: dotnet.gc.last_collection.memory.committed_size, Description: The amount of committed virtual memory in use by the .NET GC, as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961931Z, 2025-12-26T13:57:06.7739447Z]  
+Value: 5357568
+
+Metric Name: dotnet.gc.last_collection.heap.size, Description: The managed GC heap size (including fragmentation), as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:06.7739453Z] gc.heap.generation: gen0
+Value: 157824
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:06.7739453Z] gc.heap.generation: gen1
+Value: 758904
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:06.7739453Z] gc.heap.generation: gen2
+Value: 0
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:06.7739453Z] gc.heap.generation: loh
+Value: 3172400
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:06.7739453Z] gc.heap.generation: poh
+Value: 9232
+
+Metric Name: dotnet.gc.last_collection.heap.fragmentation.size, Description: The heap fragmentation, as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:06.7739455Z] gc.heap.generation: gen0
+Value: 149504
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:06.7739455Z] gc.heap.generation: gen1
+Value: 6744
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:06.7739455Z] gc.heap.generation: gen2
+Value: 0
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:06.7739455Z] gc.heap.generation: loh
+Value: 704
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:06.7739455Z] gc.heap.generation: poh
+Value: 0
+
+Metric Name: dotnet.gc.pause.time, Description: The total amount of time paused in GC since the process has started., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965026Z, 2025-12-26T13:57:06.7739458Z]  
+Value: 0.002189
+
+Metric Name: dotnet.jit.compiled_il.size, Description: Count of bytes of intermediate language that have been compiled since the process has started., Unit: By, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965414Z, 2025-12-26T13:57:06.7739462Z]  
+Value: 374576
+
+Metric Name: dotnet.jit.compiled_methods, Description: The number of times the JIT compiler (re)compiled methods since the process has started., Unit: {method}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965617Z, 2025-12-26T13:57:06.7739465Z]  
+Value: 4725
+
+Metric Name: dotnet.jit.compilation.time, Description: The number of times the JIT compiler (re)compiled methods since the process has started., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965834Z, 2025-12-26T13:57:06.7739469Z]  
+Value: 0.9400527
+
+Metric Name: dotnet.monitor.lock_contentions, Description: The number of times there was contention when trying to acquire a monitor lock since the process has started., Unit: {contention}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7966033Z, 2025-12-26T13:57:06.7739473Z]  
+Value: 0
+
+Metric Name: dotnet.thread_pool.thread.count, Description: The number of thread pool threads that currently exist., Unit: {thread}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7988533Z, 2025-12-26T13:57:06.7739477Z]  
+Value: 3
+
+Metric Name: dotnet.thread_pool.work_item.count, Description: The number of work items that the thread pool has completed since the process has started., Unit: {work_item}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7988897Z, 2025-12-26T13:57:06.7739482Z]  
+Value: 156
+
+Metric Name: dotnet.thread_pool.queue.length, Description: The number of work items that are currently queued to be processed by the thread pool., Unit: {work_item}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989074Z, 2025-12-26T13:57:06.7739485Z]  
+Value: 0
+
+Metric Name: dotnet.timer.count, Description: The number of timer instances that are currently active. An active timer is registered to tick at some point in the future and has not yet been canceled., Unit: {timer}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989241Z, 2025-12-26T13:57:06.7739488Z]  
+Value: 4
+
+Metric Name: dotnet.assembly.count, Description: The number of .NET assemblies that are currently loaded., Unit: {assembly}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989424Z, 2025-12-26T13:57:06.7739491Z]  
+Value: 80
+
+Metric Name: dotnet.exceptions, Description: The number of exceptions that have been thrown in managed code., Unit: {exception}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989604Z, 2025-12-26T13:57:06.7739501Z] error.type: SocketException
+Value: 1
+
+Metric Name: dotnet.process.cpu.count, Description: The number of processors available to the process., Unit: {cpu}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989770Z, 2025-12-26T13:57:06.7739504Z]  
+Value: 16
+
+Metric Name: dotnet.process.cpu.time, Description: CPU time used by the process., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989977Z, 2025-12-26T13:57:06.7739506Z] cpu.mode: user
+Value: 1.049322
+(2025-12-26T13:56:26.7989977Z, 2025-12-26T13:57:06.7739506Z] cpu.mode: system
+Value: 0.077857
+
+Metric Name: network_monitor.checks, Description: Number of network health checks performed, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8088980Z, 2025-12-26T13:57:06.7739512Z]  
+Value: 8
+
+Metric Name: network_monitor.router_latency_ms, Description: Router ping latency distribution, Unit: ms, Metric Type: Histogram
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8095943Z, 2025-12-26T13:57:06.7739528Z]  
+Value: Sum: 35 Count: 8 Min: 2 Max: 13 
+(-Infinity,0]:0
+(0,5]:6
+(5,10]:1
+(10,25]:1
+(25,50]:0
+(50,75]:0
+(75,100]:0
+(100,250]:0
+(250,500]:0
+(500,750]:0
+(750,1000]:0
+(1000,2500]:0
+(2500,5000]:0
+(5000,7500]:0
+(7500,10000]:0
+(10000,+Infinity]:0
+
+
+Metric Name: network_monitor.internet_latency_ms, Description: Internet ping latency distribution, Unit: ms, Metric Type: Histogram
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8096211Z, 2025-12-26T13:57:06.7739540Z]  
+Value: Sum: 98 Count: 8 Min: 8 Max: 20 
+(-Infinity,0]:0
+(0,5]:0
+(5,10]:3
+(10,25]:5
+(25,50]:0
+(50,75]:0
+(75,100]:0
+(100,250]:0
+(250,500]:0
+(500,750]:0
+(750,1000]:0
+(1000,2500]:0
+(2500,5000]:0
+(5000,7500]:0
+(7500,10000]:0
+(10000,+Infinity]:0
+
+● Excellent  Router:    2ms Internet:   10ms [13:57:13]          Resource associated with Metrics:
+	service.name: NetworkMonitor
+	service.version: 1.0.0
+	service.instance.id: c10e6895-78a3-483d-ba32-edf53dc3b74a
+	telemetry.sdk.name: opentelemetry
+	telemetry.sdk.language: dotnet
+	telemetry.sdk.version: 1.14.0
+
+Metric Name: dotnet.gc.collections, Description: The number of garbage collections that have occurred since the process has started., Unit: {collection}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:57:16.7748514Z] gc.heap.generation: gen2
+Value: 1
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:57:16.7748514Z] gc.heap.generation: gen1
+Value: 0
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:57:16.7748514Z] gc.heap.generation: gen0
+Value: 0
+
+Metric Name: dotnet.process.memory.working_set, Description: The number of bytes of physical memory mapped to the process context., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961416Z, 2025-12-26T13:57:16.7748520Z]  
+Value: 82849792
+
+Metric Name: dotnet.gc.heap.total_allocated, Description: The approximate number of bytes allocated on the managed GC heap since the process has started. The returned value does not include any native allocations., Unit: By, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961701Z, 2025-12-26T13:57:16.7748522Z]  
+Value: 14109800
+
+Metric Name: dotnet.gc.last_collection.memory.committed_size, Description: The amount of committed virtual memory in use by the .NET GC, as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961931Z, 2025-12-26T13:57:16.7748523Z]  
+Value: 5357568
+
+Metric Name: dotnet.gc.last_collection.heap.size, Description: The managed GC heap size (including fragmentation), as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:16.7748526Z] gc.heap.generation: gen0
+Value: 157824
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:16.7748526Z] gc.heap.generation: gen1
+Value: 758904
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:16.7748526Z] gc.heap.generation: gen2
+Value: 0
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:16.7748526Z] gc.heap.generation: loh
+Value: 3172400
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:16.7748526Z] gc.heap.generation: poh
+Value: 9232
+
+Metric Name: dotnet.gc.last_collection.heap.fragmentation.size, Description: The heap fragmentation, as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:16.7748528Z] gc.heap.generation: gen0
+Value: 149504
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:16.7748528Z] gc.heap.generation: gen1
+Value: 6744
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:16.7748528Z] gc.heap.generation: gen2
+Value: 0
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:16.7748528Z] gc.heap.generation: loh
+Value: 704
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:16.7748528Z] gc.heap.generation: poh
+Value: 0
+
+Metric Name: dotnet.gc.pause.time, Description: The total amount of time paused in GC since the process has started., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965026Z, 2025-12-26T13:57:16.7748530Z]  
+Value: 0.002189
+
+Metric Name: dotnet.jit.compiled_il.size, Description: Count of bytes of intermediate language that have been compiled since the process has started., Unit: By, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965414Z, 2025-12-26T13:57:16.7748532Z]  
+Value: 380184
+
+Metric Name: dotnet.jit.compiled_methods, Description: The number of times the JIT compiler (re)compiled methods since the process has started., Unit: {method}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965617Z, 2025-12-26T13:57:16.7748534Z]  
+Value: 4797
+
+Metric Name: dotnet.jit.compilation.time, Description: The number of times the JIT compiler (re)compiled methods since the process has started., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965834Z, 2025-12-26T13:57:16.7748535Z]  
+Value: 0.9712446
+
+Metric Name: dotnet.monitor.lock_contentions, Description: The number of times there was contention when trying to acquire a monitor lock since the process has started., Unit: {contention}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7966033Z, 2025-12-26T13:57:16.7748537Z]  
+Value: 0
+
+Metric Name: dotnet.thread_pool.thread.count, Description: The number of thread pool threads that currently exist., Unit: {thread}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7988533Z, 2025-12-26T13:57:16.7748539Z]  
+Value: 2
+
+Metric Name: dotnet.thread_pool.work_item.count, Description: The number of work items that the thread pool has completed since the process has started., Unit: {work_item}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7988897Z, 2025-12-26T13:57:16.7748541Z]  
+Value: 194
+
+Metric Name: dotnet.thread_pool.queue.length, Description: The number of work items that are currently queued to be processed by the thread pool., Unit: {work_item}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989074Z, 2025-12-26T13:57:16.7748543Z]  
+Value: 0
+
+Metric Name: dotnet.timer.count, Description: The number of timer instances that are currently active. An active timer is registered to tick at some point in the future and has not yet been canceled., Unit: {timer}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989241Z, 2025-12-26T13:57:16.7748545Z]  
+Value: 4
+
+Metric Name: dotnet.assembly.count, Description: The number of .NET assemblies that are currently loaded., Unit: {assembly}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989424Z, 2025-12-26T13:57:16.7748547Z]  
+Value: 80
+
+Metric Name: dotnet.exceptions, Description: The number of exceptions that have been thrown in managed code., Unit: {exception}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989604Z, 2025-12-26T13:57:16.7748551Z] error.type: SocketException
+Value: 1
+
+Metric Name: dotnet.process.cpu.count, Description: The number of processors available to the process., Unit: {cpu}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989770Z, 2025-12-26T13:57:16.7748552Z]  
+Value: 16
+
+Metric Name: dotnet.process.cpu.time, Description: CPU time used by the process., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989977Z, 2025-12-26T13:57:16.7748554Z] cpu.mode: user
+Value: 1.088399
+(2025-12-26T13:56:26.7989977Z, 2025-12-26T13:57:16.7748554Z] cpu.mode: system
+Value: 0.088417
+
+Metric Name: network_monitor.checks, Description: Number of network health checks performed, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8088980Z, 2025-12-26T13:57:16.7748559Z]  
+Value: 10
+
+Metric Name: network_monitor.router_latency_ms, Description: Router ping latency distribution, Unit: ms, Metric Type: Histogram
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8095943Z, 2025-12-26T13:57:16.7748569Z]  
+Value: Sum: 39 Count: 10 Min: 2 Max: 13 
+(-Infinity,0]:0
+(0,5]:8
+(5,10]:1
+(10,25]:1
+(25,50]:0
+(50,75]:0
+(75,100]:0
+(100,250]:0
+(250,500]:0
+(500,750]:0
+(750,1000]:0
+(1000,2500]:0
+(2500,5000]:0
+(5000,7500]:0
+(7500,10000]:0
+(10000,+Infinity]:0
+
+
+Metric Name: network_monitor.internet_latency_ms, Description: Internet ping latency distribution, Unit: ms, Metric Type: Histogram
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8096211Z, 2025-12-26T13:57:16.7748575Z]  
+Value: Sum: 118 Count: 10 Min: 8 Max: 20 
+(-Infinity,0]:0
+(0,5]:0
+(5,10]:5
+(10,25]:5
+(25,50]:0
+(50,75]:0
+(75,100]:0
+(100,250]:0
+(250,500]:0
+(500,750]:0
+(750,1000]:0
+(1000,2500]:0
+(2500,5000]:0
+(5000,7500]:0
+(7500,10000]:0
+(10000,+Infinity]:0
+
+● Excellent  Router:    2ms Internet:    8ms [13:57:23]          Resource associated with Metrics:
+	service.name: NetworkMonitor
+	service.version: 1.0.0
+	service.instance.id: c10e6895-78a3-483d-ba32-edf53dc3b74a
+	telemetry.sdk.name: opentelemetry
+	telemetry.sdk.language: dotnet
+	telemetry.sdk.version: 1.14.0
+
+Metric Name: dotnet.gc.collections, Description: The number of garbage collections that have occurred since the process has started., Unit: {collection}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:57:26.7748551Z] gc.heap.generation: gen2
+Value: 1
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:57:26.7748551Z] gc.heap.generation: gen1
+Value: 0
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:57:26.7748551Z] gc.heap.generation: gen0
+Value: 0
+
+Metric Name: dotnet.process.memory.working_set, Description: The number of bytes of physical memory mapped to the process context., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961416Z, 2025-12-26T13:57:26.7748557Z]  
+Value: 84492288
+
+Metric Name: dotnet.gc.heap.total_allocated, Description: The approximate number of bytes allocated on the managed GC heap since the process has started. The returned value does not include any native allocations., Unit: By, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961701Z, 2025-12-26T13:57:26.7748560Z]  
+Value: 15127880
+
+Metric Name: dotnet.gc.last_collection.memory.committed_size, Description: The amount of committed virtual memory in use by the .NET GC, as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961931Z, 2025-12-26T13:57:26.7748564Z]  
+Value: 5357568
+
+Metric Name: dotnet.gc.last_collection.heap.size, Description: The managed GC heap size (including fragmentation), as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:26.7748570Z] gc.heap.generation: gen0
+Value: 157824
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:26.7748570Z] gc.heap.generation: gen1
+Value: 758904
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:26.7748570Z] gc.heap.generation: gen2
+Value: 0
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:26.7748570Z] gc.heap.generation: loh
+Value: 3172400
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:26.7748570Z] gc.heap.generation: poh
+Value: 9232
+
+Metric Name: dotnet.gc.last_collection.heap.fragmentation.size, Description: The heap fragmentation, as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:26.7748572Z] gc.heap.generation: gen0
+Value: 149504
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:26.7748572Z] gc.heap.generation: gen1
+Value: 6744
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:26.7748572Z] gc.heap.generation: gen2
+Value: 0
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:26.7748572Z] gc.heap.generation: loh
+Value: 704
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:26.7748572Z] gc.heap.generation: poh
+Value: 0
+
+Metric Name: dotnet.gc.pause.time, Description: The total amount of time paused in GC since the process has started., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965026Z, 2025-12-26T13:57:26.7748576Z]  
+Value: 0.002189
+
+Metric Name: dotnet.jit.compiled_il.size, Description: Count of bytes of intermediate language that have been compiled since the process has started., Unit: By, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965414Z, 2025-12-26T13:57:26.7748579Z]  
+Value: 409327
+
+Metric Name: dotnet.jit.compiled_methods, Description: The number of times the JIT compiler (re)compiled methods since the process has started., Unit: {method}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965617Z, 2025-12-26T13:57:26.7748582Z]  
+Value: 5075
+
+Metric Name: dotnet.jit.compilation.time, Description: The number of times the JIT compiler (re)compiled methods since the process has started., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965834Z, 2025-12-26T13:57:26.7748585Z]  
+Value: 1.1116144
+
+Metric Name: dotnet.monitor.lock_contentions, Description: The number of times there was contention when trying to acquire a monitor lock since the process has started., Unit: {contention}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7966033Z, 2025-12-26T13:57:26.7748588Z]  
+Value: 0
+
+Metric Name: dotnet.thread_pool.thread.count, Description: The number of thread pool threads that currently exist., Unit: {thread}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7988533Z, 2025-12-26T13:57:26.7748591Z]  
+Value: 3
+
+Metric Name: dotnet.thread_pool.work_item.count, Description: The number of work items that the thread pool has completed since the process has started., Unit: {work_item}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7988897Z, 2025-12-26T13:57:26.7748597Z]  
+Value: 233
+
+Metric Name: dotnet.thread_pool.queue.length, Description: The number of work items that are currently queued to be processed by the thread pool., Unit: {work_item}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989074Z, 2025-12-26T13:57:26.7748600Z]  
+Value: 0
+
+Metric Name: dotnet.timer.count, Description: The number of timer instances that are currently active. An active timer is registered to tick at some point in the future and has not yet been canceled., Unit: {timer}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989241Z, 2025-12-26T13:57:26.7748604Z]  
+Value: 4
+
+Metric Name: dotnet.assembly.count, Description: The number of .NET assemblies that are currently loaded., Unit: {assembly}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989424Z, 2025-12-26T13:57:26.7748607Z]  
+Value: 80
+
+Metric Name: dotnet.exceptions, Description: The number of exceptions that have been thrown in managed code., Unit: {exception}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989604Z, 2025-12-26T13:57:26.7748616Z] error.type: SocketException
+Value: 1
+
+Metric Name: dotnet.process.cpu.count, Description: The number of processors available to the process., Unit: {cpu}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989770Z, 2025-12-26T13:57:26.7748619Z]  
+Value: 16
+
+Metric Name: dotnet.process.cpu.time, Description: CPU time used by the process., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989977Z, 2025-12-26T13:57:26.7748622Z] cpu.mode: user
+Value: 1.237081
+(2025-12-26T13:56:26.7989977Z, 2025-12-26T13:57:26.7748622Z] cpu.mode: system
+Value: 0.099826
+
+Metric Name: network_monitor.checks, Description: Number of network health checks performed, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8088980Z, 2025-12-26T13:57:26.7748628Z]  
+Value: 12
+
+Metric Name: network_monitor.router_latency_ms, Description: Router ping latency distribution, Unit: ms, Metric Type: Histogram
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8095943Z, 2025-12-26T13:57:26.7748644Z]  
+Value: Sum: 43 Count: 12 Min: 2 Max: 13 
+(-Infinity,0]:0
+(0,5]:10
+(5,10]:1
+(10,25]:1
+(25,50]:0
+(50,75]:0
+(75,100]:0
+(100,250]:0
+(250,500]:0
+(500,750]:0
+(750,1000]:0
+(1000,2500]:0
+(2500,5000]:0
+(5000,7500]:0
+(7500,10000]:0
+(10000,+Infinity]:0
+
+
+Metric Name: network_monitor.internet_latency_ms, Description: Internet ping latency distribution, Unit: ms, Metric Type: Histogram
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8096211Z, 2025-12-26T13:57:26.7748655Z]  
+Value: Sum: 136 Count: 12 Min: 8 Max: 20 
+(-Infinity,0]:0
+(0,5]:0
+(5,10]:7
+(10,25]:5
+(25,50]:0
+(50,75]:0
+(75,100]:0
+(100,250]:0
+(250,500]:0
+(500,750]:0
+(750,1000]:0
+(1000,2500]:0
+(2500,5000]:0
+(5000,7500]:0
+(7500,10000]:0
+(10000,+Infinity]:0
+
+● Excellent  Router:    2ms Internet:   10ms [13:57:34]          Resource associated with Metrics:
+	service.name: NetworkMonitor
+	service.version: 1.0.0
+	service.instance.id: c10e6895-78a3-483d-ba32-edf53dc3b74a
+	telemetry.sdk.name: opentelemetry
+	telemetry.sdk.language: dotnet
+	telemetry.sdk.version: 1.14.0
+
+Metric Name: dotnet.gc.collections, Description: The number of garbage collections that have occurred since the process has started., Unit: {collection}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:57:36.7749986Z] gc.heap.generation: gen2
+Value: 1
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:57:36.7749986Z] gc.heap.generation: gen1
+Value: 0
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:57:36.7749986Z] gc.heap.generation: gen0
+Value: 0
+
+Metric Name: dotnet.process.memory.working_set, Description: The number of bytes of physical memory mapped to the process context., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961416Z, 2025-12-26T13:57:36.7749998Z]  
+Value: 85536768
+
+Metric Name: dotnet.gc.heap.total_allocated, Description: The approximate number of bytes allocated on the managed GC heap since the process has started. The returned value does not include any native allocations., Unit: By, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961701Z, 2025-12-26T13:57:36.7750001Z]  
+Value: 16132656
+
+Metric Name: dotnet.gc.last_collection.memory.committed_size, Description: The amount of committed virtual memory in use by the .NET GC, as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961931Z, 2025-12-26T13:57:36.7750006Z]  
+Value: 5357568
+
+Metric Name: dotnet.gc.last_collection.heap.size, Description: The managed GC heap size (including fragmentation), as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:36.7750010Z] gc.heap.generation: gen0
+Value: 157824
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:36.7750010Z] gc.heap.generation: gen1
+Value: 758904
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:36.7750010Z] gc.heap.generation: gen2
+Value: 0
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:36.7750010Z] gc.heap.generation: loh
+Value: 3172400
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:36.7750010Z] gc.heap.generation: poh
+Value: 9232
+
+Metric Name: dotnet.gc.last_collection.heap.fragmentation.size, Description: The heap fragmentation, as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:36.7750013Z] gc.heap.generation: gen0
+Value: 149504
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:36.7750013Z] gc.heap.generation: gen1
+Value: 6744
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:36.7750013Z] gc.heap.generation: gen2
+Value: 0
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:36.7750013Z] gc.heap.generation: loh
+Value: 704
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:36.7750013Z] gc.heap.generation: poh
+Value: 0
+
+Metric Name: dotnet.gc.pause.time, Description: The total amount of time paused in GC since the process has started., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965026Z, 2025-12-26T13:57:36.7750016Z]  
+Value: 0.002189
+
+Metric Name: dotnet.jit.compiled_il.size, Description: Count of bytes of intermediate language that have been compiled since the process has started., Unit: By, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965414Z, 2025-12-26T13:57:36.7750021Z]  
+Value: 411909
+
+Metric Name: dotnet.jit.compiled_methods, Description: The number of times the JIT compiler (re)compiled methods since the process has started., Unit: {method}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965617Z, 2025-12-26T13:57:36.7750024Z]  
+Value: 5107
+
+Metric Name: dotnet.jit.compilation.time, Description: The number of times the JIT compiler (re)compiled methods since the process has started., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965834Z, 2025-12-26T13:57:36.7750027Z]  
+Value: 1.1238183
+
+Metric Name: dotnet.monitor.lock_contentions, Description: The number of times there was contention when trying to acquire a monitor lock since the process has started., Unit: {contention}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7966033Z, 2025-12-26T13:57:36.7750029Z]  
+Value: 0
+
+Metric Name: dotnet.thread_pool.thread.count, Description: The number of thread pool threads that currently exist., Unit: {thread}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7988533Z, 2025-12-26T13:57:36.7750032Z]  
+Value: 3
+
+Metric Name: dotnet.thread_pool.work_item.count, Description: The number of work items that the thread pool has completed since the process has started., Unit: {work_item}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7988897Z, 2025-12-26T13:57:36.7750037Z]  
+Value: 271
+
+Metric Name: dotnet.thread_pool.queue.length, Description: The number of work items that are currently queued to be processed by the thread pool., Unit: {work_item}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989074Z, 2025-12-26T13:57:36.7750040Z]  
+Value: 0
+
+Metric Name: dotnet.timer.count, Description: The number of timer instances that are currently active. An active timer is registered to tick at some point in the future and has not yet been canceled., Unit: {timer}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989241Z, 2025-12-26T13:57:36.7750042Z]  
+Value: 4
+
+Metric Name: dotnet.assembly.count, Description: The number of .NET assemblies that are currently loaded., Unit: {assembly}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989424Z, 2025-12-26T13:57:36.7750045Z]  
+Value: 80
+
+Metric Name: dotnet.exceptions, Description: The number of exceptions that have been thrown in managed code., Unit: {exception}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989604Z, 2025-12-26T13:57:36.7750052Z] error.type: SocketException
+Value: 1
+
+Metric Name: dotnet.process.cpu.count, Description: The number of processors available to the process., Unit: {cpu}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989770Z, 2025-12-26T13:57:36.7750055Z]  
+Value: 16
+
+Metric Name: dotnet.process.cpu.time, Description: CPU time used by the process., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989977Z, 2025-12-26T13:57:36.7750058Z] cpu.mode: user
+Value: 1.259204
+(2025-12-26T13:56:26.7989977Z, 2025-12-26T13:57:36.7750058Z] cpu.mode: system
+Value: 0.109236
+
+Metric Name: network_monitor.checks, Description: Number of network health checks performed, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8088980Z, 2025-12-26T13:57:36.7750063Z]  
+Value: 14
+
+Metric Name: network_monitor.router_latency_ms, Description: Router ping latency distribution, Unit: ms, Metric Type: Histogram
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8095943Z, 2025-12-26T13:57:36.7750080Z]  
+Value: Sum: 47 Count: 14 Min: 2 Max: 13 
+(-Infinity,0]:0
+(0,5]:12
+(5,10]:1
+(10,25]:1
+(25,50]:0
+(50,75]:0
+(75,100]:0
+(100,250]:0
+(250,500]:0
+(500,750]:0
+(750,1000]:0
+(1000,2500]:0
+(2500,5000]:0
+(5000,7500]:0
+(7500,10000]:0
+(10000,+Infinity]:0
+
+
+Metric Name: network_monitor.internet_latency_ms, Description: Internet ping latency distribution, Unit: ms, Metric Type: Histogram
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8096211Z, 2025-12-26T13:57:36.7750093Z]  
+Value: Sum: 157 Count: 14 Min: 8 Max: 20 
+(-Infinity,0]:0
+(0,5]:0
+(5,10]:8
+(10,25]:6
+(25,50]:0
+(50,75]:0
+(75,100]:0
+(100,250]:0
+(250,500]:0
+(500,750]:0
+(750,1000]:0
+(1000,2500]:0
+(2500,5000]:0
+(5000,7500]:0
+(7500,10000]:0
+(10000,+Infinity]:0
+
+● Excellent  Router:    2ms Internet:    9ms [13:57:44]          ^C
+
+⏹️  Shutting down...
+info: NetworkMonitor.Core.Services.MonitorBackgroundService[0]                                                                                                                                                     
+      Network Monitor stopped
+Resource associated with Metrics:
+	service.name: NetworkMonitor
+	service.version: 1.0.0
+	service.instance.id: c10e6895-78a3-483d-ba32-edf53dc3b74a
+	telemetry.sdk.name: opentelemetry
+	telemetry.sdk.language: dotnet
+	telemetry.sdk.version: 1.14.0
+
+Metric Name: dotnet.gc.collections, Description: The number of garbage collections that have occurred since the process has started., Unit: {collection}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:57:45.6906631Z] gc.heap.generation: gen2
+Value: 1
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:57:45.6906631Z] gc.heap.generation: gen1
+Value: 1
+(2025-12-26T13:56:26.7950050Z, 2025-12-26T13:57:45.6906631Z] gc.heap.generation: gen0
+Value: 0
+
+Metric Name: dotnet.process.memory.working_set, Description: The number of bytes of physical memory mapped to the process context., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961416Z, 2025-12-26T13:57:45.6906635Z]  
+Value: 87142400
+
+Metric Name: dotnet.gc.heap.total_allocated, Description: The approximate number of bytes allocated on the managed GC heap since the process has started. The returned value does not include any native allocations., Unit: By, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961701Z, 2025-12-26T13:57:45.6906637Z]  
+Value: 17203128
+
+Metric Name: dotnet.gc.last_collection.memory.committed_size, Description: The amount of committed virtual memory in use by the .NET GC, as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7961931Z, 2025-12-26T13:57:45.6906639Z]  
+Value: 16945152
+
+Metric Name: dotnet.gc.last_collection.heap.size, Description: The managed GC heap size (including fragmentation), as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:45.6906640Z] gc.heap.generation: gen0
+Value: 165856
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:45.6906640Z] gc.heap.generation: gen1
+Value: 1027080
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:45.6906640Z] gc.heap.generation: gen2
+Value: 711400
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:45.6906640Z] gc.heap.generation: loh
+Value: 6633200
+(2025-12-26T13:56:26.7962152Z, 2025-12-26T13:57:45.6906640Z] gc.heap.generation: poh
+Value: 25576
+
+Metric Name: dotnet.gc.last_collection.heap.fragmentation.size, Description: The heap fragmentation, as observed during the latest garbage collection., Unit: By, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:45.6906641Z] gc.heap.generation: gen0
+Value: 149504
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:45.6906641Z] gc.heap.generation: gen1
+Value: 7944
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:45.6906641Z] gc.heap.generation: gen2
+Value: 0
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:45.6906641Z] gc.heap.generation: loh
+Value: 1472
+(2025-12-26T13:56:26.7962321Z, 2025-12-26T13:57:45.6906641Z] gc.heap.generation: poh
+Value: 0
+
+Metric Name: dotnet.gc.pause.time, Description: The total amount of time paused in GC since the process has started., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965026Z, 2025-12-26T13:57:45.6906642Z]  
+Value: 0.004773
+
+Metric Name: dotnet.jit.compiled_il.size, Description: Count of bytes of intermediate language that have been compiled since the process has started., Unit: By, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965414Z, 2025-12-26T13:57:45.6906644Z]  
+Value: 423873
+
+Metric Name: dotnet.jit.compiled_methods, Description: The number of times the JIT compiler (re)compiled methods since the process has started., Unit: {method}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965617Z, 2025-12-26T13:57:45.6906645Z]  
+Value: 5313
+
+Metric Name: dotnet.jit.compilation.time, Description: The number of times the JIT compiler (re)compiled methods since the process has started., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7965834Z, 2025-12-26T13:57:45.6906647Z]  
+Value: 1.1523272
+
+Metric Name: dotnet.monitor.lock_contentions, Description: The number of times there was contention when trying to acquire a monitor lock since the process has started., Unit: {contention}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7966033Z, 2025-12-26T13:57:45.6906652Z]  
+Value: 0
+
+Metric Name: dotnet.thread_pool.thread.count, Description: The number of thread pool threads that currently exist., Unit: {thread}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7988533Z, 2025-12-26T13:57:45.6906653Z]  
+Value: 2
+
+Metric Name: dotnet.thread_pool.work_item.count, Description: The number of work items that the thread pool has completed since the process has started., Unit: {work_item}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7988897Z, 2025-12-26T13:57:45.6906655Z]  
+Value: 308
+
+Metric Name: dotnet.thread_pool.queue.length, Description: The number of work items that are currently queued to be processed by the thread pool., Unit: {work_item}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989074Z, 2025-12-26T13:57:45.6906656Z]  
+Value: 0
+
+Metric Name: dotnet.timer.count, Description: The number of timer instances that are currently active. An active timer is registered to tick at some point in the future and has not yet been canceled., Unit: {timer}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989241Z, 2025-12-26T13:57:45.6906658Z]  
+Value: 3
+
+Metric Name: dotnet.assembly.count, Description: The number of .NET assemblies that are currently loaded., Unit: {assembly}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989424Z, 2025-12-26T13:57:45.6906659Z]  
+Value: 80
+
+Metric Name: dotnet.exceptions, Description: The number of exceptions that have been thrown in managed code., Unit: {exception}, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989604Z, 2025-12-26T13:57:45.6906661Z] error.type: SocketException
+Value: 1
+(2025-12-26T13:56:26.7989604Z, 2025-12-26T13:57:45.6906661Z] error.type: TaskCanceledException
+Value: 1
+
+Metric Name: dotnet.process.cpu.count, Description: The number of processors available to the process., Unit: {cpu}, Metric Type: LongSumNonMonotonic
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989770Z, 2025-12-26T13:57:45.6906662Z]  
+Value: 16
+
+Metric Name: dotnet.process.cpu.time, Description: CPU time used by the process., Unit: s, Metric Type: DoubleSum
+Instrumentation scope (Meter):
+	Name: System.Runtime
+(2025-12-26T13:56:26.7989977Z, 2025-12-26T13:57:45.6906664Z] cpu.mode: user
+Value: 1.300522
+(2025-12-26T13:56:26.7989977Z, 2025-12-26T13:57:45.6906664Z] cpu.mode: system
+Value: 0.119224
+
+Metric Name: network_monitor.checks, Description: Number of network health checks performed, Metric Type: LongSum
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8088980Z, 2025-12-26T13:57:45.6906668Z]  
+Value: 16
+
+Metric Name: network_monitor.router_latency_ms, Description: Router ping latency distribution, Unit: ms, Metric Type: Histogram
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8095943Z, 2025-12-26T13:57:45.6906674Z]  
+Value: Sum: 51 Count: 16 Min: 2 Max: 13 
+(-Infinity,0]:0
+(0,5]:14
+(5,10]:1
+(10,25]:1
+(25,50]:0
+(50,75]:0
+(75,100]:0
+(100,250]:0
+(250,500]:0
+(500,750]:0
+(750,1000]:0
+(1000,2500]:0
+(2500,5000]:0
+(5000,7500]:0
+(7500,10000]:0
+(10000,+Infinity]:0
+
+
+Metric Name: network_monitor.internet_latency_ms, Description: Internet ping latency distribution, Unit: ms, Metric Type: Histogram
+Instrumentation scope (Meter):
+	Name: NetworkMonitor.Core
+(2025-12-26T13:56:26.8096211Z, 2025-12-26T13:57:45.6906678Z]  
+Value: Sum: 179 Count: 16 Min: 8 Max: 20 
+(-Infinity,0]:0
+(0,5]:0
+(5,10]:9
+(10,25]:7
+(25,50]:0
+(50,75]:0
+(75,100]:0
+(100,250]:0
+(250,500]:0
+(500,750]:0
+(750,1000]:0
+(1000,2500]:0
+(2500,5000]:0
+(5000,7500]:0
+(7500,10000]:0
+(10000,+Infinity]:0
+
+👋 Network Monitor stopped. Goodbye!
+
+real	1m21.197s
+user	0m3.567s
+sys	0m0.531s
 kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ 
+
