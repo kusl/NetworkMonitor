@@ -548,3 +548,7 @@ The workflow file should replace your existing `.github/workflows/release.yml`. 
 
 
 
+if you are connected to any lan, isn't the router ip address explicitly advertised by the router? is this something we need to configure like this? 
+"RouterAddress": "192.168.1.1"
+I mean it is good that we allow the users to configure this setting or even to allow configuring something other than 8.8.8.8 for the Internet because maybe someone lives in a place that prohibits google dot com or some weird network topology but for most people, we should be able to get this router address from code, right? and also we should be able to try different defaults like 1.1.1.1 if 8.8.8.8 is unavailable? we should absolutely make things configurable but why make people think if we can make things work out of the box? 
+if we can make things work out of the box by automatically detecting 192.168.1.1 or 192.168.0.1 or 10.0.0.1 or something like that we should detect that. If it is not possible to automatically detect, we should use the setting from app settings. What do you think? Can you please generate the shell script that makes all the necessary changes to the code as well as tests to make this happen? 
