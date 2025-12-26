@@ -608,3 +608,73 @@ Build failed with 3 error(s) in 0.7s
 Can you please look at `dump.txt` for the latest code and resolve these errors? Also please review to make sure we have a good test coverage and generate me a single shell script that addresses all the concerns. Please and thank you. 
 
 
+Now I have a comprehensive understanding of the codebase. Let me search for the exact current content of the files that need fixing.Now I have a complete picture. Let me search for the existing test files to understand test coverage.Now I have all the information I need. Let me create a comprehensive fix script that addresses all three errors and reviews test coverage.I've created a comprehensive shell script that fixes all three build errors. Let me provide a summary of what the script does:
+
+## Summary of Fixes
+
+### Error 1: CS1729 - NetworkStatusEventArgs constructor
+The code was calling `new NetworkStatusEventArgs(status, _lastStatus)` with 2 arguments, but the class only had a 1-argument constructor.
+
+**Fix**: Updated `NetworkStatusEventArgs` to:
+- Add a 2-argument constructor `(currentStatus, previousStatus)`
+- Keep the 1-argument constructor for backward compatibility
+- Add a `CurrentStatus` property (more descriptive)
+- Keep a `Status` property as an alias for backward compatibility
+
+### Error 2: CA1001 - NetworkConfigurationService not disposable
+The class owns a `SemaphoreSlim _initLock` which is disposable, but the class didn't implement `IDisposable`.
+
+**Fix**: Updated `NetworkConfigurationService` to:
+- Implement `IDisposable`
+- Add a `Dispose()` method that disposes `_initLock`
+- Add `_disposed` tracking field
+- Add `ObjectDisposedException.ThrowIf()` checks in public methods
+
+### Error 3: CA1822 - ComputeHealth can be static
+The `ComputeHealth` method didn't use any instance data, so it could be marked as static.
+
+**Fix**: Made `ComputeHealth` static and passed `MonitorOptions` as a parameter instead of using the instance field `_options`.
+
+## Test Coverage Improvements
+
+The script also adds/updates tests for:
+
+1. **NetworkStatusEventArgsTests** - New test file covering:
+   - Single-argument constructor
+   - Two-argument constructor
+   - `Status` property backward compatibility
+   - Null previous status handling
+
+2. **NetworkMonitorServiceTests** - Updated to:
+   - Use new `FakeNetworkConfigurationService`
+   - Test `StatusChanged` event with `PreviousStatus`
+   - Test cancellation support
+
+3. **NetworkConfigurationServiceTests** - New comprehensive tests for:
+   - Explicit router configuration
+   - Auto-detection with gateway detector
+   - Fallback to common gateways
+   - Internet target fallback
+   - Result caching
+   - Dispose behavior
+   - ObjectDisposedException after dispose
+
+4. **Fakes Updated**:
+   - `FakeNetworkConfigurationService` - Now implements `IDisposable`
+   - `FakeInternetTargetProvider` - Enhanced with fluent configuration methods
+
+To run the script:
+```bash
+chmod +x fix-build-errors.sh
+./fix-build-errors.sh
+```
+
+
+
+
+
+
+
+
+
+
