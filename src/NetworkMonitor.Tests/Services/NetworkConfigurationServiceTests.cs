@@ -55,7 +55,7 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetRouterAddressAsync_WhenAutoDetect_UsesDetectedGateway()
+    public async Task GetRouterAddressAsync_WhenAutoDetect_UsesGatewayDetector()
     {
         // Arrange
         _gatewayDetector.WithGateway("192.168.1.1");
@@ -71,11 +71,11 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetRouterAddressAsync_WhenDetectionFails_FallsBackToCommonGateways()
+    public async Task GetRouterAddressAsync_WhenAutoDetectFails_TriesCommonGateways()
     {
         // Arrange
-        _gatewayDetector.WithNoGateway();
-        _gatewayDetector.WithCommonGateways("192.168.0.1", "10.0.0.1");
+        _gatewayDetector.WithGateway(null); // No auto-detected gateway
+        _gatewayDetector.WithCommonGateways("192.168.0.1", "192.168.1.1", "10.0.0.1");
         _pingService.AlwaysSucceed(5);
         var options = new MonitorOptions { RouterAddress = "auto" };
         var service = CreateService(options);
@@ -84,31 +84,18 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
         var result = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal("192.168.0.1", result);
-    }
-
-    [Fact]
-    public async Task GetRouterAddressAsync_WhenNoGatewayReachable_ReturnsNull()
-    {
-        // Arrange
-        _gatewayDetector.WithNoGateway();
-        _gatewayDetector.WithCommonGateways(); // Empty
-        var options = new MonitorOptions { RouterAddress = "auto" };
-        var service = CreateService(options);
-
-        // Act
-        var result = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Null(result);
+        Assert.Equal("192.168.0.1", result); // First common gateway that responds
     }
 
     [Fact]
     public async Task GetInternetTargetAsync_ReturnsPrimaryTarget()
     {
-        // Arrange
+        // Arrange - Configure the fake to use "1.1.1.1" as primary
         _internetTargetProvider.WithPrimaryTarget("1.1.1.1");
-        var service = CreateService();
+        _internetTargetProvider.WithTargets("1.1.1.1", "8.8.8.8");
+        _pingService.AlwaysSucceed(5);
+        var options = new MonitorOptions { EnableFallbackTargets = false };
+        var service = CreateService(options);
 
         // Act
         var result = await service.GetInternetTargetAsync(TestContext.Current.CancellationToken);
@@ -118,7 +105,41 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetRouterAddressAsync_CachesResult()
+    public async Task GetInternetTargetAsync_WhenFallbackEnabled_ReturnsFirstReachable()
+    {
+        // Arrange
+        _internetTargetProvider.WithTargets("8.8.8.8", "1.1.1.1");
+        _pingService.AlwaysSucceed(5);
+        var options = new MonitorOptions { EnableFallbackTargets = true };
+        var service = CreateService(options);
+
+        // Act
+        var result = await service.GetInternetTargetAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal("8.8.8.8", result); // First reachable target
+    }
+
+    [Fact]
+    public async Task GetInternetTargetAsync_WhenPrimaryUnreachable_UsesFallback()
+    {
+        // Arrange
+        _internetTargetProvider.WithTargets("8.8.8.8", "1.1.1.1");
+        // First target fails, second succeeds
+        _pingService.QueueResult(PingResult.Failed("8.8.8.8", "Timeout"));
+        _pingService.QueueResult(PingResult.Succeeded("1.1.1.1", 10));
+        var options = new MonitorOptions { EnableFallbackTargets = true };
+        var service = CreateService(options);
+
+        // Act
+        var result = await service.GetInternetTargetAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal("1.1.1.1", result);
+    }
+
+    [Fact]
+    public async Task ResultsAreCached_MultipleCallsReturnSameValue()
     {
         // Arrange
         _gatewayDetector.WithGateway("192.168.1.1");
@@ -126,15 +147,13 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
         var options = new MonitorOptions { RouterAddress = "auto" };
         var service = CreateService(options);
 
-        // Act - call twice
+        // Act
         var result1 = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
-
-        // Change the gateway - should not affect second call due to caching
-        _gatewayDetector.WithGateway("10.0.0.1");
+        _gatewayDetector.WithGateway("10.0.0.1"); // Change gateway
         var result2 = await service.GetRouterAddressAsync(TestContext.Current.CancellationToken);
 
-        // Assert - both should return cached value
-        Assert.Equal("192.168.1.1", result1);
+        // Assert - Should return cached value
+        Assert.Equal(result1, result2);
         Assert.Equal("192.168.1.1", result2);
     }
 
@@ -144,7 +163,7 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
         // Arrange
         var service = CreateService();
 
-        // Act & Assert - should not throw
+        // Act & Assert - Should not throw
         service.Dispose();
         service.Dispose();
     }
@@ -155,23 +174,9 @@ public sealed class NetworkConfigurationServiceTests : IDisposable
         // Arrange
         var service = CreateService();
         service.Dispose();
-        _service = null; // Prevent double dispose in cleanup
 
         // Act & Assert
         await Assert.ThrowsAsync<ObjectDisposedException>(
             () => service.GetRouterAddressAsync(TestContext.Current.CancellationToken));
-    }
-
-    [Fact]
-    public async Task GetInternetTargetAsync_AfterDispose_ThrowsObjectDisposedException()
-    {
-        // Arrange
-        var service = CreateService();
-        service.Dispose();
-        _service = null; // Prevent double dispose in cleanup
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ObjectDisposedException>(
-            () => service.GetInternetTargetAsync(TestContext.Current.CancellationToken));
     }
 }

@@ -4,22 +4,26 @@ namespace NetworkMonitor.Core.Models;
 /// Represents the overall network health status.
 /// This is the "at a glance" view that's our highest priority.
 /// </summary>
+/// <remarks>
+/// Values are ordered from worst (0) to best (4) for natural comparison.
+/// This allows: NetworkHealth.Excellent > NetworkHealth.Poor
+/// </remarks>
 public enum NetworkHealth
 {
-    /// <summary>All targets responding with good latency</summary>
-    Excellent,
-
-    /// <summary>All targets responding but some latency</summary>
-    Good,
-
-    /// <summary>Some packet loss or high latency</summary>
-    Degraded,
+    /// <summary>No connectivity</summary>
+    Offline = 0,
 
     /// <summary>Significant connectivity issues</summary>
-    Poor,
+    Poor = 1,
 
-    /// <summary>No connectivity</summary>
-    Offline
+    /// <summary>Some packet loss or high latency</summary>
+    Degraded = 2,
+
+    /// <summary>All targets responding but some latency</summary>
+    Good = 3,
+
+    /// <summary>All targets responding with good latency</summary>
+    Excellent = 4
 }
 
 /// <summary>
