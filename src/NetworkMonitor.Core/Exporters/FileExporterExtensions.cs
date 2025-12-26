@@ -15,13 +15,13 @@ public static class FileExporterExtensions
         FileExporterOptions? options = null)
     {
         options ??= FileExporterOptions.Default;
-        
+
         return builder.AddReader(
             new PeriodicExportingMetricReader(
                 new FileMetricExporter(options),
                 exportIntervalMilliseconds: 10000));
     }
-    
+
     /// <summary>
     /// Adds a file exporter with custom configuration.
     /// </summary>

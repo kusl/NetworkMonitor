@@ -7,23 +7,23 @@ namespace NetworkMonitor.Core.Models;
 public sealed class StorageOptions
 {
     public const string SectionName = "Storage";
-    
+
     /// <summary>
     /// Application name used for directory structure.
     /// </summary>
     public string ApplicationName { get; set; } = "NetworkMonitor";
-    
+
     /// <summary>
     /// Maximum file size in bytes before rotation (25MB default).
     /// </summary>
     public long MaxFileSizeBytes { get; set; } = 25 * 1024 * 1024;
-    
+
     /// <summary>
     /// How many days of data to retain in SQLite.
     /// Default: 30 days
     /// </summary>
     public int RetentionDays { get; set; } = 30;
-    
+
     /// <summary>
     /// Get the data directory following XDG specification with fallbacks.
     /// Priority:
@@ -39,14 +39,14 @@ public sealed class StorageOptions
         {
             return Path.Combine(xdgDataHome, ApplicationName);
         }
-        
+
         // Try platform-specific app data
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         if (!string.IsNullOrEmpty(localAppData) && CanWriteToDirectory(localAppData))
         {
             return Path.Combine(localAppData, ApplicationName);
         }
-        
+
         // Try ~/.local/share (Linux fallback)
         var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         if (!string.IsNullOrEmpty(homeDir))
@@ -57,12 +57,12 @@ public sealed class StorageOptions
                 return Path.Combine(localShare, ApplicationName);
             }
         }
-        
+
         // Final fallback: current directory with timestamp subfolder
         var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
         return Path.Combine(Environment.CurrentDirectory, $"{ApplicationName}_{timestamp}");
     }
-    
+
     private static bool CanWriteToDirectory(string path)
     {
         try
@@ -71,7 +71,7 @@ public sealed class StorageOptions
             {
                 Directory.CreateDirectory(path);
             }
-            
+
             // Test write access
             var testFile = Path.Combine(path, $".write_test_{Guid.NewGuid()}");
             File.WriteAllText(testFile, "test");

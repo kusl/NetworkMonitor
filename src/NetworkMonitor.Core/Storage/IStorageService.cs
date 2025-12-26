@@ -12,7 +12,7 @@ public interface IStorageService
     /// Persists a network status snapshot.
     /// </summary>
     Task SaveStatusAsync(NetworkStatus status, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Retrieves historical data for trendline display.
     /// </summary>
@@ -21,7 +21,7 @@ public interface IStorageService
         DateTimeOffset to,
         TimeGranularity granularity,
         CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Gets recent raw ping results for detailed analysis.
     /// </summary>

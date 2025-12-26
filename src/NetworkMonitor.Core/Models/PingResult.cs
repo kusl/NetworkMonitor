@@ -21,7 +21,7 @@ public sealed record PingResult(
     /// </summary>
     public static PingResult Succeeded(string target, long roundtripTimeMs) =>
         new(target, true, roundtripTimeMs, DateTimeOffset.UtcNow);
-    
+
     /// <summary>
     /// Creates a failed ping result.
     /// </summary>

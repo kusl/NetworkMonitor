@@ -16,10 +16,10 @@ public interface IPingService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Result of the ping operation</returns>
     Task<PingResult> PingAsync(
-        string target, 
-        int timeoutMs, 
+        string target,
+        int timeoutMs,
         CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Sends multiple pings and returns all results.
     /// Useful for calculating statistics like packet loss.

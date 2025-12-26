@@ -8,16 +8,16 @@ public enum NetworkHealth
 {
     /// <summary>All targets responding with good latency</summary>
     Excellent,
-    
+
     /// <summary>All targets responding but some latency</summary>
     Good,
-    
+
     /// <summary>Some packet loss or high latency</summary>
     Degraded,
-    
+
     /// <summary>Significant connectivity issues</summary>
     Poor,
-    
+
     /// <summary>No connectivity</summary>
     Offline
 }
@@ -41,7 +41,7 @@ public sealed record NetworkStatus(
     /// <summary>
     /// Quick check if network is usable (Excellent, Good, or Degraded).
     /// </summary>
-    public bool IsUsable => Health is NetworkHealth.Excellent 
-                            or NetworkHealth.Good 
+    public bool IsUsable => Health is NetworkHealth.Excellent
+                            or NetworkHealth.Good
                             or NetworkHealth.Degraded;
 }

@@ -52,7 +52,7 @@ Console.CancelKeyPress += (_, e) =>
 
 try
 {
-    await host.RunAsync();
+    await host.RunAsync().ConfigureAwait(false);
 }
 catch (OperationCanceledException)
 {

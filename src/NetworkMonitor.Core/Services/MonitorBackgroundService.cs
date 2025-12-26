@@ -17,7 +17,7 @@ public sealed class MonitorBackgroundService : BackgroundService
     private readonly IStorageService _storage;
     private readonly MonitorOptions _options;
     private readonly ILogger<MonitorBackgroundService> _logger;
-    
+
     public MonitorBackgroundService(
         INetworkMonitorService monitorService,
         IStatusDisplay display,
@@ -31,7 +31,7 @@ public sealed class MonitorBackgroundService : BackgroundService
         _options = options.Value;
         _logger = logger;
     }
-    
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation(
@@ -39,26 +39,26 @@ public sealed class MonitorBackgroundService : BackgroundService
             _options.IntervalMs,
             _options.RouterAddress,
             _options.InternetTarget);
-        
+
         // Subscribe to status changes for logging significant events
         _monitorService.StatusChanged += OnStatusChanged;
-        
+
         try
         {
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    var status = await _monitorService.CheckNetworkAsync(stoppingToken);
-                    
+                    var status = await _monitorService.CheckNetworkAsync(stoppingToken).ConfigureAwait(false);
+
                     // Update display
                     _display.UpdateStatus(status);
-                    
+
                     // Persist results
-                    await _storage.SaveStatusAsync(status, stoppingToken);
-                    
+                    await _storage.SaveStatusAsync(status, stoppingToken).ConfigureAwait(false);
+
                     // Wait for next cycle
-                    await Task.Delay(_options.IntervalMs, stoppingToken);
+                    await Task.Delay(_options.IntervalMs, stoppingToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
@@ -68,9 +68,9 @@ public sealed class MonitorBackgroundService : BackgroundService
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error during monitoring cycle");
-                    
+
                     // Continue monitoring even if one cycle fails
-                    await Task.Delay(_options.IntervalMs, stoppingToken);
+                    await Task.Delay(_options.IntervalMs, stoppingToken).ConfigureAwait(false);
                 }
             }
         }
@@ -79,10 +79,10 @@ public sealed class MonitorBackgroundService : BackgroundService
             _monitorService.StatusChanged -= OnStatusChanged;
             _display.Clear();
         }
-        
+
         _logger.LogInformation("Network Monitor stopped");
     }
-    
+
     private void OnStatusChanged(object? sender, NetworkStatus status)
     {
         // Log significant status changes

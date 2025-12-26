@@ -13,7 +13,7 @@ public interface IStatusDisplay
     /// </summary>
     /// <param name="status">Current status to display</param>
     void UpdateStatus(NetworkStatus status);
-    
+
     /// <summary>
     /// Clears the display.
     /// </summary>

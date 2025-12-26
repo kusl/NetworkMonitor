@@ -6,7 +6,7 @@ namespace NetworkMonitor.Tests;
 /// <summary>
 /// Tests for NetworkStatus model.
 /// </summary>
-public sealed class NetworkStatusTests
+internal sealed class NetworkStatusTests
 {
     [Theory]
     [InlineData(NetworkHealth.Excellent, true)]
@@ -23,7 +23,7 @@ public sealed class NetworkStatusTests
             PingResult.Succeeded("internet", 20),
             DateTimeOffset.UtcNow,
             "Test message");
-        
+
         // Act & Assert
         Assert.Equal(expectedUsable, status.IsUsable);
     }

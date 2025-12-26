@@ -12,11 +12,11 @@ namespace NetworkMonitor.Tests.Fakes;
 /// 2. Manual fakes are more explicit and readable
 /// 3. No magic - you can see exactly what happens
 /// </summary>
-public sealed class FakePingService : IPingService
+internal sealed class FakePingService : IPingService
 {
     private readonly Queue<PingResult> _results = new();
     private PingResult? _defaultResult;
-    
+
     /// <summary>
     /// Queues a specific result to be returned on next ping.
     /// Results are returned in FIFO order.
@@ -26,7 +26,7 @@ public sealed class FakePingService : IPingService
         _results.Enqueue(result);
         return this;
     }
-    
+
     /// <summary>
     /// Sets a default result to return when queue is empty.
     /// </summary>
@@ -35,7 +35,7 @@ public sealed class FakePingService : IPingService
         _defaultResult = result;
         return this;
     }
-    
+
     /// <summary>
     /// Configures to return successful pings with specified latency.
     /// </summary>
@@ -44,7 +44,7 @@ public sealed class FakePingService : IPingService
         _defaultResult = PingResult.Succeeded("test", latencyMs);
         return this;
     }
-    
+
     /// <summary>
     /// Configures to always fail.
     /// </summary>
@@ -53,27 +53,27 @@ public sealed class FakePingService : IPingService
         _defaultResult = PingResult.Failed("test", error);
         return this;
     }
-    
+
     public Task<PingResult> PingAsync(
-        string target, 
-        int timeoutMs, 
+        string target,
+        int timeoutMs,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        
+
         if (_results.TryDequeue(out var result))
         {
             return Task.FromResult(result with { Target = target });
         }
-        
+
         if (_defaultResult != null)
         {
             return Task.FromResult(_defaultResult with { Target = target });
         }
-        
+
         return Task.FromResult(PingResult.Failed(target, "No result configured"));
     }
-    
+
     public async Task<IReadOnlyList<PingResult>> PingMultipleAsync(
         string target,
         int count,
@@ -81,12 +81,12 @@ public sealed class FakePingService : IPingService
         CancellationToken cancellationToken = default)
     {
         var results = new List<PingResult>(count);
-        
+
         for (var i = 0; i < count; i++)
         {
-            results.Add(await PingAsync(target, timeoutMs, cancellationToken));
+            results.Add(await PingAsync(target, timeoutMs, cancellationToken).ConfigureAwait(false));
         }
-        
+
         return results;
     }
 }
