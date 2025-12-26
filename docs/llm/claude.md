@@ -242,3 +242,39 @@ however, you don't need to look at output.txt and hopefully it will save you tim
     /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(231,50): error CA1859: Change return type of method 'AggregateByGranularity' from 'System.Collections.Generic.IReadOnlyList<NetworkMonitor.Core.Models.HistoricalData>' to 'System.Collections.Generic.List<NetworkMonitor.Core.Models.HistoricalData>' for improved performance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1859)
 Build failed with 3 error(s) in 0.7s
 please generate a new script to replace the existing script and once again, the script only needs to do what we need to do next, we put everything in git so no need to repeat yourself with code that has not changed. 
+
+Let me search for more specific code to see the exact lines that need to be fixed:Now let me search for the PingService code to see what needs to be fixed:Now let me search for the SqliteStorageService to find the AggregateByGranularity method:Now I have all the information I need. The three remaining errors are:
+
+1. **CA1305** in `StorageOptions.cs` line 62: `DateTime.ToString("yyyyMMdd_HHmmss")` needs `CultureInfo.InvariantCulture`
+2. **CA1513** in `PingService.cs` line 29: Use `ObjectDisposedException.ThrowIf` instead of explicit throw
+3. **CA1859** in `SqliteStorageService.cs` line 231: Change return type of `AggregateByGranularity` from `IReadOnlyList<HistoricalData>` to `List<HistoricalData>`
+
+Let me create a minimal fix script:Here's the fix script for the three remaining errors:
+
+## What this script fixes
+
+| Error | File | Line | Issue | Fix |
+|-------|------|------|-------|-----|
+| **CA1305** | `StorageOptions.cs` | 62 | `DateTime.ToString(string)` varies by locale | Add `CultureInfo.InvariantCulture` parameter |
+| **CA1513** | `PingService.cs` | 29 | Explicit `throw new ObjectDisposedException` | Use `ObjectDisposedException.ThrowIf(_disposed, this)` |
+| **CA1859** | `SqliteStorageService.cs` | 231 | Return type `IReadOnlyList` is less performant | Change to `List<HistoricalData>` |
+
+## Why these fixes work
+
+1. **CA1305**: The code `DateTime.UtcNow.ToString("yyyyMMdd_HHmmss")` could potentially format differently based on locale. Using `CultureInfo.InvariantCulture` ensures consistent formatting across all systems.
+
+2. **CA1513**: .NET 7+ introduced `ObjectDisposedException.ThrowIf()` as a cleaner, more idiomatic way to check disposal state. It replaces the verbose `if (_disposed) throw new...` pattern.
+
+3. **CA1859**: When a private method returns `IReadOnlyList<T>` but actually creates and returns a `List<T>`, the analyzer suggests returning the concrete type for better performance (avoids interface dispatch overhead in private code).
+
+Run it with:
+```bash
+bash fix-three-errors.sh
+```
+
+
+
+
+
+
+
