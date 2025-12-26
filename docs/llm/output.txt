@@ -4495,4 +4495,7 @@ Build failed with 78 error(s) in 0.7s
 real	0m0.863s
 user	0m0.939s
 sys	0m0.172s
+kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ git status
+On branch master
+nothing to commit, working tree clean
 kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ 
