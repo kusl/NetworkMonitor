@@ -610,3 +610,3046 @@ real	0m0.021s
 user	0m0.011s
 sys	0m0.015s
 kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor$ 
+kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor$ cd ~/src/dotnet/network-monitor/src
+kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ nano generate-network-monitor.sh
+kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ cat generate-network-monitor.sh
+#!/bin/bash
+# =============================================================================
+# Network Monitor Application Generator
+# =============================================================================
+# This script generates a complete cross-platform network monitoring application
+# that provides at-a-glance network status and historical trendlines.
+#
+# DESIGN PRINCIPLES:
+# - Minimal dependencies (only what's truly necessary)
+# - All packages must be free/open source (Apache 2.0, MIT, etc.)
+# - Cross-platform (Windows, macOS, Linux)
+# - Testable code with dependency injection
+# - Async-first with proper cancellation token support
+# - XDG-compliant file storage with graceful fallbacks
+#
+# BANNED PACKAGES (non-free or controversial):
+# - FluentAssertions (license issues)
+# - MassTransit (license issues)
+# - Moq (controversial maintainer)
+#
+# USAGE:
+#   cd ~/src/dotnet/network-monitor/src
+#   chmod +x generate-network-monitor.sh
+#   ./generate-network-monitor.sh
+#
+# =============================================================================
+
+set -e  # Exit on error
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+log_info() { echo -e "${CYAN}[INFO]${NC} $1"; }
+log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+
+# Ensure we're in the src directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+log_info "Starting Network Monitor application generation..."
+log_info "Working directory: $SCRIPT_DIR"
+
+# =============================================================================
+# Directory Structure
+# =============================================================================
+log_info "Creating directory structure..."
+
+mkdir -p NetworkMonitor.Core/Models
+mkdir -p NetworkMonitor.Core/Services
+mkdir -p NetworkMonitor.Core/Storage
+mkdir -p NetworkMonitor.Core/Exporters
+mkdir -p NetworkMonitor.Console
+mkdir -p NetworkMonitor.Tests/Services
+mkdir -p NetworkMonitor.Tests/Storage
+mkdir -p NetworkMonitor.Tests/Fakes
+
+log_success "Directory structure created"
+
+# =============================================================================
+# Directory.Build.props - Shared build properties
+# =============================================================================
+log_info "Creating Directory.Build.props..."
+
+cat > Directory.Build.props << 'EOF'
+<Project>
+  <!-- 
+    Shared build properties for all projects in the solution.
+    This ensures consistent settings across the entire solution.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest-all</AnalysisLevel>
+  </PropertyGroup>
+
+  <!-- Test projects don't need to be packaged -->
+  <PropertyGroup Condition="$(MSBuildProjectName.Contains('.Tests'))">
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+</Project>
+EOF
+
+# =============================================================================
+# Directory.Packages.props - Central Package Management
+# =============================================================================
+log_info "Creating Directory.Packages.props..."
+
+cat > Directory.Packages.props << 'EOF'
+<Project>
+  <!--
+    Central Package Management (CPM)
+    All NuGet package versions are defined here for consistency.
+    
+    PACKAGE SELECTION CRITERIA:
+    1. Must be free/open source (Apache 2.0, MIT, BSD, etc.)
+    2. Must be actively maintained
+    3. Prefer Microsoft/official packages where available
+    4. Minimal footprint - only include what's truly needed
+    
+    BANNED PACKAGES (DO NOT ADD):
+    - FluentAssertions (restrictive license)
+    - MassTransit (restrictive license)
+    - Moq (controversial maintainer)
+    - Any package with "non-commercial only" license
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <!-- Microsoft.Extensions.* - Core DI and hosting (MIT License) -->
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    
+    <!-- SQLite - Official Microsoft package (MIT License) -->
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+    
+    <!-- OpenTelemetry - Official packages (Apache 2.0 License) -->
+    <PackageVersion Include="OpenTelemetry" Version="1.14.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.14.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.14.0" />
+    
+    <!-- Testing - xUnit (Apache 2.0 License) -->
+    <PackageVersion Include="xunit.v3" Version="1.1.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+  </ItemGroup>
+</Project>
+EOF
+
+# =============================================================================
+# Solution File
+# =============================================================================
+log_info "Creating solution file..."
+
+cat > NetworkMonitor.slnx << 'EOF'
+<Solution>
+  <Project Path="NetworkMonitor.Core/NetworkMonitor.Core.csproj" />
+  <Project Path="NetworkMonitor.Console/NetworkMonitor.Console.csproj" />
+  <Project Path="NetworkMonitor.Tests/NetworkMonitor.Tests.csproj" />
+</Solution>
+EOF
+
+# =============================================================================
+# NetworkMonitor.Core Project
+# =============================================================================
+log_info "Creating NetworkMonitor.Core project..."
+
+cat > NetworkMonitor.Core/NetworkMonitor.Core.csproj << 'EOF'
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Core library containing:
+    - Domain models (PingResult, NetworkStatus, etc.)
+    - Service interfaces and implementations
+    - Storage abstractions and implementations (File, SQLite)
+    - OpenTelemetry exporters
+    
+    This project has no UI dependencies and can be tested in isolation.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="OpenTelemetry" />
+  </ItemGroup>
+</Project>
+EOF
+
+# =============================================================================
+# Models
+# =============================================================================
+log_info "Creating models..."
+
+# PingResult.cs
+cat > NetworkMonitor.Core/Models/PingResult.cs << 'EOF'
+namespace NetworkMonitor.Core.Models;
+
+/// <summary>
+/// Represents the result of a single ping operation.
+/// Immutable record for thread safety and easy comparison.
+/// </summary>
+/// <param name="Target">The hostname or IP address that was pinged</param>
+/// <param name="Success">Whether the ping succeeded</param>
+/// <param name="RoundtripTimeMs">Round-trip time in milliseconds (null if failed)</param>
+/// <param name="Timestamp">When the ping was performed (UTC)</param>
+/// <param name="ErrorMessage">Error message if the ping failed</param>
+public sealed record PingResult(
+    string Target,
+    bool Success,
+    long? RoundtripTimeMs,
+    DateTimeOffset Timestamp,
+    string? ErrorMessage = null)
+{
+    /// <summary>
+    /// Creates a successful ping result.
+    /// </summary>
+    public static PingResult Succeeded(string target, long roundtripTimeMs) =>
+        new(target, true, roundtripTimeMs, DateTimeOffset.UtcNow);
+    
+    /// <summary>
+    /// Creates a failed ping result.
+    /// </summary>
+    public static PingResult Failed(string target, string errorMessage) =>
+        new(target, false, null, DateTimeOffset.UtcNow, errorMessage);
+}
+EOF
+
+# NetworkStatus.cs
+cat > NetworkMonitor.Core/Models/NetworkStatus.cs << 'EOF'
+namespace NetworkMonitor.Core.Models;
+
+/// <summary>
+/// Represents the overall network health status.
+/// This is the "at a glance" view that's our highest priority.
+/// </summary>
+public enum NetworkHealth
+{
+    /// <summary>All targets responding with good latency</summary>
+    Excellent,
+    
+    /// <summary>All targets responding but some latency</summary>
+    Good,
+    
+    /// <summary>Some packet loss or high latency</summary>
+    Degraded,
+    
+    /// <summary>Significant connectivity issues</summary>
+    Poor,
+    
+    /// <summary>No connectivity</summary>
+    Offline
+}
+
+/// <summary>
+/// Comprehensive network status at a point in time.
+/// Aggregates multiple ping results into a single status view.
+/// </summary>
+/// <param name="Health">Overall health assessment</param>
+/// <param name="RouterResult">Result of pinging the local router/gateway</param>
+/// <param name="InternetResult">Result of pinging an internet target (e.g., 8.8.8.8)</param>
+/// <param name="Timestamp">When this status was computed</param>
+/// <param name="Message">Human-readable status message</param>
+public sealed record NetworkStatus(
+    NetworkHealth Health,
+    PingResult? RouterResult,
+    PingResult? InternetResult,
+    DateTimeOffset Timestamp,
+    string Message)
+{
+    /// <summary>
+    /// Quick check if network is usable (Excellent, Good, or Degraded).
+    /// </summary>
+    public bool IsUsable => Health is NetworkHealth.Excellent 
+                            or NetworkHealth.Good 
+                            or NetworkHealth.Degraded;
+}
+EOF
+
+# MonitorOptions.cs
+cat > NetworkMonitor.Core/Models/MonitorOptions.cs << 'EOF'
+namespace NetworkMonitor.Core.Models;
+
+/// <summary>
+/// Configuration options for the network monitor.
+/// Bound from appsettings.json or environment variables.
+/// </summary>
+public sealed class MonitorOptions
+{
+    /// <summary>
+    /// Configuration section name in appsettings.json
+    /// </summary>
+    public const string SectionName = "NetworkMonitor";
+    
+    /// <summary>
+    /// Router/gateway IP address to ping for local network health.
+    /// Default: 192.168.1.1 (common home router)
+    /// </summary>
+    public string RouterAddress { get; set; } = "192.168.1.1";
+    
+    /// <summary>
+    /// Internet target to ping for WAN connectivity.
+    /// Default: 8.8.8.8 (Google DNS - highly reliable)
+    /// </summary>
+    public string InternetTarget { get; set; } = "8.8.8.8";
+    
+    /// <summary>
+    /// Timeout for each ping in milliseconds.
+    /// Default: 3000ms (3 seconds)
+    /// </summary>
+    public int TimeoutMs { get; set; } = 3000;
+    
+    /// <summary>
+    /// Interval between monitoring cycles in milliseconds.
+    /// Default: 5000ms (5 seconds)
+    /// </summary>
+    public int IntervalMs { get; set; } = 5000;
+    
+    /// <summary>
+    /// Number of pings per target per cycle.
+    /// Default: 3 (for statistical significance)
+    /// </summary>
+    public int PingsPerCycle { get; set; } = 3;
+    
+    /// <summary>
+    /// Latency threshold (ms) below which is considered "excellent".
+    /// Default: 20ms
+    /// </summary>
+    public int ExcellentLatencyMs { get; set; } = 20;
+    
+    /// <summary>
+    /// Latency threshold (ms) below which is considered "good".
+    /// Default: 100ms
+    /// </summary>
+    public int GoodLatencyMs { get; set; } = 100;
+    
+    /// <summary>
+    /// Packet loss percentage above which network is "degraded".
+    /// Default: 10%
+    /// </summary>
+    public int DegradedPacketLossPercent { get; set; } = 10;
+}
+EOF
+
+# StorageOptions.cs
+cat > NetworkMonitor.Core/Models/StorageOptions.cs << 'EOF'
+namespace NetworkMonitor.Core.Models;
+
+/// <summary>
+/// Configuration for telemetry storage.
+/// Follows XDG Base Directory Specification with graceful fallbacks.
+/// </summary>
+public sealed class StorageOptions
+{
+    public const string SectionName = "Storage";
+    
+    /// <summary>
+    /// Application name used for directory structure.
+    /// </summary>
+    public string ApplicationName { get; set; } = "NetworkMonitor";
+    
+    /// <summary>
+    /// Maximum file size in bytes before rotation (25MB default).
+    /// </summary>
+    public long MaxFileSizeBytes { get; set; } = 25 * 1024 * 1024;
+    
+    /// <summary>
+    /// How many days of data to retain in SQLite.
+    /// Default: 30 days
+    /// </summary>
+    public int RetentionDays { get; set; } = 30;
+    
+    /// <summary>
+    /// Get the data directory following XDG specification with fallbacks.
+    /// Priority:
+    /// 1. XDG_DATA_HOME (Linux)
+    /// 2. LocalApplicationData (Windows/macOS)
+    /// 3. Current directory (final fallback)
+    /// </summary>
+    public string GetDataDirectory()
+    {
+        // Try XDG_DATA_HOME first (Linux)
+        var xdgDataHome = Environment.GetEnvironmentVariable("XDG_DATA_HOME");
+        if (!string.IsNullOrEmpty(xdgDataHome) && CanWriteToDirectory(xdgDataHome))
+        {
+            return Path.Combine(xdgDataHome, ApplicationName);
+        }
+        
+        // Try platform-specific app data
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        if (!string.IsNullOrEmpty(localAppData) && CanWriteToDirectory(localAppData))
+        {
+            return Path.Combine(localAppData, ApplicationName);
+        }
+        
+        // Try ~/.local/share (Linux fallback)
+        var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (!string.IsNullOrEmpty(homeDir))
+        {
+            var localShare = Path.Combine(homeDir, ".local", "share");
+            if (CanWriteToDirectory(localShare) || CanWriteToDirectory(homeDir))
+            {
+                return Path.Combine(localShare, ApplicationName);
+            }
+        }
+        
+        // Final fallback: current directory with timestamp subfolder
+        var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+        return Path.Combine(Environment.CurrentDirectory, $"{ApplicationName}_{timestamp}");
+    }
+    
+    private static bool CanWriteToDirectory(string path)
+    {
+        try
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+            
+            // Test write access
+            var testFile = Path.Combine(path, $".write_test_{Guid.NewGuid()}");
+            File.WriteAllText(testFile, "test");
+            File.Delete(testFile);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+}
+EOF
+
+# HistoricalData.cs
+cat > NetworkMonitor.Core/Models/HistoricalData.cs << 'EOF'
+namespace NetworkMonitor.Core.Models;
+
+/// <summary>
+/// Aggregated historical data for trendline display.
+/// </summary>
+/// <param name="Period">Time period this data covers</param>
+/// <param name="AverageLatencyMs">Average latency in milliseconds</param>
+/// <param name="MinLatencyMs">Minimum latency observed</param>
+/// <param name="MaxLatencyMs">Maximum latency observed</param>
+/// <param name="PacketLossPercent">Percentage of failed pings</param>
+/// <param name="SampleCount">Number of pings in this period</param>
+public sealed record HistoricalData(
+    DateTimeOffset Period,
+    double AverageLatencyMs,
+    long MinLatencyMs,
+    long MaxLatencyMs,
+    double PacketLossPercent,
+    int SampleCount);
+
+/// <summary>
+/// Time granularity for historical data aggregation.
+/// </summary>
+public enum TimeGranularity
+{
+    Minute,
+    Hour,
+    Day
+}
+EOF
+
+# =============================================================================
+# Service Interfaces
+# =============================================================================
+log_info "Creating service interfaces..."
+
+# IPingService.cs
+cat > NetworkMonitor.Core/Services/IPingService.cs << 'EOF'
+using NetworkMonitor.Core.Models;
+
+namespace NetworkMonitor.Core.Services;
+
+/// <summary>
+/// Abstraction for ping operations.
+/// Allows for easy testing with fake implementations.
+/// </summary>
+public interface IPingService
+{
+    /// <summary>
+    /// Sends a single ICMP ping to the specified target.
+    /// </summary>
+    /// <param name="target">Hostname or IP address</param>
+    /// <param name="timeoutMs">Timeout in milliseconds</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Result of the ping operation</returns>
+    Task<PingResult> PingAsync(
+        string target, 
+        int timeoutMs, 
+        CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Sends multiple pings and returns all results.
+    /// Useful for calculating statistics like packet loss.
+    /// </summary>
+    /// <param name="target">Hostname or IP address</param>
+    /// <param name="count">Number of pings to send</param>
+    /// <param name="timeoutMs">Timeout per ping in milliseconds</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>All ping results</returns>
+    Task<IReadOnlyList<PingResult>> PingMultipleAsync(
+        string target,
+        int count,
+        int timeoutMs,
+        CancellationToken cancellationToken = default);
+}
+EOF
+
+# INetworkMonitorService.cs
+cat > NetworkMonitor.Core/Services/INetworkMonitorService.cs << 'EOF'
+using NetworkMonitor.Core.Models;
+
+namespace NetworkMonitor.Core.Services;
+
+/// <summary>
+/// Main service for monitoring network health.
+/// Orchestrates ping operations and computes overall status.
+/// </summary>
+public interface INetworkMonitorService
+{
+    /// <summary>
+    /// Performs a single network health check.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Current network status</returns>
+    Task<NetworkStatus> CheckNetworkAsync(CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Event raised when network status changes.
+    /// </summary>
+    event EventHandler<NetworkStatus>? StatusChanged;
+}
+EOF
+
+# IStatusDisplay.cs
+cat > NetworkMonitor.Core/Services/IStatusDisplay.cs << 'EOF'
+using NetworkMonitor.Core.Models;
+
+namespace NetworkMonitor.Core.Services;
+
+/// <summary>
+/// Abstraction for displaying network status.
+/// Allows for different display implementations (console, GUI, etc.).
+/// </summary>
+public interface IStatusDisplay
+{
+    /// <summary>
+    /// Updates the display with the current network status.
+    /// </summary>
+    /// <param name="status">Current status to display</param>
+    void UpdateStatus(NetworkStatus status);
+    
+    /// <summary>
+    /// Clears the display.
+    /// </summary>
+    void Clear();
+}
+EOF
+
+# =============================================================================
+# Service Implementations
+# =============================================================================
+log_info "Creating service implementations..."
+
+# PingService.cs
+cat > NetworkMonitor.Core/Services/PingService.cs << 'EOF'
+using System.Diagnostics;
+using System.Net.NetworkInformation;
+using Microsoft.Extensions.Logging;
+using NetworkMonitor.Core.Models;
+
+namespace NetworkMonitor.Core.Services;
+
+/// <summary>
+/// Cross-platform ping implementation using System.Net.NetworkInformation.
+/// Works on Windows, macOS, and Linux without external dependencies.
+/// </summary>
+public sealed class PingService : IPingService, IDisposable
+{
+    private readonly ILogger<PingService> _logger;
+    private readonly Ping _ping;
+    private bool _disposed;
+    
+    public PingService(ILogger<PingService> logger)
+    {
+        _logger = logger;
+        _ping = new Ping();
+    }
+    
+    public async Task<PingResult> PingAsync(
+        string target, 
+        int timeoutMs, 
+        CancellationToken cancellationToken = default)
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(PingService));
+        }
+        
+        try
+        {
+            _logger.LogDebug("Pinging {Target} with timeout {TimeoutMs}ms", target, timeoutMs);
+            
+            // Create a linked token that respects both the caller's token and our timeout
+            using var timeoutCts = new CancellationTokenSource(timeoutMs);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken, timeoutCts.Token);
+            
+            var stopwatch = Stopwatch.StartNew();
+            
+            // Note: PingAsync doesn't accept CancellationToken directly,
+            // but we can use the timeout parameter
+            var reply = await _ping.SendPingAsync(target, timeoutMs);
+            
+            stopwatch.Stop();
+            
+            if (reply.Status == IPStatus.Success)
+            {
+                _logger.LogDebug(
+                    "Ping to {Target} succeeded: {RoundtripMs}ms", 
+                    target, 
+                    reply.RoundtripTime);
+                    
+                return PingResult.Succeeded(target, reply.RoundtripTime);
+            }
+            
+            var errorMessage = reply.Status.ToString();
+            _logger.LogDebug("Ping to {Target} failed: {Status}", target, errorMessage);
+            
+            return PingResult.Failed(target, errorMessage);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogDebug("Ping to {Target} cancelled", target);
+            return PingResult.Failed(target, "Cancelled");
+        }
+        catch (PingException ex)
+        {
+            _logger.LogWarning(ex, "Ping to {Target} threw exception", target);
+            return PingResult.Failed(target, ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error pinging {Target}", target);
+            return PingResult.Failed(target, $"Unexpected error: {ex.Message}");
+        }
+    }
+    
+    public async Task<IReadOnlyList<PingResult>> PingMultipleAsync(
+        string target,
+        int count,
+        int timeoutMs,
+        CancellationToken cancellationToken = default)
+    {
+        var results = new List<PingResult>(count);
+        
+        for (var i = 0; i < count && !cancellationToken.IsCancellationRequested; i++)
+        {
+            var result = await PingAsync(target, timeoutMs, cancellationToken);
+            results.Add(result);
+            
+            // Small delay between pings to avoid flooding
+            if (i < count - 1)
+            {
+                await Task.Delay(50, cancellationToken);
+            }
+        }
+        
+        return results;
+    }
+    
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _ping.Dispose();
+            _disposed = true;
+        }
+    }
+}
+EOF
+
+# NetworkMonitorService.cs
+cat > NetworkMonitor.Core/Services/NetworkMonitorService.cs << 'EOF'
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using NetworkMonitor.Core.Models;
+
+namespace NetworkMonitor.Core.Services;
+
+/// <summary>
+/// Main network monitoring service.
+/// Coordinates ping operations and computes overall network health.
+/// Exposes OpenTelemetry metrics for observability.
+/// </summary>
+public sealed class NetworkMonitorService : INetworkMonitorService
+{
+    private static readonly ActivitySource ActivitySource = new("NetworkMonitor.Core");
+    private static readonly Meter Meter = new("NetworkMonitor.Core");
+    
+    // Metrics
+    private static readonly Counter<long> _checkCounter = Meter.CreateCounter<long>(
+        "network_monitor.checks",
+        description: "Number of network health checks performed");
+    
+    private static readonly Histogram<double> _routerLatencyHistogram = Meter.CreateHistogram<double>(
+        "network_monitor.router_latency_ms",
+        unit: "ms",
+        description: "Router ping latency distribution");
+    
+    private static readonly Histogram<double> _internetLatencyHistogram = Meter.CreateHistogram<double>(
+        "network_monitor.internet_latency_ms",
+        unit: "ms",
+        description: "Internet ping latency distribution");
+    
+    private static readonly Counter<long> _failureCounter = Meter.CreateCounter<long>(
+        "network_monitor.failures",
+        description: "Number of ping failures by target type");
+    
+    private readonly IPingService _pingService;
+    private readonly MonitorOptions _options;
+    private readonly ILogger<NetworkMonitorService> _logger;
+    
+    private NetworkStatus? _lastStatus;
+    
+    public event EventHandler<NetworkStatus>? StatusChanged;
+    
+    public NetworkMonitorService(
+        IPingService pingService,
+        IOptions<MonitorOptions> options,
+        ILogger<NetworkMonitorService> logger)
+    {
+        _pingService = pingService;
+        _options = options.Value;
+        _logger = logger;
+    }
+    
+    public async Task<NetworkStatus> CheckNetworkAsync(CancellationToken cancellationToken = default)
+    {
+        using var activity = ActivitySource.StartActivity("NetworkMonitor.CheckNetwork");
+        
+        _checkCounter.Add(1);
+        
+        _logger.LogDebug("Starting network health check");
+        
+        // Ping router and internet in parallel for efficiency
+        var routerTask = PingWithStatsAsync(
+            _options.RouterAddress, 
+            "router",
+            cancellationToken);
+            
+        var internetTask = PingWithStatsAsync(
+            _options.InternetTarget,
+            "internet", 
+            cancellationToken);
+        
+        await Task.WhenAll(routerTask, internetTask);
+        
+        var routerResult = await routerTask;
+        var internetResult = await internetTask;
+        
+        // Record metrics
+        if (routerResult is { Success: true, RoundtripTimeMs: not null })
+        {
+            _routerLatencyHistogram.Record(routerResult.RoundtripTimeMs.Value);
+        }
+        else
+        {
+            _failureCounter.Add(1, new KeyValuePair<string, object?>("target_type", "router"));
+        }
+        
+        if (internetResult is { Success: true, RoundtripTimeMs: not null })
+        {
+            _internetLatencyHistogram.Record(internetResult.RoundtripTimeMs.Value);
+        }
+        else
+        {
+            _failureCounter.Add(1, new KeyValuePair<string, object?>("target_type", "internet"));
+        }
+        
+        // Compute overall health
+        var (health, message) = ComputeHealth(routerResult, internetResult);
+        
+        var status = new NetworkStatus(
+            health,
+            routerResult,
+            internetResult,
+            DateTimeOffset.UtcNow,
+            message);
+        
+        activity?.SetTag("health", health.ToString());
+        activity?.SetTag("router.success", routerResult?.Success ?? false);
+        activity?.SetTag("internet.success", internetResult?.Success ?? false);
+        
+        // Fire event if status changed
+        if (_lastStatus?.Health != status.Health)
+        {
+            _logger.LogInformation(
+                "Network status changed: {OldHealth} -> {NewHealth}: {Message}",
+                _lastStatus?.Health.ToString() ?? "Unknown",
+                status.Health,
+                status.Message);
+                
+            StatusChanged?.Invoke(this, status);
+        }
+        
+        _lastStatus = status;
+        
+        return status;
+    }
+    
+    private async Task<PingResult?> PingWithStatsAsync(
+        string target,
+        string targetType,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var results = await _pingService.PingMultipleAsync(
+                target,
+                _options.PingsPerCycle,
+                _options.TimeoutMs,
+                cancellationToken);
+            
+            if (results.Count == 0)
+            {
+                return null;
+            }
+            
+            // Calculate aggregate result
+            var successfulPings = results.Where(r => r.Success).ToList();
+            
+            if (successfulPings.Count == 0)
+            {
+                // All pings failed - return the last failure
+                return results[^1];
+            }
+            
+            // Return a result with median latency for stability
+            var sortedLatencies = successfulPings
+                .Where(r => r.RoundtripTimeMs.HasValue)
+                .Select(r => r.RoundtripTimeMs!.Value)
+                .OrderBy(l => l)
+                .ToList();
+            
+            var medianLatency = sortedLatencies.Count > 0 
+                ? sortedLatencies[sortedLatencies.Count / 2] 
+                : 0;
+            
+            return PingResult.Succeeded(target, medianLatency);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error pinging {Target}", target);
+            return PingResult.Failed(target, ex.Message);
+        }
+    }
+    
+    private (NetworkHealth Health, string Message) ComputeHealth(
+        PingResult? routerResult,
+        PingResult? internetResult)
+    {
+        // Priority 1: Check if we can reach the router (local network)
+        if (routerResult is not { Success: true })
+        {
+            return (NetworkHealth.Offline, 
+                "Cannot reach local network - check WiFi/Ethernet connection");
+        }
+        
+        // Priority 2: Check if we can reach the internet
+        if (internetResult is not { Success: true })
+        {
+            return (NetworkHealth.Poor, 
+                $"Local network OK (router: {routerResult.RoundtripTimeMs}ms) but no internet access");
+        }
+        
+        // Both connected - evaluate latency
+        var routerLatency = routerResult.RoundtripTimeMs!.Value;
+        var internetLatency = internetResult.RoundtripTimeMs!.Value;
+        
+        if (routerLatency <= _options.ExcellentLatencyMs && 
+            internetLatency <= _options.ExcellentLatencyMs)
+        {
+            return (NetworkHealth.Excellent, 
+                $"Excellent - Router: {routerLatency}ms, Internet: {internetLatency}ms");
+        }
+        
+        if (routerLatency <= _options.GoodLatencyMs && 
+            internetLatency <= _options.GoodLatencyMs)
+        {
+            return (NetworkHealth.Good, 
+                $"Good - Router: {routerLatency}ms, Internet: {internetLatency}ms");
+        }
+        
+        // High latency somewhere
+        if (routerLatency > _options.GoodLatencyMs)
+        {
+            return (NetworkHealth.Degraded, 
+                $"High local latency: Router {routerLatency}ms - possible WiFi interference");
+        }
+        
+        return (NetworkHealth.Degraded, 
+            $"High internet latency: {internetLatency}ms - possible ISP issues");
+    }
+}
+EOF
+
+# ConsoleStatusDisplay.cs
+cat > NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs << 'EOF'
+using NetworkMonitor.Core.Models;
+
+namespace NetworkMonitor.Core.Services;
+
+/// <summary>
+/// Console-based status display with ANSI colors.
+/// Provides "at a glance" network status visualization.
+/// </summary>
+public sealed class ConsoleStatusDisplay : IStatusDisplay
+{
+    private readonly object _lock = new();
+    
+    // ANSI color codes
+    private const string Reset = "\x1b[0m";
+    private const string Bold = "\x1b[1m";
+    private const string Green = "\x1b[32m";
+    private const string Yellow = "\x1b[33m";
+    private const string Red = "\x1b[31m";
+    private const string Cyan = "\x1b[36m";
+    private const string Magenta = "\x1b[35m";
+    
+    public void UpdateStatus(NetworkStatus status)
+    {
+        lock (_lock)
+        {
+            var (color, symbol) = status.Health switch
+            {
+                NetworkHealth.Excellent => (Green, "●"),
+                NetworkHealth.Good => (Green, "○"),
+                NetworkHealth.Degraded => (Yellow, "◐"),
+                NetworkHealth.Poor => (Red, "◑"),
+                NetworkHealth.Offline => (Red, "○"),
+                _ => (Reset, "?")
+            };
+            
+            Console.Write($"\r{color}{Bold}{symbol} {status.Health,-10}{Reset} ");
+            Console.Write($"{Cyan}Router:{Reset} ");
+            
+            if (status.RouterResult?.Success == true)
+            {
+                Console.Write($"{Green}{status.RouterResult.RoundtripTimeMs,4}ms{Reset} ");
+            }
+            else
+            {
+                Console.Write($"{Red}FAIL{Reset}   ");
+            }
+            
+            Console.Write($"{Cyan}Internet:{Reset} ");
+            
+            if (status.InternetResult?.Success == true)
+            {
+                Console.Write($"{Green}{status.InternetResult.RoundtripTimeMs,4}ms{Reset} ");
+            }
+            else
+            {
+                Console.Write($"{Red}FAIL{Reset}   ");
+            }
+            
+            Console.Write($"{Magenta}[{status.Timestamp:HH:mm:ss}]{Reset}");
+            
+            // Pad to clear any previous longer text
+            Console.Write("          ");
+        }
+    }
+    
+    public void Clear()
+    {
+        lock (_lock)
+        {
+            Console.Write("\r" + new string(' ', Console.WindowWidth - 1) + "\r");
+        }
+    }
+}
+EOF
+
+# MonitorBackgroundService.cs
+cat > NetworkMonitor.Core/Services/MonitorBackgroundService.cs << 'EOF'
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using NetworkMonitor.Core.Models;
+using NetworkMonitor.Core.Storage;
+
+namespace NetworkMonitor.Core.Services;
+
+/// <summary>
+/// Background service that runs the continuous monitoring loop.
+/// Implements IHostedService for proper lifecycle management.
+/// </summary>
+public sealed class MonitorBackgroundService : BackgroundService
+{
+    private readonly INetworkMonitorService _monitorService;
+    private readonly IStatusDisplay _display;
+    private readonly IStorageService _storage;
+    private readonly MonitorOptions _options;
+    private readonly ILogger<MonitorBackgroundService> _logger;
+    
+    public MonitorBackgroundService(
+        INetworkMonitorService monitorService,
+        IStatusDisplay display,
+        IStorageService storage,
+        IOptions<MonitorOptions> options,
+        ILogger<MonitorBackgroundService> logger)
+    {
+        _monitorService = monitorService;
+        _display = display;
+        _storage = storage;
+        _options = options.Value;
+        _logger = logger;
+    }
+    
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        _logger.LogInformation(
+            "Network Monitor starting. Interval: {IntervalMs}ms, Router: {Router}, Internet: {Internet}",
+            _options.IntervalMs,
+            _options.RouterAddress,
+            _options.InternetTarget);
+        
+        // Subscribe to status changes for logging significant events
+        _monitorService.StatusChanged += OnStatusChanged;
+        
+        try
+        {
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try
+                {
+                    var status = await _monitorService.CheckNetworkAsync(stoppingToken);
+                    
+                    // Update display
+                    _display.UpdateStatus(status);
+                    
+                    // Persist results
+                    await _storage.SaveStatusAsync(status, stoppingToken);
+                    
+                    // Wait for next cycle
+                    await Task.Delay(_options.IntervalMs, stoppingToken);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    // Normal shutdown
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error during monitoring cycle");
+                    
+                    // Continue monitoring even if one cycle fails
+                    await Task.Delay(_options.IntervalMs, stoppingToken);
+                }
+            }
+        }
+        finally
+        {
+            _monitorService.StatusChanged -= OnStatusChanged;
+            _display.Clear();
+        }
+        
+        _logger.LogInformation("Network Monitor stopped");
+    }
+    
+    private void OnStatusChanged(object? sender, NetworkStatus status)
+    {
+        // Log significant status changes
+        if (status.Health == NetworkHealth.Offline)
+        {
+            _logger.LogWarning("Network is OFFLINE: {Message}", status.Message);
+        }
+        else if (status.Health == NetworkHealth.Poor)
+        {
+            _logger.LogWarning("Network is POOR: {Message}", status.Message);
+        }
+    }
+}
+EOF
+
+# =============================================================================
+# Storage Interfaces and Implementations
+# =============================================================================
+log_info "Creating storage layer..."
+
+# IStorageService.cs
+cat > NetworkMonitor.Core/Storage/IStorageService.cs << 'EOF'
+using NetworkMonitor.Core.Models;
+
+namespace NetworkMonitor.Core.Storage;
+
+/// <summary>
+/// Abstraction for persisting network status data.
+/// Implementations may write to files, SQLite, or both.
+/// </summary>
+public interface IStorageService
+{
+    /// <summary>
+    /// Persists a network status snapshot.
+    /// </summary>
+    Task SaveStatusAsync(NetworkStatus status, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Retrieves historical data for trendline display.
+    /// </summary>
+    Task<IReadOnlyList<HistoricalData>> GetHistoricalDataAsync(
+        DateTimeOffset from,
+        DateTimeOffset to,
+        TimeGranularity granularity,
+        CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Gets recent raw ping results for detailed analysis.
+    /// </summary>
+    Task<IReadOnlyList<PingResult>> GetRecentPingsAsync(
+        int count,
+        CancellationToken cancellationToken = default);
+}
+EOF
+
+# SqliteStorageService.cs
+cat > NetworkMonitor.Core/Storage/SqliteStorageService.cs << 'EOF'
+using System.Data;
+using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using NetworkMonitor.Core.Models;
+
+namespace NetworkMonitor.Core.Storage;
+
+/// <summary>
+/// SQLite-based storage for network monitoring data.
+/// Provides durable storage with efficient querying for trendlines.
+/// 
+/// Schema is automatically created/migrated on startup.
+/// Old data is automatically pruned based on retention settings.
+/// </summary>
+public sealed class SqliteStorageService : IStorageService, IAsyncDisposable
+{
+    private readonly StorageOptions _options;
+    private readonly ILogger<SqliteStorageService> _logger;
+    private readonly string _connectionString;
+    private bool _initialized;
+    private readonly SemaphoreSlim _initLock = new(1, 1);
+    
+    public SqliteStorageService(
+        IOptions<StorageOptions> options,
+        ILogger<SqliteStorageService> logger)
+    {
+        _options = options.Value;
+        _logger = logger;
+        
+        var dataDir = _options.GetDataDirectory();
+        Directory.CreateDirectory(dataDir);
+        
+        var dbPath = Path.Combine(dataDir, "network-monitor.db");
+        _connectionString = $"Data Source={dbPath}";
+        
+        _logger.LogInformation("SQLite database path: {DbPath}", dbPath);
+    }
+    
+    private async Task EnsureInitializedAsync(CancellationToken cancellationToken)
+    {
+        if (_initialized) return;
+        
+        await _initLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_initialized) return;
+            
+            await using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken);
+            
+            // Create tables
+            var createTablesSql = """
+                CREATE TABLE IF NOT EXISTS ping_results (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    target TEXT NOT NULL,
+                    success INTEGER NOT NULL,
+                    roundtrip_ms INTEGER,
+                    timestamp TEXT NOT NULL,
+                    error_message TEXT,
+                    target_type TEXT NOT NULL
+                );
+                
+                CREATE INDEX IF NOT EXISTS idx_ping_results_timestamp 
+                ON ping_results(timestamp DESC);
+                
+                CREATE INDEX IF NOT EXISTS idx_ping_results_target_type 
+                ON ping_results(target_type, timestamp DESC);
+                
+                CREATE TABLE IF NOT EXISTS network_status (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    health TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    timestamp TEXT NOT NULL,
+                    router_latency_ms INTEGER,
+                    internet_latency_ms INTEGER
+                );
+                
+                CREATE INDEX IF NOT EXISTS idx_network_status_timestamp 
+                ON network_status(timestamp DESC);
+                """;
+            
+            await using var command = connection.CreateCommand();
+            command.CommandText = createTablesSql;
+            await command.ExecuteNonQueryAsync(cancellationToken);
+            
+            _logger.LogDebug("Database schema initialized");
+            _initialized = true;
+        }
+        finally
+        {
+            _initLock.Release();
+        }
+    }
+    
+    public async Task SaveStatusAsync(NetworkStatus status, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await EnsureInitializedAsync(cancellationToken);
+            
+            await using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken);
+            
+            // Save status
+            await using var statusCommand = connection.CreateCommand();
+            statusCommand.CommandText = """
+                INSERT INTO network_status (health, message, timestamp, router_latency_ms, internet_latency_ms)
+                VALUES (@health, @message, @timestamp, @routerLatency, @internetLatency)
+                """;
+            
+            statusCommand.Parameters.AddWithValue("@health", status.Health.ToString());
+            statusCommand.Parameters.AddWithValue("@message", status.Message);
+            statusCommand.Parameters.AddWithValue("@timestamp", status.Timestamp.ToString("O"));
+            statusCommand.Parameters.AddWithValue("@routerLatency", 
+                (object?)status.RouterResult?.RoundtripTimeMs ?? DBNull.Value);
+            statusCommand.Parameters.AddWithValue("@internetLatency", 
+                (object?)status.InternetResult?.RoundtripTimeMs ?? DBNull.Value);
+            
+            await statusCommand.ExecuteNonQueryAsync(cancellationToken);
+            
+            // Save individual ping results
+            if (status.RouterResult != null)
+            {
+                await SavePingResultAsync(connection, status.RouterResult, "router", cancellationToken);
+            }
+            
+            if (status.InternetResult != null)
+            {
+                await SavePingResultAsync(connection, status.InternetResult, "internet", cancellationToken);
+            }
+            
+            // Periodically prune old data (roughly every 100 saves)
+            if (Random.Shared.Next(100) == 0)
+            {
+                await PruneOldDataAsync(connection, cancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log but don't throw - storage failures shouldn't stop monitoring
+            _logger.LogWarning(ex, "Failed to save status to SQLite");
+        }
+    }
+    
+    private async Task SavePingResultAsync(
+        SqliteConnection connection,
+        PingResult result,
+        string targetType,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            INSERT INTO ping_results (target, success, roundtrip_ms, timestamp, error_message, target_type)
+            VALUES (@target, @success, @roundtripMs, @timestamp, @errorMessage, @targetType)
+            """;
+        
+        command.Parameters.AddWithValue("@target", result.Target);
+        command.Parameters.AddWithValue("@success", result.Success ? 1 : 0);
+        command.Parameters.AddWithValue("@roundtripMs", (object?)result.RoundtripTimeMs ?? DBNull.Value);
+        command.Parameters.AddWithValue("@timestamp", result.Timestamp.ToString("O"));
+        command.Parameters.AddWithValue("@errorMessage", (object?)result.ErrorMessage ?? DBNull.Value);
+        command.Parameters.AddWithValue("@targetType", targetType);
+        
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+    
+    private async Task PruneOldDataAsync(SqliteConnection connection, CancellationToken cancellationToken)
+    {
+        var cutoff = DateTimeOffset.UtcNow.AddDays(-_options.RetentionDays).ToString("O");
+        
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            DELETE FROM ping_results WHERE timestamp < @cutoff;
+            DELETE FROM network_status WHERE timestamp < @cutoff;
+            """;
+        command.Parameters.AddWithValue("@cutoff", cutoff);
+        
+        var deleted = await command.ExecuteNonQueryAsync(cancellationToken);
+        
+        if (deleted > 0)
+        {
+            _logger.LogDebug("Pruned {Count} old records", deleted);
+        }
+    }
+    
+    public async Task<IReadOnlyList<HistoricalData>> GetHistoricalDataAsync(
+        DateTimeOffset from,
+        DateTimeOffset to,
+        TimeGranularity granularity,
+        CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync(cancellationToken);
+        
+        await using var connection = new SqliteConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        
+        // SQLite doesn't have date functions that work with ISO timestamps,
+        // so we'll do aggregation in code for now
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT roundtrip_ms, timestamp, success, target_type
+            FROM ping_results
+            WHERE timestamp >= @from AND timestamp <= @to
+            ORDER BY timestamp
+            """;
+        
+        command.Parameters.AddWithValue("@from", from.ToString("O"));
+        command.Parameters.AddWithValue("@to", to.ToString("O"));
+        
+        var results = new List<(long? LatencyMs, DateTimeOffset Timestamp, bool Success)>();
+        
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var latencyMs = reader.IsDBNull(0) ? (long?)null : reader.GetInt64(0);
+            var timestamp = DateTimeOffset.Parse(reader.GetString(1));
+            var success = reader.GetInt32(2) == 1;
+            
+            results.Add((latencyMs, timestamp, success));
+        }
+        
+        // Group by time period and aggregate
+        return AggregateByGranularity(results, granularity);
+    }
+    
+    private IReadOnlyList<HistoricalData> AggregateByGranularity(
+        List<(long? LatencyMs, DateTimeOffset Timestamp, bool Success)> results,
+        TimeGranularity granularity)
+    {
+        if (results.Count == 0)
+        {
+            return Array.Empty<HistoricalData>();
+        }
+        
+        var grouped = results.GroupBy(r => TruncateToPeriod(r.Timestamp, granularity));
+        
+        return grouped.Select(g =>
+        {
+            var successfulPings = g.Where(p => p.Success && p.LatencyMs.HasValue).ToList();
+            var latencies = successfulPings.Select(p => p.LatencyMs!.Value).ToList();
+            
+            return new HistoricalData(
+                Period: g.Key,
+                AverageLatencyMs: latencies.Count > 0 ? latencies.Average() : 0,
+                MinLatencyMs: latencies.Count > 0 ? latencies.Min() : 0,
+                MaxLatencyMs: latencies.Count > 0 ? latencies.Max() : 0,
+                PacketLossPercent: g.Count() > 0 ? 
+                    (double)(g.Count() - successfulPings.Count) / g.Count() * 100 : 0,
+                SampleCount: g.Count());
+        }).OrderBy(h => h.Period).ToList();
+    }
+    
+    private static DateTimeOffset TruncateToPeriod(DateTimeOffset timestamp, TimeGranularity granularity)
+    {
+        return granularity switch
+        {
+            TimeGranularity.Minute => new DateTimeOffset(
+                timestamp.Year, timestamp.Month, timestamp.Day,
+                timestamp.Hour, timestamp.Minute, 0, timestamp.Offset),
+            TimeGranularity.Hour => new DateTimeOffset(
+                timestamp.Year, timestamp.Month, timestamp.Day,
+                timestamp.Hour, 0, 0, timestamp.Offset),
+            TimeGranularity.Day => new DateTimeOffset(
+                timestamp.Year, timestamp.Month, timestamp.Day,
+                0, 0, 0, timestamp.Offset),
+            _ => timestamp
+        };
+    }
+    
+    public async Task<IReadOnlyList<PingResult>> GetRecentPingsAsync(
+        int count,
+        CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync(cancellationToken);
+        
+        await using var connection = new SqliteConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT target, success, roundtrip_ms, timestamp, error_message
+            FROM ping_results
+            ORDER BY timestamp DESC
+            LIMIT @count
+            """;
+        command.Parameters.AddWithValue("@count", count);
+        
+        var results = new List<PingResult>();
+        
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            results.Add(new PingResult(
+                Target: reader.GetString(0),
+                Success: reader.GetInt32(1) == 1,
+                RoundtripTimeMs: reader.IsDBNull(2) ? null : reader.GetInt64(2),
+                Timestamp: DateTimeOffset.Parse(reader.GetString(3)),
+                ErrorMessage: reader.IsDBNull(4) ? null : reader.GetString(4)));
+        }
+        
+        return results;
+    }
+    
+    public async ValueTask DisposeAsync()
+    {
+        _initLock.Dispose();
+    }
+}
+EOF
+
+# =============================================================================
+# OpenTelemetry Exporters (adapted from reference implementation)
+# =============================================================================
+log_info "Creating OpenTelemetry file exporters..."
+
+# FileExporterOptions.cs
+cat > NetworkMonitor.Core/Exporters/FileExporterOptions.cs << 'EOF'
+namespace NetworkMonitor.Core.Exporters;
+
+/// <summary>
+/// Configuration for file-based OpenTelemetry exporters.
+/// Follows XDG specification with fallbacks.
+/// </summary>
+public sealed class FileExporterOptions
+{
+    /// <summary>
+    /// Directory where telemetry files will be written.
+    /// Automatically determined based on XDG spec if not set.
+    /// </summary>
+    public string Directory { get; set; } = GetDefaultDirectory();
+    
+    /// <summary>
+    /// Maximum file size before rotation (25MB default).
+    /// </summary>
+    public long MaxFileSizeBytes { get; set; } = 25 * 1024 * 1024;
+    
+    /// <summary>
+    /// Application name for directory structure.
+    /// </summary>
+    public string ApplicationName { get; set; } = "NetworkMonitor";
+    
+    /// <summary>
+    /// Unique run identifier for file naming.
+    /// </summary>
+    public string RunId { get; set; } = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+    
+    private static string GetDefaultDirectory()
+    {
+        // XDG_DATA_HOME (Linux)
+        var xdgDataHome = Environment.GetEnvironmentVariable("XDG_DATA_HOME");
+        if (!string.IsNullOrEmpty(xdgDataHome))
+        {
+            return Path.Combine(xdgDataHome, "NetworkMonitor", "telemetry");
+        }
+        
+        // Platform-specific app data
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        if (!string.IsNullOrEmpty(localAppData))
+        {
+            return Path.Combine(localAppData, "NetworkMonitor", "telemetry");
+        }
+        
+        // Fallback to ~/.local/share
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (!string.IsNullOrEmpty(home))
+        {
+            return Path.Combine(home, ".local", "share", "NetworkMonitor", "telemetry");
+        }
+        
+        // Final fallback: current directory
+        return Path.Combine(Environment.CurrentDirectory, "telemetry");
+    }
+    
+    public static FileExporterOptions Default => new();
+}
+EOF
+
+# FileMetricExporter.cs (simplified version)
+cat > NetworkMonitor.Core/Exporters/FileMetricExporter.cs << 'EOF'
+using System.Text;
+using System.Text.Json;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+
+namespace NetworkMonitor.Core.Exporters;
+
+/// <summary>
+/// Exports OpenTelemetry metrics to JSON files.
+/// Files are rotated based on size and date.
+/// Failures are logged but don't stop the application.
+/// </summary>
+public sealed class FileMetricExporter : BaseExporter<Metric>
+{
+    private readonly FileExporterOptions _options;
+    private readonly object _lock = new();
+    private StreamWriter? _writer;
+    private string _currentFilePath = string.Empty;
+    private DateTime _currentDate;
+    private long _currentSize;
+    private int _fileNumber;
+    private bool _firstRecord = true;
+    private readonly JsonSerializerOptions _jsonOptions;
+    
+    public FileMetricExporter(FileExporterOptions? options = null)
+    {
+        _options = options ?? FileExporterOptions.Default;
+        _jsonOptions = new JsonSerializerOptions 
+        { 
+            WriteIndented = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+        EnsureDirectory();
+    }
+    
+    public override ExportResult Export(in Batch<Metric> batch)
+    {
+        try
+        {
+            lock (_lock)
+            {
+                EnsureWriter();
+                
+                foreach (var metric in batch)
+                {
+                    foreach (var point in metric.GetMetricPoints())
+                    {
+                        var record = SerializeMetricPoint(metric, point);
+                        var json = JsonSerializer.Serialize(record, _jsonOptions);
+                        WriteJson(json);
+                    }
+                }
+                
+                _writer?.Flush();
+            }
+            
+            return ExportResult.Success;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[FileMetricExporter] Export failed: {ex.Message}");
+            return ExportResult.Failure;
+        }
+    }
+    
+    private object SerializeMetricPoint(Metric metric, MetricPoint point)
+    {
+        var tags = new Dictionary<string, string?>();
+        foreach (var tag in point.Tags)
+        {
+            tags[tag.Key] = tag.Value?.ToString();
+        }
+        
+        object? value = metric.MetricType switch
+        {
+            MetricType.LongSum => point.GetSumLong(),
+            MetricType.DoubleSum => point.GetSumDouble(),
+            MetricType.LongGauge => point.GetGaugeLastValueLong(),
+            MetricType.DoubleGauge => point.GetGaugeLastValueDouble(),
+            MetricType.Histogram => new
+            {
+                Count = point.GetHistogramCount(),
+                Sum = point.GetHistogramSum()
+            },
+            _ => null
+        };
+        
+        return new
+        {
+            Timestamp = point.EndTime.ToString("O"),
+            Name = metric.Name,
+            Description = metric.Description,
+            Unit = metric.Unit,
+            Type = metric.MetricType.ToString(),
+            Tags = tags,
+            Value = value
+        };
+    }
+    
+    private void WriteJson(string json)
+    {
+        var bytes = Encoding.UTF8.GetByteCount(json) + 2;
+        
+        if (ShouldRotate(bytes))
+        {
+            RotateFile();
+        }
+        
+        if (!_firstRecord)
+        {
+            _writer!.WriteLine(",");
+        }
+        else
+        {
+            _firstRecord = false;
+        }
+        
+        _writer!.Write(json);
+        _currentSize += bytes;
+    }
+    
+    private bool ShouldRotate(long bytes) =>
+        _currentSize + bytes > _options.MaxFileSizeBytes ||
+        _currentDate != DateTime.UtcNow.Date;
+    
+    private void EnsureDirectory()
+    {
+        try
+        {
+            Directory.CreateDirectory(_options.Directory);
+        }
+        catch
+        {
+            // Fallback to current directory
+            _options.Directory = Environment.CurrentDirectory;
+        }
+    }
+    
+    private void EnsureWriter()
+    {
+        if (_writer == null)
+        {
+            OpenNewFile();
+        }
+        else if (_currentDate != DateTime.UtcNow.Date)
+        {
+            RotateFile();
+        }
+    }
+    
+    private void OpenNewFile()
+    {
+        _currentDate = DateTime.UtcNow.Date;
+        _fileNumber = 0;
+        _currentFilePath = GetFilePath();
+        
+        _writer = new StreamWriter(_currentFilePath, append: false, Encoding.UTF8);
+        _currentSize = 0;
+        _firstRecord = true;
+        
+        _writer.WriteLine("[");
+        _currentSize = 2;
+    }
+    
+    private void RotateFile()
+    {
+        CloseWriter();
+        _fileNumber++;
+        OpenNewFile();
+    }
+    
+    private string GetFilePath()
+    {
+        var fileName = _fileNumber == 0
+            ? $"metrics_{_options.RunId}.json"
+            : $"metrics_{_options.RunId}_{_fileNumber:D3}.json";
+        return Path.Combine(_options.Directory, fileName);
+    }
+    
+    private void CloseWriter()
+    {
+        if (_writer != null)
+        {
+            _writer.WriteLine();
+            _writer.WriteLine("]");
+            _writer.Flush();
+            _writer.Dispose();
+            _writer = null;
+        }
+    }
+    
+    protected override bool OnShutdown(int timeoutMilliseconds)
+    {
+        lock (_lock)
+        {
+            CloseWriter();
+        }
+        return true;
+    }
+}
+EOF
+
+# FileExporterExtensions.cs
+cat > NetworkMonitor.Core/Exporters/FileExporterExtensions.cs << 'EOF'
+using OpenTelemetry.Metrics;
+
+namespace NetworkMonitor.Core.Exporters;
+
+/// <summary>
+/// Extension methods for registering file exporters.
+/// </summary>
+public static class FileExporterExtensions
+{
+    /// <summary>
+    /// Adds a file exporter for metrics.
+    /// </summary>
+    public static MeterProviderBuilder AddFileExporter(
+        this MeterProviderBuilder builder,
+        FileExporterOptions? options = null)
+    {
+        options ??= FileExporterOptions.Default;
+        
+        return builder.AddReader(
+            new PeriodicExportingMetricReader(
+                new FileMetricExporter(options),
+                exportIntervalMilliseconds: 10000));
+    }
+    
+    /// <summary>
+    /// Adds a file exporter with custom configuration.
+    /// </summary>
+    public static MeterProviderBuilder AddFileExporter(
+        this MeterProviderBuilder builder,
+        Action<FileExporterOptions> configure)
+    {
+        var options = new FileExporterOptions();
+        configure(options);
+        return builder.AddFileExporter(options);
+    }
+}
+EOF
+
+# ServiceCollectionExtensions.cs
+cat > NetworkMonitor.Core/ServiceCollectionExtensions.cs << 'EOF'
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using NetworkMonitor.Core.Exporters;
+using NetworkMonitor.Core.Models;
+using NetworkMonitor.Core.Services;
+using NetworkMonitor.Core.Storage;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+
+namespace NetworkMonitor.Core;
+
+/// <summary>
+/// Extension methods for registering Network Monitor services.
+/// Encapsulates all the DI wiring in one place.
+/// </summary>
+public static class ServiceCollectionExtensions
+{
+    /// <summary>
+    /// Registers all Network Monitor services with the DI container.
+    /// </summary>
+    public static IServiceCollection AddNetworkMonitor(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        // Bind options from configuration
+        services.Configure<MonitorOptions>(
+            configuration.GetSection(MonitorOptions.SectionName));
+        services.Configure<StorageOptions>(
+            configuration.GetSection(StorageOptions.SectionName));
+        
+        // Register services
+        services.AddSingleton<IPingService, PingService>();
+        services.AddSingleton<INetworkMonitorService, NetworkMonitorService>();
+        services.AddSingleton<IStatusDisplay, ConsoleStatusDisplay>();
+        services.AddSingleton<IStorageService, SqliteStorageService>();
+        
+        // Register background service
+        services.AddHostedService<MonitorBackgroundService>();
+        
+        return services;
+    }
+    
+    /// <summary>
+    /// Adds OpenTelemetry metrics with file and console export.
+    /// </summary>
+    public static IServiceCollection AddNetworkMonitorTelemetry(
+        this IServiceCollection services,
+        FileExporterOptions? fileOptions = null)
+    {
+        fileOptions ??= FileExporterOptions.Default;
+        
+        services.AddOpenTelemetry()
+            .ConfigureResource(resource => resource
+                .AddService(
+                    serviceName: "NetworkMonitor",
+                    serviceVersion: "1.0.0"))
+            .WithMetrics(metrics =>
+            {
+                metrics
+                    .AddMeter("NetworkMonitor.Core")
+                    .AddRuntimeInstrumentation()
+                    .AddConsoleExporter()
+                    .AddFileExporter(fileOptions);
+            });
+        
+        return services;
+    }
+}
+EOF
+
+# =============================================================================
+# Console Application
+# =============================================================================
+log_info "Creating console application..."
+
+cat > NetworkMonitor.Console/NetworkMonitor.Console.csproj << 'EOF'
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Console application entry point.
+    Thin layer that wires up hosting and runs the monitor.
+    All business logic is in NetworkMonitor.Core.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NetworkMonitor.Core\NetworkMonitor.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>
+EOF
+
+# Program.cs
+cat > NetworkMonitor.Console/Program.cs << 'EOF'
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using NetworkMonitor.Core;
+using NetworkMonitor.Core.Exporters;
+
+// =============================================================================
+// Network Monitor Console Application
+// =============================================================================
+// A cross-platform network monitoring tool that provides:
+// - At-a-glance network health status (PRIMARY GOAL)
+// - Historical trendlines via SQLite storage
+// - OpenTelemetry metrics exported to files
+//
+// Usage:
+//   dotnet run                          # Run with defaults
+//   dotnet run -- --help                # Show help (future)
+//   Ctrl+C                              # Graceful shutdown
+//
+// Configuration via appsettings.json or environment variables.
+// =============================================================================
+
+Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
+Console.WriteLine("║           Network Monitor - Cross-Platform Edition           ║");
+Console.WriteLine("║                  Press Ctrl+C to stop                        ║");
+Console.WriteLine("╚══════════════════════════════════════════════════════════════╝");
+Console.WriteLine();
+
+var fileExporterOptions = new FileExporterOptions();
+Console.WriteLine($"📁 Telemetry: {fileExporterOptions.Directory}");
+Console.WriteLine($"🆔 Run ID: {fileExporterOptions.RunId}");
+Console.WriteLine();
+
+var builder = Host.CreateApplicationBuilder(args);
+
+// Configure logging
+builder.Logging.SetMinimumLevel(LogLevel.Warning);
+builder.Logging.AddFilter("NetworkMonitor", LogLevel.Information);
+
+// Register Network Monitor services
+builder.Services.AddNetworkMonitor(builder.Configuration);
+builder.Services.AddNetworkMonitorTelemetry(fileExporterOptions);
+
+var host = builder.Build();
+
+// Handle Ctrl+C gracefully
+Console.CancelKeyPress += (_, e) =>
+{
+    e.Cancel = true;
+    Console.WriteLine("\n\n⏹️  Shutting down...");
+};
+
+try
+{
+    await host.RunAsync();
+}
+catch (OperationCanceledException)
+{
+    // Normal shutdown
+}
+finally
+{
+    Console.WriteLine("👋 Network Monitor stopped. Goodbye!");
+}
+EOF
+
+# appsettings.json
+cat > NetworkMonitor.Console/appsettings.json << 'EOF'
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Warning",
+      "NetworkMonitor": "Information"
+    }
+  },
+  "NetworkMonitor": {
+    "RouterAddress": "192.168.1.1",
+    "InternetTarget": "8.8.8.8",
+    "TimeoutMs": 3000,
+    "IntervalMs": 5000,
+    "PingsPerCycle": 3,
+    "ExcellentLatencyMs": 20,
+    "GoodLatencyMs": 100,
+    "DegradedPacketLossPercent": 10
+  },
+  "Storage": {
+    "ApplicationName": "NetworkMonitor",
+    "MaxFileSizeBytes": 26214400,
+    "RetentionDays": 30
+  }
+}
+EOF
+
+# =============================================================================
+# Test Project
+# =============================================================================
+log_info "Creating test project..."
+
+cat > NetworkMonitor.Tests/NetworkMonitor.Tests.csproj << 'EOF'
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Unit tests using xUnit 3.
+    
+    Testing approach:
+    - Use manual fakes/stubs instead of mocking frameworks (Moq is banned)
+    - Focus on behavior, not implementation details
+    - Each test class tests one component in isolation
+    - Integration tests can test multiple components together
+  -->
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NetworkMonitor.Core\NetworkMonitor.Core.csproj" />
+  </ItemGroup>
+</Project>
+EOF
+
+# =============================================================================
+# Test Fakes (instead of Moq)
+# =============================================================================
+log_info "Creating test fakes..."
+
+# FakePingService.cs
+cat > NetworkMonitor.Tests/Fakes/FakePingService.cs << 'EOF'
+using NetworkMonitor.Core.Models;
+using NetworkMonitor.Core.Services;
+
+namespace NetworkMonitor.Tests.Fakes;
+
+/// <summary>
+/// Fake ping service for testing.
+/// Allows tests to control exactly what ping results are returned.
+/// 
+/// Using manual fakes instead of Moq because:
+/// 1. Moq is banned (controversial maintainer)
+/// 2. Manual fakes are more explicit and readable
+/// 3. No magic - you can see exactly what happens
+/// </summary>
+public sealed class FakePingService : IPingService
+{
+    private readonly Queue<PingResult> _results = new();
+    private PingResult? _defaultResult;
+    
+    /// <summary>
+    /// Queues a specific result to be returned on next ping.
+    /// Results are returned in FIFO order.
+    /// </summary>
+    public FakePingService QueueResult(PingResult result)
+    {
+        _results.Enqueue(result);
+        return this;
+    }
+    
+    /// <summary>
+    /// Sets a default result to return when queue is empty.
+    /// </summary>
+    public FakePingService WithDefaultResult(PingResult result)
+    {
+        _defaultResult = result;
+        return this;
+    }
+    
+    /// <summary>
+    /// Configures to return successful pings with specified latency.
+    /// </summary>
+    public FakePingService AlwaysSucceed(long latencyMs = 10)
+    {
+        _defaultResult = PingResult.Succeeded("test", latencyMs);
+        return this;
+    }
+    
+    /// <summary>
+    /// Configures to always fail.
+    /// </summary>
+    public FakePingService AlwaysFail(string error = "Network unreachable")
+    {
+        _defaultResult = PingResult.Failed("test", error);
+        return this;
+    }
+    
+    public Task<PingResult> PingAsync(
+        string target, 
+        int timeoutMs, 
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        if (_results.TryDequeue(out var result))
+        {
+            return Task.FromResult(result with { Target = target });
+        }
+        
+        if (_defaultResult != null)
+        {
+            return Task.FromResult(_defaultResult with { Target = target });
+        }
+        
+        return Task.FromResult(PingResult.Failed(target, "No result configured"));
+    }
+    
+    public async Task<IReadOnlyList<PingResult>> PingMultipleAsync(
+        string target,
+        int count,
+        int timeoutMs,
+        CancellationToken cancellationToken = default)
+    {
+        var results = new List<PingResult>(count);
+        
+        for (var i = 0; i < count; i++)
+        {
+            results.Add(await PingAsync(target, timeoutMs, cancellationToken));
+        }
+        
+        return results;
+    }
+}
+EOF
+
+# FakeStorageService.cs
+cat > NetworkMonitor.Tests/Fakes/FakeStorageService.cs << 'EOF'
+using NetworkMonitor.Core.Models;
+using NetworkMonitor.Core.Storage;
+
+namespace NetworkMonitor.Tests.Fakes;
+
+/// <summary>
+/// In-memory storage for testing.
+/// Stores data in memory without any I/O.
+/// </summary>
+public sealed class FakeStorageService : IStorageService
+{
+    private readonly List<NetworkStatus> _statuses = new();
+    private readonly List<PingResult> _pings = new();
+    
+    public IReadOnlyList<NetworkStatus> SavedStatuses => _statuses;
+    public IReadOnlyList<PingResult> SavedPings => _pings;
+    
+    public Task SaveStatusAsync(NetworkStatus status, CancellationToken cancellationToken = default)
+    {
+        _statuses.Add(status);
+        
+        if (status.RouterResult != null)
+        {
+            _pings.Add(status.RouterResult);
+        }
+        
+        if (status.InternetResult != null)
+        {
+            _pings.Add(status.InternetResult);
+        }
+        
+        return Task.CompletedTask;
+    }
+    
+    public Task<IReadOnlyList<HistoricalData>> GetHistoricalDataAsync(
+        DateTimeOffset from,
+        DateTimeOffset to,
+        TimeGranularity granularity,
+        CancellationToken cancellationToken = default)
+    {
+        // Simple implementation for testing
+        return Task.FromResult<IReadOnlyList<HistoricalData>>(Array.Empty<HistoricalData>());
+    }
+    
+    public Task<IReadOnlyList<PingResult>> GetRecentPingsAsync(
+        int count,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyList<PingResult>>(
+            _pings.TakeLast(count).Reverse().ToList());
+    }
+    
+    public void Clear()
+    {
+        _statuses.Clear();
+        _pings.Clear();
+    }
+}
+EOF
+
+# NullLogger.cs
+cat > NetworkMonitor.Tests/Fakes/NullLogger.cs << 'EOF'
+using Microsoft.Extensions.Logging;
+
+namespace NetworkMonitor.Tests.Fakes;
+
+/// <summary>
+/// Logger that discards all log messages.
+/// Useful for tests where we don't care about logging output.
+/// </summary>
+public sealed class NullLogger<T> : ILogger<T>
+{
+    public static readonly NullLogger<T> Instance = new();
+    
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+    
+    public bool IsEnabled(LogLevel logLevel) => false;
+    
+    public void Log<TState>(
+        LogLevel logLevel,
+        EventId eventId,
+        TState state,
+        Exception? exception,
+        Func<TState, Exception?, string> formatter)
+    {
+        // Intentionally empty
+    }
+}
+EOF
+
+# =============================================================================
+# Unit Tests
+# =============================================================================
+log_info "Creating unit tests..."
+
+# PingResultTests.cs
+cat > NetworkMonitor.Tests/PingResultTests.cs << 'EOF'
+using NetworkMonitor.Core.Models;
+using Xunit;
+
+namespace NetworkMonitor.Tests;
+
+/// <summary>
+/// Tests for PingResult model.
+/// </summary>
+public sealed class PingResultTests
+{
+    [Fact]
+    public void Succeeded_CreatesSuccessfulResult()
+    {
+        // Arrange & Act
+        var result = PingResult.Succeeded("192.168.1.1", 42);
+        
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal("192.168.1.1", result.Target);
+        Assert.Equal(42, result.RoundtripTimeMs);
+        Assert.Null(result.ErrorMessage);
+    }
+    
+    [Fact]
+    public void Failed_CreatesFailedResult()
+    {
+        // Arrange & Act
+        var result = PingResult.Failed("8.8.8.8", "Timeout");
+        
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal("8.8.8.8", result.Target);
+        Assert.Null(result.RoundtripTimeMs);
+        Assert.Equal("Timeout", result.ErrorMessage);
+    }
+    
+    [Fact]
+    public void Timestamp_IsSetToUtcNow()
+    {
+        // Arrange
+        var before = DateTimeOffset.UtcNow;
+        
+        // Act
+        var result = PingResult.Succeeded("test", 10);
+        
+        // Assert
+        var after = DateTimeOffset.UtcNow;
+        Assert.InRange(result.Timestamp, before, after);
+    }
+}
+EOF
+
+# NetworkStatusTests.cs
+cat > NetworkMonitor.Tests/NetworkStatusTests.cs << 'EOF'
+using NetworkMonitor.Core.Models;
+using Xunit;
+
+namespace NetworkMonitor.Tests;
+
+/// <summary>
+/// Tests for NetworkStatus model.
+/// </summary>
+public sealed class NetworkStatusTests
+{
+    [Theory]
+    [InlineData(NetworkHealth.Excellent, true)]
+    [InlineData(NetworkHealth.Good, true)]
+    [InlineData(NetworkHealth.Degraded, true)]
+    [InlineData(NetworkHealth.Poor, false)]
+    [InlineData(NetworkHealth.Offline, false)]
+    public void IsUsable_ReturnsCorrectValue(NetworkHealth health, bool expectedUsable)
+    {
+        // Arrange
+        var status = new NetworkStatus(
+            health,
+            PingResult.Succeeded("router", 10),
+            PingResult.Succeeded("internet", 20),
+            DateTimeOffset.UtcNow,
+            "Test message");
+        
+        // Act & Assert
+        Assert.Equal(expectedUsable, status.IsUsable);
+    }
+}
+EOF
+
+# NetworkMonitorServiceTests.cs
+cat > NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs << 'EOF'
+using Microsoft.Extensions.Options;
+using NetworkMonitor.Core.Models;
+using NetworkMonitor.Core.Services;
+using NetworkMonitor.Tests.Fakes;
+using Xunit;
+
+namespace NetworkMonitor.Tests.Services;
+
+/// <summary>
+/// Tests for NetworkMonitorService.
+/// Uses fake implementations for isolation.
+/// </summary>
+public sealed class NetworkMonitorServiceTests
+{
+    private readonly FakePingService _pingService;
+    private readonly NetworkMonitorService _service;
+    
+    public NetworkMonitorServiceTests()
+    {
+        _pingService = new FakePingService();
+        var options = Options.Create(new MonitorOptions());
+        _service = new NetworkMonitorService(
+            _pingService,
+            options,
+            NullLogger<NetworkMonitorService>.Instance);
+    }
+    
+    [Fact]
+    public async Task CheckNetworkAsync_WhenBothSucceed_ReturnsExcellent()
+    {
+        // Arrange
+        _pingService.AlwaysSucceed(latencyMs: 5);
+        
+        // Act
+        var status = await _service.CheckNetworkAsync();
+        
+        // Assert
+        Assert.Equal(NetworkHealth.Excellent, status.Health);
+        Assert.True(status.RouterResult?.Success);
+        Assert.True(status.InternetResult?.Success);
+    }
+    
+    [Fact]
+    public async Task CheckNetworkAsync_WhenRouterFails_ReturnsOffline()
+    {
+        // Arrange
+        _pingService.AlwaysFail("No route to host");
+        
+        // Act
+        var status = await _service.CheckNetworkAsync();
+        
+        // Assert
+        Assert.Equal(NetworkHealth.Offline, status.Health);
+        Assert.Contains("local network", status.Message, StringComparison.OrdinalIgnoreCase);
+    }
+    
+    [Fact]
+    public async Task CheckNetworkAsync_WhenInternetFails_ReturnsPoor()
+    {
+        // Arrange - Router succeeds, internet fails
+        _pingService
+            .QueueResult(PingResult.Succeeded("router", 10))
+            .QueueResult(PingResult.Succeeded("router", 10))
+            .QueueResult(PingResult.Succeeded("router", 10))
+            .QueueResult(PingResult.Failed("internet", "Timeout"))
+            .QueueResult(PingResult.Failed("internet", "Timeout"))
+            .QueueResult(PingResult.Failed("internet", "Timeout"));
+        
+        // Act
+        var status = await _service.CheckNetworkAsync();
+        
+        // Assert
+        Assert.Equal(NetworkHealth.Poor, status.Health);
+        Assert.True(status.RouterResult?.Success);
+        Assert.False(status.InternetResult?.Success);
+    }
+    
+    [Fact]
+    public async Task CheckNetworkAsync_HighLatency_ReturnsDegraded()
+    {
+        // Arrange - High latency on internet
+        _pingService
+            .QueueResult(PingResult.Succeeded("router", 10))
+            .QueueResult(PingResult.Succeeded("router", 10))
+            .QueueResult(PingResult.Succeeded("router", 10))
+            .QueueResult(PingResult.Succeeded("internet", 500))
+            .QueueResult(PingResult.Succeeded("internet", 500))
+            .QueueResult(PingResult.Succeeded("internet", 500));
+        
+        // Act
+        var status = await _service.CheckNetworkAsync();
+        
+        // Assert
+        Assert.Equal(NetworkHealth.Degraded, status.Health);
+    }
+    
+    [Fact]
+    public async Task CheckNetworkAsync_FiresStatusChangedEvent()
+    {
+        // Arrange
+        _pingService.AlwaysSucceed(5);
+        NetworkStatus? receivedStatus = null;
+        _service.StatusChanged += (_, s) => receivedStatus = s;
+        
+        // Act
+        await _service.CheckNetworkAsync();
+        
+        // Assert
+        Assert.NotNull(receivedStatus);
+        Assert.Equal(NetworkHealth.Excellent, receivedStatus.Health);
+    }
+    
+    [Fact]
+    public async Task CheckNetworkAsync_RespectsCancellation()
+    {
+        // Arrange
+        _pingService.AlwaysSucceed(5);
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+        
+        // Act & Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => _service.CheckNetworkAsync(cts.Token));
+    }
+}
+EOF
+
+# FakePingServiceTests.cs
+cat > NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs << 'EOF'
+using NetworkMonitor.Core.Models;
+using Xunit;
+
+namespace NetworkMonitor.Tests.Fakes;
+
+/// <summary>
+/// Tests for the FakePingService itself.
+/// Ensures our test doubles work correctly.
+/// </summary>
+public sealed class FakePingServiceTests
+{
+    [Fact]
+    public async Task AlwaysSucceed_ReturnsSuccessfulPings()
+    {
+        // Arrange
+        var fake = new FakePingService().AlwaysSucceed(25);
+        
+        // Act
+        var result = await fake.PingAsync("test", 1000);
+        
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal(25, result.RoundtripTimeMs);
+    }
+    
+    [Fact]
+    public async Task QueuedResults_ReturnedInOrder()
+    {
+        // Arrange
+        var fake = new FakePingService()
+            .QueueResult(PingResult.Succeeded("", 10))
+            .QueueResult(PingResult.Succeeded("", 20))
+            .QueueResult(PingResult.Failed("", "error"));
+        
+        // Act
+        var r1 = await fake.PingAsync("target", 1000);
+        var r2 = await fake.PingAsync("target", 1000);
+        var r3 = await fake.PingAsync("target", 1000);
+        
+        // Assert
+        Assert.Equal(10, r1.RoundtripTimeMs);
+        Assert.Equal(20, r2.RoundtripTimeMs);
+        Assert.False(r3.Success);
+    }
+    
+    [Fact]
+    public async Task PingMultipleAsync_ReturnsRequestedCount()
+    {
+        // Arrange
+        var fake = new FakePingService().AlwaysSucceed();
+        
+        // Act
+        var results = await fake.PingMultipleAsync("test", 5, 1000);
+        
+        // Assert
+        Assert.Equal(5, results.Count);
+        Assert.All(results, r => Assert.True(r.Success));
+    }
+}
+EOF
+
+# =============================================================================
+# GitHub Actions Workflow
+# =============================================================================
+log_info "Creating GitHub Actions workflow..."
+
+mkdir -p ../.github/workflows
+
+cat > ../.github/workflows/build-and-test.yml << 'EOF'
+# GitHub Actions Workflow: Build and Test Network Monitor
+# 
+# This workflow:
+# 1. Builds the solution on Linux, Windows, and macOS
+# 2. Runs all unit tests
+# 3. Uploads test results
+#
+# The application is designed to be testable in CI without network access
+# by using fake implementations for all I/O operations.
+
+name: Build and Test
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Display .NET info
+        run: dotnet --info
+
+      - name: Restore dependencies
+        run: dotnet restore src/NetworkMonitor.slnx
+
+      - name: Build solution
+        run: dotnet build src/NetworkMonitor.slnx --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test src/NetworkMonitor.slnx --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}
+          path: '**/test-results.trx'
+          if-no-files-found: warn
+EOF
+
+# =============================================================================
+# Run Script
+# =============================================================================
+log_info "Creating run script..."
+
+cat > run.sh << 'EOF'
+#!/bin/bash
+# =============================================================================
+# Run Network Monitor
+# =============================================================================
+# Convenience script to build and run the network monitor.
+#
+# Usage:
+#   ./run.sh                # Build and run
+#   ./run.sh --no-build     # Run without building
+#   ./run.sh --test         # Run tests only
+# =============================================================================
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+case "${1:-}" in
+    --no-build)
+        echo "Running without build..."
+        dotnet run --project NetworkMonitor.Console --no-build
+        ;;
+    --test)
+        echo "Running tests..."
+        dotnet test --verbosity normal
+        ;;
+    *)
+        echo "Building and running..."
+        dotnet build
+        dotnet run --project NetworkMonitor.Console
+        ;;
+esac
+EOF
+
+chmod +x run.sh
+
+# =============================================================================
+# Completion
+# =============================================================================
+log_success "=========================================="
+log_success "Network Monitor application generated!"
+log_success "=========================================="
+echo ""
+log_info "Directory structure created:"
+echo "  src/"
+echo "  ├── NetworkMonitor.Core/          # Core library"
+echo "  ├── NetworkMonitor.Console/       # Console app"
+echo "  ├── NetworkMonitor.Tests/         # Unit tests"
+echo "  ├── NetworkMonitor.slnx           # Solution file"
+echo "  ├── Directory.Build.props         # Shared build config"
+echo "  ├── Directory.Packages.props      # Central package management"
+echo "  └── run.sh                        # Convenience script"
+echo ""
+log_info "Next steps:"
+echo "  1. cd src"
+echo "  2. dotnet restore"
+echo "  3. dotnet build"
+echo "  4. dotnet test"
+echo "  5. ./run.sh"
+echo ""
+log_info "Or just run: ./run.sh"
+echo ""
+log_warn "Note: You may need to adjust RouterAddress in appsettings.json"
+log_warn "      to match your network's gateway IP."
+
+kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ time bash generate-network-monitor.sh 
+[INFO] Starting Network Monitor application generation...
+[INFO] Working directory: /home/kushal/src/dotnet/network-monitor/src
+[INFO] Creating directory structure...
+[SUCCESS] Directory structure created
+[INFO] Creating Directory.Build.props...
+[INFO] Creating Directory.Packages.props...
+[INFO] Creating solution file...
+[INFO] Creating NetworkMonitor.Core project...
+[INFO] Creating models...
+[INFO] Creating service interfaces...
+[INFO] Creating service implementations...
+[INFO] Creating storage layer...
+[INFO] Creating OpenTelemetry file exporters...
+[INFO] Creating console application...
+[INFO] Creating test project...
+[INFO] Creating test fakes...
+[INFO] Creating unit tests...
+[INFO] Creating GitHub Actions workflow...
+[INFO] Creating run script...
+[SUCCESS] ==========================================
+[SUCCESS] Network Monitor application generated!
+[SUCCESS] ==========================================
+
+[INFO] Directory structure created:
+  src/
+  ├── NetworkMonitor.Core/          # Core library
+  ├── NetworkMonitor.Console/       # Console app
+  ├── NetworkMonitor.Tests/         # Unit tests
+  ├── NetworkMonitor.slnx           # Solution file
+  ├── Directory.Build.props         # Shared build config
+  ├── Directory.Packages.props      # Central package management
+  └── run.sh                        # Convenience script
+
+[INFO] Next steps:
+  1. cd src
+  2. dotnet restore
+  3. dotnet build
+  4. dotnet test
+  5. ./run.sh
+
+[INFO] Or just run: ./run.sh
+
+[WARN] Note: You may need to adjust RouterAddress in appsettings.json
+[WARN]       to match your network's gateway IP.
+
+real	0m0.054s
+user	0m0.018s
+sys	0m0.028s
+kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/src; time dotnet --info; time dotnet restore; time dotnet clean; time dotnet build; time dotnet test; time bash run.sh 
+.NET SDK:
+ Version:           10.0.101
+ Commit:            fad253f51b
+ Workload version:  10.0.101.1
+ MSBuild version:   18.0.6+fad253f51
+
+Runtime Environment:
+ OS Name:     fedora
+ OS Version:  43
+ OS Platform: Linux
+ RID:         fedora.43-x64
+ Base Path:   /usr/lib64/dotnet/sdk/10.0.101/
+
+.NET workloads installed:
+ [android]
+   Installation Source: SDK 10.0.100
+   Manifest Version:    36.1.2/10.0.100
+   Manifest Path:       /home/kushal/.dotnet/sdk-manifests/10.0.100/microsoft.net.sdk.android/36.1.2/WorkloadManifest.json
+   Install Type:        FileBased
+
+Configured to use workload sets when installing new manifests.
+
+Host:
+  Version:      10.0.1
+  Architecture: x64
+  Commit:       fad253f51b
+
+.NET SDKs installed:
+  10.0.101 [/usr/lib64/dotnet/sdk]
+
+.NET runtimes installed:
+  Microsoft.AspNetCore.App 10.0.1 [/usr/lib64/dotnet/shared/Microsoft.AspNetCore.App]
+  Microsoft.NETCore.App 10.0.1 [/usr/lib64/dotnet/shared/Microsoft.NETCore.App]
+
+Other architectures found:
+  None
+
+Environment variables:
+  DOTNET_BUNDLE_EXTRACT_BASE_DIR           [/home/kushal/.cache/dotnet_bundle_extract]
+  DOTNET_ROOT                              [/usr/lib64/dotnet]
+
+global.json file:
+  Not found
+
+Learn more:
+  https://aka.ms/dotnet/info
+
+Download .NET:
+  https://aka.ms/dotnet/download
+
+real	0m0.158s
+user	0m0.124s
+sys	0m0.023s
+Restore complete (2.5s)
+
+Build succeeded in 2.6s
+
+real	0m2.733s
+user	0m2.260s
+sys	0m0.530s
+
+Build succeeded in 0.4s
+
+real	0m0.575s
+user	0m0.610s
+sys	0m0.088s
+Restore complete (0.4s)
+  NetworkMonitor.Core net10.0 failed with 101 error(s) (2.7s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/ServiceCollectionExtensions.cs(52,18): error CS1061: 'IServiceCollection' does not contain a definition for 'AddOpenTelemetry' and no accessible extension method 'AddOpenTelemetry' accepting a first argument of type 'IServiceCollection' could be found (are you missing a using directive or an assembly reference?)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileExporterOptions.cs(28,41): error CA1305: The behavior of 'DateTime.ToString(string)' could vary based on the current user's locale settings. Replace this call in 'FileExporterOptions.RunId' with a call to 'DateTime.ToString(string, IFormatProvider)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/INetworkMonitorService.cs(21,40): error CA1003: Change the event 'StatusChanged' to replace the type 'System.EventHandler<NetworkMonitor.Core.Models.NetworkStatus>?' with a generic EventHandler, for example EventHandler<T>, where T is a valid EventArgs (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1003)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/IStorageService.cs(21,24): error CA1716: In virtual/interface member IStorageService.GetHistoricalDataAsync(DateTimeOffset, DateTimeOffset, TimeGranularity, CancellationToken), rename parameter to so that it no longer conflicts with the reserved language keyword 'To'. Using a reserved keyword as the name of a parameter on a virtual/interface member makes it harder for consumers in other languages to override/implement the member. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1716)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(37,9): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogInformation(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(87,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Models/StorageOptions.cs(62,25): error CA1305: The behavior of 'DateTime.ToString(string)' could vary based on the current user's locale settings. Replace this call in 'StorageOptions.GetDataDirectory()' with a call to 'DateTime.ToString(string, IFormatProvider)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(44,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(49,42): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(50,19): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(83,39): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(85,19): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(36,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(53,17): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(62,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(68,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(73,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogWarning(ILogger, Exception?, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(78,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogError(ILogger, Exception?, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(29,9): error CA1513: Use 'ObjectDisposedException.ThrowIf' instead of explicitly throwing a new exception instance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1513)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Models/StorageOptions.cs(81,9): error CA1031: Modify 'CanWriteToDirectory' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(76,9): error CA1031: Modify 'PingAsync' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(37,9): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogInformation(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(47,31): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(70,21): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogError(ILogger, Exception?, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(83,9): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogInformation(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(68,17): error CA1031: Modify 'ExecuteAsync' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(52,40): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(58,27): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(61,27): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(73,27): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(62,9): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(116,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogInformation(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs(59,9): error CA1031: Modify 'Export' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(75,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(77,34): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(78,36): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs(132,9): error CA1031: Modify 'EnsureDirectory' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(91,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogWarning(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(95,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogWarning(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(93,32): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(99,23): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(142,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogWarning(ILogger, Exception?, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(134,17): error CA5394: Random is an insecure random number generator. Use cryptographically secure random number generators when randomness is required for security. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca5394)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(160,57): error CA1508: '(object?)result.RoundtripTimeMs' is never 'null'. Remove or refactor the condition(s) to avoid dead code. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1508)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(152,35): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(165,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(183,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(116,17): error CA1508: '(object?)status.RouterResult?.RoundtripTimeMs' is never 'null'. Remove or refactor the condition(s) to avoid dead code. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1508)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(118,17): error CA1508: '(object?)status.InternetResult?.RoundtripTimeMs' is never 'null'. Remove or refactor the condition(s) to avoid dead code. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1508)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(139,9): error CA1031: Modify 'SaveStatusAsync' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(100,19): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(102,42): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(103,19): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(106,45): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(120,19): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(125,23): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(130,23): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(136,23): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(172,35): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(179,29): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(172,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogWarning(ILogger, Exception?, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(31,20): error CA1062: In externally visible method 'MonitorBackgroundService.MonitorBackgroundService(INetworkMonitorService monitorService, IStatusDisplay display, IStorageService storage, IOptions<MonitorOptions> options, ILogger<MonitorBackgroundService> logger)', validate parameter 'options' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(52,20): error CA1062: In externally visible method 'NetworkMonitorService.NetworkMonitorService(IPingService pingService, IOptions<MonitorOptions> options, ILogger<NetworkMonitorService> logger)', validate parameter 'options' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/ServiceCollectionExtensions.cs(27,13): error CA1062: In externally visible method 'IServiceCollection ServiceCollectionExtensions.AddNetworkMonitor(IServiceCollection services, IConfiguration configuration)', validate parameter 'configuration' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(26,35): error CA1062: In externally visible method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)', validate parameter 'status' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs(33,9): error CA1062: In externally visible method 'MeterProviderBuilder FileExporterExtensions.AddFileExporter(MeterProviderBuilder builder, Action<FileExporterOptions> configure)', validate parameter 'configure' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(28,20): error CA1062: In externally visible method 'SqliteStorageService.SqliteStorageService(IOptions<StorageOptions> options, ILogger<SqliteStorageService> logger)', validate parameter 'options' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs(21,17): error CA2000: Call System.IDisposable.Dispose on object created by 'new FileMetricExporter(options)' before all references to it are out of scope (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2000)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs(20,13): error CA2000: Call System.IDisposable.Dispose on object created by 'new PeriodicExportingMetricReader(' before all references to it are out of scope (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2000)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs(66,20): error CA1822: Member 'SerializeMetricPoint' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(217,29): error CA1305: The behavior of 'DateTimeOffset.Parse(string)' could vary based on the current user's locale settings. Replace this call in 'SqliteStorageService.GetHistoricalDataAsync(DateTimeOffset, DateTimeOffset, TimeGranularity, [CancellationToken])' with a call to 'DateTimeOffset.Parse(string, IFormatProvider)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(298,28): error CA1305: The behavior of 'DateTimeOffset.Parse(string)' could vary based on the current user's locale settings. Replace this call in 'SqliteStorageService.GetRecentPingsAsync(int, [CancellationToken])' with a call to 'DateTimeOffset.Parse(string, IFormatProvider)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(216,29): error CA1849: 'SqliteDataReader.IsDBNull(int)' synchronously blocks. Await 'DbDataReader.IsDBNullAsync(int)' instead. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1849)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(297,34): error CA1849: 'SqliteDataReader.IsDBNull(int)' synchronously blocks. Await 'DbDataReader.IsDBNullAsync(int)' instead. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1849)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(299,31): error CA1849: 'SqliteDataReader.IsDBNull(int)' synchronously blocks. Await 'DbDataReader.IsDBNullAsync(int)' instead. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1849)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(170,9): error CA1031: Modify 'PingWithStatsAsync' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(137,33): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs(17,27): error CA2213: 'FileMetricExporter' contains field '_writer' that is of IDisposable type 'StreamWriter?', but it is never disposed. Change the Dispose method on 'FileMetricExporter' to call Close or Dispose on this field. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2213)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(248,36): error CA1827: Count() is used where Any() could be used instead to improve performance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1827)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(275,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(277,38): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(278,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(280,35): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(291,34): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(291,40): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(292,22): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(193,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(195,38): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(196,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(200,35): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(213,34): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(213,40): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(214,22): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(112,62): error CA1062: In externally visible method 'Task SqliteStorageService.SaveStatusAsync(NetworkStatus status, CancellationToken cancellationToken = default(CancellationToken))', validate parameter 'status' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(37,27): error CA1303: Method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)' passes a literal string as parameter 'value' of a call to 'void Console.Write(string? value)'. Retrieve the following string(s) from a resource table instead: "Router: ". (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1303)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(45,31): error CA1303: Method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)' passes a literal string as parameter 'value' of a call to 'void Console.Write(string? value)'. Retrieve the following string(s) from a resource table instead: "FAIL   ". (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1303)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(48,27): error CA1303: Method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)' passes a literal string as parameter 'value' of a call to 'void Console.Write(string? value)'. Retrieve the following string(s) from a resource table instead: "Internet: ". (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1303)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(56,31): error CA1303: Method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)' passes a literal string as parameter 'value' of a call to 'void Console.Write(string? value)'. Retrieve the following string(s) from a resource table instead: "FAIL   ". (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1303)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(62,27): error CA1303: Method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)' passes a literal string as parameter 'value' of a call to 'void Console.Write(string? value)'. Retrieve the following string(s) from a resource table instead: "          ". (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1303)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(146,24): error CA1822: Member 'SavePingResultAsync' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(227,43): error CA1822: Member 'AggregateByGranularity' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822)
+
+Build failed with 101 error(s) in 3.3s
+
+real	0m3.399s
+user	0m1.136s
+sys	0m0.184s
+Restore complete (0.4s)
+  NetworkMonitor.Core net10.0 failed with 101 error(s) (0.2s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/ServiceCollectionExtensions.cs(52,18): error CS1061: 'IServiceCollection' does not contain a definition for 'AddOpenTelemetry' and no accessible extension method 'AddOpenTelemetry' accepting a first argument of type 'IServiceCollection' could be found (are you missing a using directive or an assembly reference?)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/INetworkMonitorService.cs(21,40): error CA1003: Change the event 'StatusChanged' to replace the type 'System.EventHandler<NetworkMonitor.Core.Models.NetworkStatus>?' with a generic EventHandler, for example EventHandler<T>, where T is a valid EventArgs (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1003)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileExporterOptions.cs(28,41): error CA1305: The behavior of 'DateTime.ToString(string)' could vary based on the current user's locale settings. Replace this call in 'FileExporterOptions.RunId' with a call to 'DateTime.ToString(string, IFormatProvider)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/IStorageService.cs(21,24): error CA1716: In virtual/interface member IStorageService.GetHistoricalDataAsync(DateTimeOffset, DateTimeOffset, TimeGranularity, CancellationToken), rename parameter to so that it no longer conflicts with the reserved language keyword 'To'. Using a reserved keyword as the name of a parameter on a virtual/interface member makes it harder for consumers in other languages to override/implement the member. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1716)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(31,20): error CA1062: In externally visible method 'MonitorBackgroundService.MonitorBackgroundService(INetworkMonitorService monitorService, IStatusDisplay display, IStorageService storage, IOptions<MonitorOptions> options, ILogger<MonitorBackgroundService> logger)', validate parameter 'options' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(52,20): error CA1062: In externally visible method 'NetworkMonitorService.NetworkMonitorService(IPingService pingService, IOptions<MonitorOptions> options, ILogger<NetworkMonitorService> logger)', validate parameter 'options' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Models/StorageOptions.cs(62,25): error CA1305: The behavior of 'DateTime.ToString(string)' could vary based on the current user's locale settings. Replace this call in 'StorageOptions.GetDataDirectory()' with a call to 'DateTime.ToString(string, IFormatProvider)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(37,9): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogInformation(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Models/StorageOptions.cs(81,9): error CA1031: Modify 'CanWriteToDirectory' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(87,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs(33,9): error CA1062: In externally visible method 'MeterProviderBuilder FileExporterExtensions.AddFileExporter(MeterProviderBuilder builder, Action<FileExporterOptions> configure)', validate parameter 'configure' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(37,9): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogInformation(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(70,21): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogError(ILogger, Exception?, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(83,9): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogInformation(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs(132,9): error CA1031: Modify 'EnsureDirectory' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(44,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(49,42): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(50,19): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(83,39): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(85,19): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(68,17): error CA1031: Modify 'ExecuteAsync' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(52,40): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(58,27): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(61,27): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(73,27): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(36,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(53,17): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(62,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(68,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(73,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogWarning(ILogger, Exception?, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(78,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogError(ILogger, Exception?, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(28,20): error CA1062: In externally visible method 'SqliteStorageService.SqliteStorageService(IOptions<StorageOptions> options, ILogger<SqliteStorageService> logger)', validate parameter 'options' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(91,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogWarning(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(95,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogWarning(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs(20,13): error CA2000: Call System.IDisposable.Dispose on object created by 'new PeriodicExportingMetricReader(' before all references to it are out of scope (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2000)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs(21,17): error CA2000: Call System.IDisposable.Dispose on object created by 'new FileMetricExporter(options)' before all references to it are out of scope (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2000)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(142,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogWarning(ILogger, Exception?, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(29,9): error CA1513: Use 'ObjectDisposedException.ThrowIf' instead of explicitly throwing a new exception instance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1513)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(93,32): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(99,23): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs(59,9): error CA1031: Modify 'Export' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(183,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/ServiceCollectionExtensions.cs(27,13): error CA1062: In externally visible method 'IServiceCollection ServiceCollectionExtensions.AddNetworkMonitor(IServiceCollection services, IConfiguration configuration)', validate parameter 'configuration' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(172,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogWarning(ILogger, Exception?, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs(66,20): error CA1822: Member 'SerializeMetricPoint' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(217,29): error CA1305: The behavior of 'DateTimeOffset.Parse(string)' could vary based on the current user's locale settings. Replace this call in 'SqliteStorageService.GetHistoricalDataAsync(DateTimeOffset, DateTimeOffset, TimeGranularity, [CancellationToken])' with a call to 'DateTimeOffset.Parse(string, IFormatProvider)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs(17,27): error CA2213: 'FileMetricExporter' contains field '_writer' that is of IDisposable type 'StreamWriter?', but it is never disposed. Change the Dispose method on 'FileMetricExporter' to call Close or Dispose on this field. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2213)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(62,9): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(116,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogInformation(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(134,17): error CA5394: Random is an insecure random number generator. Use cryptographically secure random number generators when randomness is required for security. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca5394)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(216,29): error CA1849: 'SqliteDataReader.IsDBNull(int)' synchronously blocks. Await 'DbDataReader.IsDBNullAsync(int)' instead. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1849)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(172,35): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(179,29): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(76,9): error CA1031: Modify 'PingAsync' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(47,31): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(160,57): error CA1508: '(object?)result.RoundtripTimeMs' is never 'null'. Remove or refactor the condition(s) to avoid dead code. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1508)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(152,35): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(165,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(170,9): error CA1031: Modify 'PingWithStatsAsync' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(137,33): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(116,17): error CA1508: '(object?)status.RouterResult?.RoundtripTimeMs' is never 'null'. Remove or refactor the condition(s) to avoid dead code. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1508)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(118,17): error CA1508: '(object?)status.InternetResult?.RoundtripTimeMs' is never 'null'. Remove or refactor the condition(s) to avoid dead code. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1508)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(139,9): error CA1031: Modify 'SaveStatusAsync' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(100,19): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(102,42): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(103,19): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(106,45): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(120,19): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(125,23): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(130,23): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(136,23): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(193,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(195,38): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(196,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(200,35): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(213,34): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(213,40): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(214,22): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(248,36): error CA1827: Count() is used where Any() could be used instead to improve performance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1827)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(26,35): error CA1062: In externally visible method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)', validate parameter 'status' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(298,28): error CA1305: The behavior of 'DateTimeOffset.Parse(string)' could vary based on the current user's locale settings. Replace this call in 'SqliteStorageService.GetRecentPingsAsync(int, [CancellationToken])' with a call to 'DateTimeOffset.Parse(string, IFormatProvider)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(297,34): error CA1849: 'SqliteDataReader.IsDBNull(int)' synchronously blocks. Await 'DbDataReader.IsDBNullAsync(int)' instead. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1849)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(299,31): error CA1849: 'SqliteDataReader.IsDBNull(int)' synchronously blocks. Await 'DbDataReader.IsDBNullAsync(int)' instead. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1849)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(75,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(77,34): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(78,36): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(37,27): error CA1303: Method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)' passes a literal string as parameter 'value' of a call to 'void Console.Write(string? value)'. Retrieve the following string(s) from a resource table instead: "Router: ". (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1303)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(45,31): error CA1303: Method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)' passes a literal string as parameter 'value' of a call to 'void Console.Write(string? value)'. Retrieve the following string(s) from a resource table instead: "FAIL   ". (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1303)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(48,27): error CA1303: Method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)' passes a literal string as parameter 'value' of a call to 'void Console.Write(string? value)'. Retrieve the following string(s) from a resource table instead: "Internet: ". (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1303)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(56,31): error CA1303: Method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)' passes a literal string as parameter 'value' of a call to 'void Console.Write(string? value)'. Retrieve the following string(s) from a resource table instead: "FAIL   ". (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1303)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(62,27): error CA1303: Method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)' passes a literal string as parameter 'value' of a call to 'void Console.Write(string? value)'. Retrieve the following string(s) from a resource table instead: "          ". (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1303)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(275,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(277,38): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(278,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(280,35): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(291,34): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(291,40): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(292,22): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(112,62): error CA1062: In externally visible method 'Task SqliteStorageService.SaveStatusAsync(NetworkStatus status, CancellationToken cancellationToken = default(CancellationToken))', validate parameter 'status' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(146,24): error CA1822: Member 'SavePingResultAsync' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(227,43): error CA1822: Member 'AggregateByGranularity' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822)
+
+Build failed with 101 error(s) in 0.9s
+
+real	0m1.015s
+user	0m0.872s
+sys	0m0.176s
+Building and running...
+Restore complete (0.5s)
+  NetworkMonitor.Core net10.0 failed with 101 error(s) (0.2s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/ServiceCollectionExtensions.cs(52,18): error CS1061: 'IServiceCollection' does not contain a definition for 'AddOpenTelemetry' and no accessible extension method 'AddOpenTelemetry' accepting a first argument of type 'IServiceCollection' could be found (are you missing a using directive or an assembly reference?)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/INetworkMonitorService.cs(21,40): error CA1003: Change the event 'StatusChanged' to replace the type 'System.EventHandler<NetworkMonitor.Core.Models.NetworkStatus>?' with a generic EventHandler, for example EventHandler<T>, where T is a valid EventArgs (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1003)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileExporterOptions.cs(28,41): error CA1305: The behavior of 'DateTime.ToString(string)' could vary based on the current user's locale settings. Replace this call in 'FileExporterOptions.RunId' with a call to 'DateTime.ToString(string, IFormatProvider)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/IStorageService.cs(21,24): error CA1716: In virtual/interface member IStorageService.GetHistoricalDataAsync(DateTimeOffset, DateTimeOffset, TimeGranularity, CancellationToken), rename parameter to so that it no longer conflicts with the reserved language keyword 'To'. Using a reserved keyword as the name of a parameter on a virtual/interface member makes it harder for consumers in other languages to override/implement the member. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1716)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Models/StorageOptions.cs(62,25): error CA1305: The behavior of 'DateTime.ToString(string)' could vary based on the current user's locale settings. Replace this call in 'StorageOptions.GetDataDirectory()' with a call to 'DateTime.ToString(string, IFormatProvider)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(31,20): error CA1062: In externally visible method 'MonitorBackgroundService.MonitorBackgroundService(INetworkMonitorService monitorService, IStatusDisplay display, IStorageService storage, IOptions<MonitorOptions> options, ILogger<MonitorBackgroundService> logger)', validate parameter 'options' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(37,9): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogInformation(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(52,20): error CA1062: In externally visible method 'NetworkMonitorService.NetworkMonitorService(IPingService pingService, IOptions<MonitorOptions> options, ILogger<NetworkMonitorService> logger)', validate parameter 'options' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(37,9): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogInformation(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(70,21): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogError(ILogger, Exception?, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(83,9): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogInformation(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Models/StorageOptions.cs(81,9): error CA1031: Modify 'CanWriteToDirectory' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(87,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs(33,9): error CA1062: In externally visible method 'MeterProviderBuilder FileExporterExtensions.AddFileExporter(MeterProviderBuilder builder, Action<FileExporterOptions> configure)', validate parameter 'configure' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs(21,17): error CA2000: Call System.IDisposable.Dispose on object created by 'new FileMetricExporter(options)' before all references to it are out of scope (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2000)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs(20,13): error CA2000: Call System.IDisposable.Dispose on object created by 'new PeriodicExportingMetricReader(' before all references to it are out of scope (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2000)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/ServiceCollectionExtensions.cs(27,13): error CA1062: In externally visible method 'IServiceCollection ServiceCollectionExtensions.AddNetworkMonitor(IServiceCollection services, IConfiguration configuration)', validate parameter 'configuration' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(91,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogWarning(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(95,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogWarning(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(44,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(49,42): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(50,19): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(83,39): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(85,19): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(68,17): error CA1031: Modify 'ExecuteAsync' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(52,40): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(58,27): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(61,27): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(73,27): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs(132,9): error CA1031: Modify 'EnsureDirectory' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(36,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(53,17): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(62,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(68,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(73,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogWarning(ILogger, Exception?, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(78,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogError(ILogger, Exception?, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(142,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogWarning(ILogger, Exception?, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs(59,9): error CA1031: Modify 'Export' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(93,32): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(99,23): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(29,9): error CA1513: Use 'ObjectDisposedException.ThrowIf' instead of explicitly throwing a new exception instance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1513)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(62,9): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(116,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogInformation(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(183,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogDebug(ILogger, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(134,17): error CA5394: Random is an insecure random number generator. Use cryptographically secure random number generators when randomness is required for security. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca5394)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs(66,20): error CA1822: Member 'SerializeMetricPoint' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs(17,27): error CA2213: 'FileMetricExporter' contains field '_writer' that is of IDisposable type 'StreamWriter?', but it is never disposed. Change the Dispose method on 'FileMetricExporter' to call Close or Dispose on this field. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2213)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(217,29): error CA1305: The behavior of 'DateTimeOffset.Parse(string)' could vary based on the current user's locale settings. Replace this call in 'SqliteStorageService.GetHistoricalDataAsync(DateTimeOffset, DateTimeOffset, TimeGranularity, [CancellationToken])' with a call to 'DateTimeOffset.Parse(string, IFormatProvider)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(172,35): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(179,29): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(216,29): error CA1849: 'SqliteDataReader.IsDBNull(int)' synchronously blocks. Await 'DbDataReader.IsDBNullAsync(int)' instead. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1849)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(28,20): error CA1062: In externally visible method 'SqliteStorageService.SqliteStorageService(IOptions<StorageOptions> options, ILogger<SqliteStorageService> logger)', validate parameter 'options' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(172,13): error CA1848: For improved performance, use the LoggerMessage delegates instead of calling 'LoggerExtensions.LogWarning(ILogger, Exception?, string?, params object?[])' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(160,57): error CA1508: '(object?)result.RoundtripTimeMs' is never 'null'. Remove or refactor the condition(s) to avoid dead code. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1508)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(152,35): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(165,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(76,9): error CA1031: Modify 'PingAsync' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(47,31): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(248,36): error CA1827: Count() is used where Any() could be used instead to improve performance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1827)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(116,17): error CA1508: '(object?)status.RouterResult?.RoundtripTimeMs' is never 'null'. Remove or refactor the condition(s) to avoid dead code. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1508)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(118,17): error CA1508: '(object?)status.InternetResult?.RoundtripTimeMs' is never 'null'. Remove or refactor the condition(s) to avoid dead code. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1508)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(193,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(195,38): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(196,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(200,35): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(213,34): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(213,40): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(214,22): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(139,9): error CA1031: Modify 'SaveStatusAsync' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(100,19): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(102,42): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(103,19): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(106,45): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(120,19): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(125,23): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(130,23): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(136,23): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(170,9): error CA1031: Modify 'PingWithStatsAsync' to catch a more specific allowed exception type, or rethrow the exception (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1031)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(137,33): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(75,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(77,34): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(78,36): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(298,28): error CA1305: The behavior of 'DateTimeOffset.Parse(string)' could vary based on the current user's locale settings. Replace this call in 'SqliteStorageService.GetRecentPingsAsync(int, [CancellationToken])' with a call to 'DateTimeOffset.Parse(string, IFormatProvider)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(26,35): error CA1062: In externally visible method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)', validate parameter 'status' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(297,34): error CA1849: 'SqliteDataReader.IsDBNull(int)' synchronously blocks. Await 'DbDataReader.IsDBNullAsync(int)' instead. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1849)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(299,31): error CA1849: 'SqliteDataReader.IsDBNull(int)' synchronously blocks. Await 'DbDataReader.IsDBNullAsync(int)' instead. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1849)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(275,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(277,38): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(278,15): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(280,35): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(291,34): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(291,40): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(292,22): error CA2007: Consider calling ConfigureAwait on the awaited task (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2007)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(37,27): error CA1303: Method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)' passes a literal string as parameter 'value' of a call to 'void Console.Write(string? value)'. Retrieve the following string(s) from a resource table instead: "Router: ". (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1303)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(45,31): error CA1303: Method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)' passes a literal string as parameter 'value' of a call to 'void Console.Write(string? value)'. Retrieve the following string(s) from a resource table instead: "FAIL   ". (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1303)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(48,27): error CA1303: Method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)' passes a literal string as parameter 'value' of a call to 'void Console.Write(string? value)'. Retrieve the following string(s) from a resource table instead: "Internet: ". (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1303)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(56,31): error CA1303: Method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)' passes a literal string as parameter 'value' of a call to 'void Console.Write(string? value)'. Retrieve the following string(s) from a resource table instead: "FAIL   ". (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1303)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(62,27): error CA1303: Method 'void ConsoleStatusDisplay.UpdateStatus(NetworkStatus status)' passes a literal string as parameter 'value' of a call to 'void Console.Write(string? value)'. Retrieve the following string(s) from a resource table instead: "          ". (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1303)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(112,62): error CA1062: In externally visible method 'Task SqliteStorageService.SaveStatusAsync(NetworkStatus status, CancellationToken cancellationToken = default(CancellationToken))', validate parameter 'status' is non-null before using it. If appropriate, throw an 'ArgumentNullException' when the argument is 'null'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1062)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(146,24): error CA1822: Member 'SavePingResultAsync' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(227,43): error CA1822: Member 'AggregateByGranularity' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822)
+
+Build failed with 101 error(s) in 0.8s
+
+real	0m0.900s
+user	0m0.925s
+sys	0m0.180s
+kushal@syn-2600-6c56-9840-001d-0000-0000-0000-1157:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/; time dotnet format; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet --info; time dotnet restore; time dotnet clean; time dotnet build; time dotnet test; time bash run.sh 

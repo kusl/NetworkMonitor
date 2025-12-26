@@ -1,0 +1,55 @@
+# GitHub Actions Workflow: Build and Test Network Monitor
+# 
+# This workflow:
+# 1. Builds the solution on Linux, Windows, and macOS
+# 2. Runs all unit tests
+# 3. Uploads test results
+#
+# The application is designed to be testable in CI without network access
+# by using fake implementations for all I/O operations.
+
+name: Build and Test
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Display .NET info
+        run: dotnet --info
+
+      - name: Restore dependencies
+        run: dotnet restore src/NetworkMonitor.slnx
+
+      - name: Build solution
+        run: dotnet build src/NetworkMonitor.slnx --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test src/NetworkMonitor.slnx --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}
+          path: '**/test-results.trx'
+          if-no-files-found: warn

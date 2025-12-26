@@ -1,0 +1,45 @@
+<Project>
+  <!--
+    Central Package Management (CPM)
+    All NuGet package versions are defined here for consistency.
+    
+    PACKAGE SELECTION CRITERIA:
+    1. Must be free/open source (Apache 2.0, MIT, BSD, etc.)
+    2. Must be actively maintained
+    3. Prefer Microsoft/official packages where available
+    4. Minimal footprint - only include what's truly needed
+    
+    BANNED PACKAGES (DO NOT ADD):
+    - FluentAssertions (restrictive license)
+    - MassTransit (restrictive license)
+    - Moq (controversial maintainer)
+    - Any package with "non-commercial only" license
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <!-- Microsoft.Extensions.* - Core DI and hosting (MIT License) -->
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    
+    <!-- SQLite - Official Microsoft package (MIT License) -->
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+    
+    <!-- OpenTelemetry - Official packages (Apache 2.0 License) -->
+    <PackageVersion Include="OpenTelemetry" Version="1.14.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.14.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.14.0" />
+    
+    <!-- Testing - xUnit (Apache 2.0 License) -->
+    <PackageVersion Include="xunit.v3" Version="1.1.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+  </ItemGroup>
+</Project>

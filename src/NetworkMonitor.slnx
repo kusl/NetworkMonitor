@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="NetworkMonitor.Core/NetworkMonitor.Core.csproj" />
+  <Project Path="NetworkMonitor.Console/NetworkMonitor.Console.csproj" />
+  <Project Path="NetworkMonitor.Tests/NetworkMonitor.Tests.csproj" />
+</Solution>
