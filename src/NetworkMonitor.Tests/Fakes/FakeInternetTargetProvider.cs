@@ -15,16 +15,13 @@ public sealed class FakeInternetTargetProvider : IInternetTargetProvider
     public FakeInternetTargetProvider WithPrimaryTarget(string target)
     {
         _primaryTarget = target;
-        // Ensure primary is first in the targets list
-        if (!_targets.Contains(target))
-        {
-            _targets.Insert(0, target);
-        }
-        else
-        {
-            _targets.Remove(target);
-            _targets.Insert(0, target);
-        }
+
+        // Remove the target if it exists (no need to check Contains first)
+        _targets.Remove(target);
+
+        // Now insert it at the start
+        _targets.Insert(0, target);
+
         return this;
     }
 
