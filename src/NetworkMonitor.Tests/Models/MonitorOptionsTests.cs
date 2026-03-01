@@ -1,72 +1,100 @@
-using Microsoft.Extensions.Logging.Abstractions;
-using NetworkMonitor.Core.Services;
+using NetworkMonitor.Core.Models;
 using Xunit;
 
-namespace NetworkMonitor.Tests.Services;
+namespace NetworkMonitor.Tests.Models;
 
 /// <summary>
-/// Tests for GatewayDetector.
-/// Note: These tests run against the real network stack, so results
-/// depend on the test environment. We test the interface contract.
+/// Tests for MonitorOptions.
 /// </summary>
-public sealed class GatewayDetectorTests
+public sealed class MonitorOptionsTests
 {
-    private readonly GatewayDetector _detector;
-
-    public GatewayDetectorTests()
+    [Fact]
+    public void IsRouterAutoDetect_WhenAuto_ReturnsTrue()
     {
-        _detector = new GatewayDetector(NullLogger<GatewayDetector>.Instance);
+        // Arrange
+        var options = new MonitorOptions { RouterAddress = "auto" };
+
+        // Act & Assert
+        Assert.True(options.IsRouterAutoDetect);
     }
 
     [Fact]
-    public void DetectDefaultGateway_ReturnsValidIpOrNull()
+    public void IsRouterAutoDetect_WhenAutoUppercase_ReturnsTrue()
     {
-        // Act
-        var result = _detector.DetectDefaultGateway();
+        // Arrange
+        var options = new MonitorOptions { RouterAddress = "AUTO" };
 
-        // Assert - should be null or a valid IP
-        if (result != null)
-        {
-            Assert.Matches(@"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", result);
-        }
+        // Act & Assert
+        Assert.True(options.IsRouterAutoDetect);
     }
 
     [Fact]
-    public void DetectDefaultGatewayV6_ReturnsValidIpOrNull()
+    public void IsRouterAutoDetect_WhenEmpty_ReturnsTrue()
     {
-        // Act
-        var result = _detector.DetectDefaultGatewayV6();
+        // Arrange
+        var options = new MonitorOptions { RouterAddress = "" };
 
-        // Assert - should be null or a valid IPv6 address
-        if (result != null)
-        {
-            Assert.Contains(":", result);
-        }
+        // Act & Assert
+        Assert.True(options.IsRouterAutoDetect);
     }
 
     [Fact]
-    public void GetCommonGatewayAddresses_ReturnsNonEmptyList()
+    public void IsRouterAutoDetect_WhenNull_ReturnsTrue()
     {
-        // Act
-        var addresses = _detector.GetCommonGatewayAddresses();
+        // Arrange
+        var options = new MonitorOptions { RouterAddress = null! };
+
+        // Act & Assert
+        Assert.True(options.IsRouterAutoDetect);
+    }
+
+    [Fact]
+    public void IsRouterAutoDetect_WhenSpecificIp_ReturnsFalse()
+    {
+        // Arrange
+        var options = new MonitorOptions { RouterAddress = "192.168.1.1" };
+
+        // Act & Assert
+        Assert.False(options.IsRouterAutoDetect);
+    }
+
+    [Fact]
+    public void DefaultValues_AreReasonable()
+    {
+        // Arrange & Act
+        var options = new MonitorOptions();
 
         // Assert
-        Assert.NotEmpty(addresses);
-        Assert.Contains("192.168.1.1", addresses);
-        Assert.Contains("192.168.0.1", addresses);
-        Assert.Contains("10.0.0.1", addresses);
+        Assert.Equal(3000, options.TimeoutMs);
+        Assert.Equal(5000, options.IntervalMs);
+        Assert.Equal(3, options.PingsPerCycle);
+        Assert.True(options.EnableFallbackTargets);
+        Assert.True(options.EnableIPv6);
+        Assert.True(options.EnableDnsChecks);
+        Assert.Empty(options.CustomTargets);
+        Assert.Empty(options.DisabledChecks);
     }
 
     [Fact]
-    public void GetCommonGatewayAddresses_AllAreValidIpAddresses()
+    public void IsCheckDisabled_WhenInList_ReturnsTrue()
     {
-        // Act
-        var addresses = _detector.GetCommonGatewayAddresses();
+        // Arrange
+        var options = new MonitorOptions { DisabledChecks = ["Router", "Teams"] };
 
-        // Assert
-        foreach (var address in addresses)
-        {
-            Assert.Matches(@"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", address);
-        }
+        // Act & Assert
+        Assert.True(options.IsCheckDisabled("Router"));
+        Assert.True(options.IsCheckDisabled("router")); // case-insensitive
+        Assert.True(options.IsCheckDisabled("Teams"));
+        Assert.False(options.IsCheckDisabled("Internet"));
+    }
+
+    [Fact]
+    public void IsCheckDisabled_WhenEmpty_ReturnsFalse()
+    {
+        // Arrange
+        var options = new MonitorOptions();
+
+        // Act & Assert
+        Assert.False(options.IsCheckDisabled("Router"));
     }
 }
