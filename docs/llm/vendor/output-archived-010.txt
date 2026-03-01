@@ -496,4 +496,184 @@ Restore failed with 6 error(s) in 0.9s
 real	0m1.016s
 user	0m1.193s
 sys	0m0.172s
-kushal@fedora:~/src/dotnet/network-monitor/src$ 
+kushal@fedora:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/src; time dotnet format; cd ~/src/dotnet/network-monitor/; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet build; time dotnet test; time dotnet list package; time dotnet list package --outdated;
+
+real	0m6.506s
+user	0m9.035s
+sys	0m0.851s
+Starting project export...
+Project Path: /home/kushal/src/dotnet/network-monitor
+Output File: docs/llm/dump.txt
+Generating directory structure...
+Collecting files...
+Found 51 files to export
+Processing (1/51): .github/workflows/build-and-test.yml
+Processing (2/51): .github/workflows/release.yml
+Processing (3/51): src/Directory.Build.props
+Processing (4/51): src/Directory.Packages.props
+Processing (5/51): src/NetworkMonitor.Console/appsettings.json
+Processing (6/51): src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
+Processing (7/51): src/NetworkMonitor.Console/Program.cs
+Processing (8/51): src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs
+Processing (9/51): src/NetworkMonitor.Core/Exporters/FileExporterOptions.cs
+Processing (10/51): src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs
+Processing (11/51): src/NetworkMonitor.Core/Models/HistoricalData.cs
+Processing (12/51): src/NetworkMonitor.Core/Models/MonitorOptions.cs
+Processing (13/51): src/NetworkMonitor.Core/Models/NetworkStatus.cs
+Processing (14/51): src/NetworkMonitor.Core/Models/NetworkStatusEventArgs.cs
+Processing (15/51): src/NetworkMonitor.Core/Models/PingResult.cs
+Processing (16/51): src/NetworkMonitor.Core/Models/StorageOptions.cs
+Processing (17/51): src/NetworkMonitor.Core/NetworkMonitor.Core.csproj
+Processing (18/51): src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
+Processing (19/51): src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs
+Processing (20/51): src/NetworkMonitor.Core/Services/GatewayDetector.cs
+Processing (21/51): src/NetworkMonitor.Core/Services/IGatewayDetector.cs
+Processing (22/51): src/NetworkMonitor.Core/Services/IInternetTargetProvider.cs
+Processing (23/51): src/NetworkMonitor.Core/Services/INetworkConfigurationService.cs
+Processing (24/51): src/NetworkMonitor.Core/Services/INetworkMonitorService.cs
+Processing (25/51): src/NetworkMonitor.Core/Services/InternetTargetProvider.cs
+Processing (26/51): src/NetworkMonitor.Core/Services/IPingService.cs
+Processing (27/51): src/NetworkMonitor.Core/Services/IStatusDisplay.cs
+Processing (28/51): src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs
+Processing (29/51): src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs
+Processing (30/51): src/NetworkMonitor.Core/Services/NetworkMonitorService.cs
+Processing (31/51): src/NetworkMonitor.Core/Services/PingService.cs
+Processing (32/51): src/NetworkMonitor.Core/Storage/IStorageService.cs
+Processing (33/51): src/NetworkMonitor.Core/Storage/SqliteStorageService.cs
+Processing (34/51): src/NetworkMonitor.slnx
+Processing (35/51): src/NetworkMonitor.Tests/Fakes/FakeGatewayDetector.cs
+Processing (36/51): src/NetworkMonitor.Tests/Fakes/FakeInternetTargetProvider.cs
+Processing (37/51): src/NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs
+Processing (38/51): src/NetworkMonitor.Tests/Fakes/FakePingService.cs
+Processing (39/51): src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs
+Processing (40/51): src/NetworkMonitor.Tests/Fakes/FakeStorageService.cs
+Processing (41/51): src/NetworkMonitor.Tests/Models/MonitorOptionsTests.cs
+Processing (42/51): src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs
+Processing (43/51): src/NetworkMonitor.Tests/Models/NetworkStatusEventArgsTests.cs
+Processing (44/51): src/NetworkMonitor.Tests/Models/PingResultTests.cs
+Processing (45/51): src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj
+Processing (46/51): src/NetworkMonitor.Tests/NetworkStatusTests.cs
+Processing (47/51): src/NetworkMonitor.Tests/PingResultTests.cs
+Processing (48/51): src/NetworkMonitor.Tests/Services/GatewayDetectorTests.cs
+Processing (49/51): src/NetworkMonitor.Tests/Services/InternetTargetProviderTests.cs
+Processing (50/51): src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs
+Processing (51/51): src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs
+
+Export completed successfully!
+Output file: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
+Total files exported: 51
+Output file size: 0.15 MB
+
+real	0m0.449s
+user	0m0.220s
+sys	0m0.312s
+Restore complete (0.5s)
+  NetworkMonitor.Core net10.0 failed with 22 error(s) (0.2s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/InternetTargetProvider.cs(37,9): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(80,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(40,9): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(41,9): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(159,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(138,17): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(96,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(141,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(106,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(109,17): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(112,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(121,17): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(179,17): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(188,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(31,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(51,17): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(60,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(66,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(189,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(119,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/GatewayDetector.cs(56,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/GatewayDetector.cs(73,21): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+
+Build failed with 22 error(s) in 0.8s
+
+real	0m0.952s
+user	0m1.024s
+sys	0m0.178s
+Restore complete (0.5s)
+  NetworkMonitor.Core net10.0 failed with 22 error(s) (0.1s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/InternetTargetProvider.cs(37,9): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs(41,9): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(96,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(106,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(109,17): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(112,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(121,17): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(138,17): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(141,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(40,9): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(80,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(31,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(51,17): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(60,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(159,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/PingService.cs(66,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/GatewayDetector.cs(56,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/GatewayDetector.cs(73,21): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(179,17): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs(188,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Storage/SqliteStorageService.cs(189,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(119,13): error CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1873)
+
+Build failed with 22 error(s) in 0.8s
+
+real	0m0.936s
+user	0m0.946s
+sys	0m0.195s
+Restore complete (0.5s)
+
+Build succeeded in 0.6s
+Project 'NetworkMonitor.Console' has the following package references
+   [net10.0]: 
+   Top-level Package                            Requested   Resolved
+   > Microsoft.Extensions.Hosting               10.0.3      10.0.3  
+   > OpenTelemetry.Exporter.Console             1.15.0      1.15.0  
+   > OpenTelemetry.Extensions.Hosting           1.15.0      1.15.0  
+   > OpenTelemetry.Instrumentation.Runtime      1.15.0      1.15.0  
+
+Project 'NetworkMonitor.Core' has the following package references
+   [net10.0]: 
+   Top-level Package                                Requested   Resolved
+   > Microsoft.Data.Sqlite                          10.0.3      10.0.3  
+   > Microsoft.Extensions.Hosting                   10.0.3      10.0.3  
+   > Microsoft.Extensions.Logging.Abstractions      10.0.3      10.0.3  
+   > Microsoft.Extensions.Options                   10.0.3      10.0.3  
+   > OpenTelemetry                                  1.15.0      1.15.0  
+   > OpenTelemetry.Exporter.Console                 1.15.0      1.15.0  
+   > OpenTelemetry.Extensions.Hosting               1.15.0      1.15.0  
+   > OpenTelemetry.Instrumentation.Runtime          1.15.0      1.15.0  
+
+Project 'NetworkMonitor.Tests' has the following package references
+   [net10.0]: 
+   Top-level Package                                Requested   Resolved
+   > Microsoft.Extensions.Logging.Abstractions      10.0.3      10.0.3  
+   > Microsoft.NET.Test.Sdk                         18.3.0      18.3.0  
+   > xunit.runner.visualstudio                      3.1.5       3.1.5   
+   > xunit.v3                                       3.2.2       3.2.2   
+
+
+real	0m1.364s
+user	0m1.366s
+sys	0m0.252s
+Restore complete (0.5s)
+
+Build succeeded in 0.5s
+
+The following sources were used:
+   https://api.nuget.org/v3/index.json
+
+The given project `NetworkMonitor.Console` has no updates given the current sources.
+The given project `NetworkMonitor.Core` has no updates given the current sources.
+The given project `NetworkMonitor.Tests` has no updates given the current sources.
+
+real	0m1.601s
+user	0m1.591s
+sys	0m0.287s
+kushal@fedora:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/src; time dotnet format; cd ~/src/dotnet/network-monitor/; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet build; time dotnet test; time dotnet list package; time dotnet list package --outdated;
