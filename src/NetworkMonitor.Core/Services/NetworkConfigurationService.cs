@@ -58,6 +58,12 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService, 
         return _resolvedInternetTarget ?? _internetTargetProvider.PrimaryTarget;
     }
 
+    /// <inheritdoc />
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync(cancellationToken);
+    }
+
     private async Task EnsureInitializedAsync(CancellationToken cancellationToken)
     {
         if (_initialized) return;
@@ -127,76 +133,49 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService, 
         return null;
     }
 
-    private async Task<string> ResolveInternetTargetAsync(CancellationToken cancellationToken)
+    private async Task<string?> ResolveInternetTargetAsync(CancellationToken cancellationToken)
     {
-        var targets = _internetTargetProvider.GetTargets();
+        if (!_options.EnableFallbackTargets)
+        {
+            _logger.LogDebug("Fallback targets disabled. Using configured target: {Target}", _options.InternetTarget);
+            return _options.InternetTarget;
+        }
 
-        foreach (var target in targets)
+        _logger.LogDebug("Finding reachable internet target...");
+
+        foreach (var target in _internetTargetProvider.GetTargets())
         {
             if (await IsReachableAsync(target, cancellationToken))
             {
-                _logger.LogDebug("Using internet target: {Target}", target);
+                _logger.LogInformation("Using internet target: {Target}", target);
                 return target;
             }
-            _logger.LogDebug("Internet target {Target} is not reachable", target);
         }
 
-        // Return primary target even if not reachable - we'll report the failure
-        _logger.LogWarning("No reachable internet targets found. Using primary: {Target}",
-            _internetTargetProvider.PrimaryTarget);
-        return _internetTargetProvider.PrimaryTarget;
+        _logger.LogWarning("No internet target is reachable. Using default: {Target}", _options.InternetTarget);
+        return _options.InternetTarget;
     }
 
     private async Task<bool> IsReachableAsync(string target, CancellationToken cancellationToken)
     {
         try
         {
-            var result = await _pingService.PingAsync(target, 2000, cancellationToken);
+            var result = await _pingService.PingAsync(target, _options.TimeoutMs, cancellationToken);
             return result.Success;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Failed to ping {Target}", target);
+            _logger.LogDebug("Failed to reach {Target}: {Error}", target, ex.Message);
             return false;
         }
     }
 
-    /// <inheritdoc />
-    public async Task InitializeAsync(CancellationToken cancellationToken = default)
-    {
-        await _initLock.WaitAsync(cancellationToken);
-        try
-        {
-            if (_initialized)
-                return;
-
-            _logger.LogInformation("Initializing network configuration...");
-
-            // Resolve router address
-            _resolvedRouterAddress = await ResolveRouterAddressAsync(cancellationToken);
-            if (_resolvedRouterAddress != null)
-            {
-                _logger.LogInformation("Router address resolved to: {Address}", _resolvedRouterAddress);
-            }
-            else
-            {
-                _logger.LogWarning("Could not resolve router address - router monitoring will be skipped");
-            }
-
-            // Resolve internet target
-            _resolvedInternetTarget = await ResolveInternetTargetAsync(cancellationToken);
-            _logger.LogInformation("Internet target resolved to: {Target}", _resolvedInternetTarget);
-
-            _initialized = true;
-        }
-        finally
-        {
-            _initLock.Release();
-        }
-    }
-
     /// <summary>
-    /// Disposes the service and releases resources.
+    /// Disposes the service and its resources.
     /// </summary>
     public void Dispose()
     {

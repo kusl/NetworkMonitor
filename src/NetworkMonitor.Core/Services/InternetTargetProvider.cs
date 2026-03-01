@@ -6,6 +6,7 @@ namespace NetworkMonitor.Core.Services;
 
 /// <summary>
 /// Provides internet connectivity test targets with automatic fallback.
+/// Supports both IPv4 and IPv6 targets.
 /// </summary>
 public sealed class InternetTargetProvider : IInternetTargetProvider
 {
@@ -13,8 +14,8 @@ public sealed class InternetTargetProvider : IInternetTargetProvider
     private readonly MonitorOptions _options;
 
     /// <summary>
-    /// Well-known, highly available DNS servers that can be used for
-    /// connectivity testing. Ordered by global reliability.
+    /// Well-known, highly available DNS servers (IPv4).
+    /// Ordered by global reliability.
     /// </summary>
     private static readonly string[] DefaultTargets =
     [
@@ -25,6 +26,21 @@ public sealed class InternetTargetProvider : IInternetTargetProvider
         "9.9.9.9",       // Quad9 DNS (security-focused)
         "208.67.222.222", // OpenDNS (Cisco)
         "208.67.220.220", // OpenDNS (secondary)
+    ];
+
+    /// <summary>
+    /// Well-known, highly available DNS servers (IPv6).
+    /// Ordered by global reliability.
+    /// </summary>
+    private static readonly string[] DefaultIPv6Targets =
+    [
+        "2001:4860:4860::8888", // Google Public DNS (primary)
+        "2606:4700:4700::1111", // Cloudflare DNS (primary)
+        "2001:4860:4860::8844", // Google Public DNS (secondary)
+        "2606:4700:4700::1001", // Cloudflare DNS (secondary)
+        "2620:fe::fe",          // Quad9 DNS (primary)
+        "2620:fe::9",           // Quad9 DNS (secondary)
+        "2620:119:35::35",      // OpenDNS (Cisco)
     ];
 
     public InternetTargetProvider(
@@ -67,5 +83,11 @@ public sealed class InternetTargetProvider : IInternetTargetProvider
         }
 
         return targets;
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> GetIPv6Targets()
+    {
+        return DefaultIPv6Targets;
     }
 }

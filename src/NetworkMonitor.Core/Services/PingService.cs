@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net;
 using System.Net.NetworkInformation;
 using Microsoft.Extensions.Logging;
 using NetworkMonitor.Core.Models;
@@ -7,6 +8,7 @@ namespace NetworkMonitor.Core.Services;
 
 /// <summary>
 /// Cross-platform ping implementation using System.Net.NetworkInformation.
+/// Supports both IPv4 and IPv6.
 /// Works on Windows, macOS, and Linux without external dependencies.
 /// </summary>
 public sealed class PingService : IPingService
@@ -30,6 +32,29 @@ public sealed class PingService : IPingService
         {
             _logger.LogDebug("Pinging {Target} with timeout {TimeoutMs}ms", target, timeoutMs);
 
+            // Resolve hostname to IP if needed, to support both IPv4 and IPv6
+            IPAddress? resolvedAddress = null;
+            if (!IPAddress.TryParse(target, out resolvedAddress))
+            {
+                // It's a hostname — resolve it
+                try
+                {
+                    var entry = await Dns.GetHostEntryAsync(target, cancellationToken);
+                    if (entry.AddressList.Length > 0)
+                    {
+                        resolvedAddress = entry.AddressList[0];
+                    }
+                    else
+                    {
+                        return PingResult.Failed(target, "DNS resolution returned no addresses");
+                    }
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    return PingResult.Failed(target, $"DNS resolution failed: {ex.Message}");
+                }
+            }
+
             // Create a new Ping instance per call to allow concurrent pings.
             // The Ping class does not support multiple concurrent async operations
             // on the same instance.
@@ -39,7 +64,7 @@ public sealed class PingService : IPingService
 
             // Note: PingAsync doesn't accept CancellationToken directly,
             // but we can use the timeout parameter
-            var reply = await ping.SendPingAsync(target, timeoutMs).ConfigureAwait(false);
+            var reply = await ping.SendPingAsync(resolvedAddress!, timeoutMs).ConfigureAwait(false);
 
             stopwatch.Stop();
 

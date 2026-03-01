@@ -16,13 +16,14 @@ namespace NetworkMonitor.Core.Services;
 public interface IInternetTargetProvider
 {
     /// <summary>
-    /// Gets the ordered list of internet targets to try.
+    /// Gets the ordered list of IPv4 internet targets to try.
     /// </summary>
-    /// <remarks>
-    /// The first reachable target will be used for monitoring.
-    /// Targets are ordered by reliability and global availability.
-    /// </remarks>
     IReadOnlyList<string> GetTargets();
+
+    /// <summary>
+    /// Gets the ordered list of IPv6 internet targets to try.
+    /// </summary>
+    IReadOnlyList<string> GetIPv6Targets();
 
     /// <summary>
     /// Gets the primary (preferred) target.

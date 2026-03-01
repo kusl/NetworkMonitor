@@ -32,6 +32,19 @@ public sealed class GatewayDetectorTests
     }
 
     [Fact]
+    public void DetectDefaultGatewayV6_ReturnsValidIpOrNull()
+    {
+        // Act
+        var result = _detector.DetectDefaultGatewayV6();
+
+        // Assert - should be null or a valid IPv6 address
+        if (result != null)
+        {
+            Assert.Contains(":", result);
+        }
+    }
+
+    [Fact]
     public void GetCommonGatewayAddresses_ReturnsNonEmptyList()
     {
         // Act

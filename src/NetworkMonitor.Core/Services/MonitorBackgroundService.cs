@@ -39,10 +39,13 @@ public sealed class MonitorBackgroundService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation(
-            "Network Monitor starting. Interval: {IntervalMs}ms, Router: {Router}, Internet: {Internet}",
+            "Network Monitor starting. Interval: {IntervalMs}ms, Router: {Router}, Internet: {Internet}, IPv6: {IPv6}, DNS: {Dns}, CustomTargets: {CustomCount}",
             _options.IntervalMs,
             _options.RouterAddress,
-            _options.InternetTarget);
+            _options.InternetTarget,
+            _options.EnableIPv6,
+            _options.EnableDnsChecks,
+            _options.CustomTargets.Count);
 
         // Subscribe to status changes for logging significant events
         _monitorService.StatusChanged += OnStatusChanged;

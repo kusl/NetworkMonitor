@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Net;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NetworkMonitor.Core.Models;
@@ -8,7 +9,8 @@ namespace NetworkMonitor.Core.Services;
 
 /// <summary>
 /// Main network monitoring service.
-/// Coordinates ping operations and computes overall network health.
+/// Coordinates ping operations across multiple targets and computes overall network health.
+/// Supports IPv4, IPv6, DNS resolution, packet loss tracking, and custom targets.
 /// Exposes OpenTelemetry metrics for observability.
 /// </summary>
 public sealed class NetworkMonitorService : INetworkMonitorService
@@ -35,8 +37,20 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         "network_monitor.failures",
         description: "Number of ping failures by target type");
 
+    private static readonly Histogram<double> DnsResolutionHistogram = Meter.CreateHistogram<double>(
+        "network_monitor.dns_resolution_ms",
+        unit: "ms",
+        description: "DNS resolution latency distribution");
+
+    private static readonly Histogram<double> PacketLossHistogram = Meter.CreateHistogram<double>(
+        "network_monitor.packet_loss_percent",
+        unit: "%",
+        description: "Packet loss percentage distribution");
+
     private readonly IPingService _pingService;
     private readonly INetworkConfigurationService _configService;
+    private readonly IDnsResolverService? _dnsResolver;
+    private readonly IInternetTargetProvider _internetTargetProvider;
     private readonly MonitorOptions _options;
     private readonly ILogger<NetworkMonitorService> _logger;
 
@@ -51,13 +65,17 @@ public sealed class NetworkMonitorService : INetworkMonitorService
     public NetworkMonitorService(
         IPingService pingService,
         INetworkConfigurationService configService,
+        IInternetTargetProvider internetTargetProvider,
         IOptions<MonitorOptions> options,
-        ILogger<NetworkMonitorService> logger)
+        ILogger<NetworkMonitorService> logger,
+        IDnsResolverService? dnsResolver = null)
     {
         _pingService = pingService;
         _configService = configService;
+        _internetTargetProvider = internetTargetProvider;
         _options = options.Value;
         _logger = logger;
+        _dnsResolver = dnsResolver;
     }
 
     /// <inheritdoc />
@@ -73,11 +91,16 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         var routerAddress = await _configService.GetRouterAddressAsync(cancellationToken);
         var internetTarget = await _configService.GetInternetTargetAsync(cancellationToken);
 
-        // Ping router (if we have one)
+        // Collect all target check results
+        var targetResults = new List<TargetCheckResult>();
+
+        // Ping router (if we have one and it's not disabled)
         PingResult? routerResult = null;
-        if (!string.IsNullOrEmpty(routerAddress))
+        if (!string.IsNullOrEmpty(routerAddress) && !_options.IsCheckDisabled("Router"))
         {
-            routerResult = await PingWithAggregationAsync(routerAddress, cancellationToken);
+            var (pingResult, packetLoss) = await PingWithMetricsAsync(routerAddress, cancellationToken);
+            routerResult = pingResult;
+
             if (routerResult is { Success: true, RoundtripTimeMs: not null })
             {
                 RouterLatencyHistogram.Record(routerResult.RoundtripTimeMs.Value);
@@ -86,32 +109,76 @@ public sealed class NetworkMonitorService : INetworkMonitorService
             {
                 FailureCounter.Add(1, new KeyValuePair<string, object?>("target_type", "router"));
             }
+
+            PacketLossHistogram.Record(packetLoss, new KeyValuePair<string, object?>("target", "router"));
+
+            targetResults.Add(new TargetCheckResult(
+                new MonitorTarget("Router", routerAddress, TargetCategory.Router),
+                routerResult, null, null, packetLoss, DateTimeOffset.UtcNow));
         }
 
-        // Ping internet target
-        var internetResult = await PingWithAggregationAsync(internetTarget, cancellationToken);
-        if (internetResult is { Success: true, RoundtripTimeMs: not null })
+        // Ping internet target (if not disabled)
+        PingResult? internetResult = null;
+        double internetPacketLoss = 0;
+        if (!_options.IsCheckDisabled("Internet"))
         {
-            InternetLatencyHistogram.Record(internetResult.RoundtripTimeMs.Value);
+            (internetResult, internetPacketLoss) = await PingWithMetricsAsync(internetTarget, cancellationToken);
+
+            if (internetResult is { Success: true, RoundtripTimeMs: not null })
+            {
+                InternetLatencyHistogram.Record(internetResult.RoundtripTimeMs.Value);
+            }
+            else
+            {
+                FailureCounter.Add(1, new KeyValuePair<string, object?>("target_type", "internet"));
+            }
+
+            PacketLossHistogram.Record(internetPacketLoss, new KeyValuePair<string, object?>("target", "internet"));
+
+            // DNS check for internet target (if it's a hostname)
+            DnsResult? internetDns = null;
+            if (_options.EnableDnsChecks && _dnsResolver != null && !IPAddress.TryParse(internetTarget, out _))
+            {
+                internetDns = await _dnsResolver.ResolveAsync(internetTarget, cancellationToken);
+                DnsResolutionHistogram.Record(internetDns.ResolutionTimeMs,
+                    new KeyValuePair<string, object?>("target", internetTarget));
+            }
+
+            targetResults.Add(new TargetCheckResult(
+                new MonitorTarget("Internet", internetTarget, TargetCategory.PublicDns),
+                internetResult, null, internetDns, internetPacketLoss, DateTimeOffset.UtcNow));
         }
         else
         {
-            FailureCounter.Add(1, new KeyValuePair<string, object?>("target_type", "internet"));
+            // Need a non-null internetResult for health computation
+            internetResult = PingResult.Failed(internetTarget, "Check disabled");
+        }
+
+        // Check custom targets
+        foreach (var customTarget in _options.CustomTargets)
+        {
+            if (!customTarget.Enabled || _options.IsCheckDisabled(customTarget.Name))
+                continue;
+
+            var customResult = await CheckCustomTargetAsync(customTarget, cancellationToken);
+            targetResults.Add(customResult);
         }
 
         // Compute overall health
-        var (health, message) = ComputeHealth(routerResult, internetResult, _options);
+        var (health, message) = ComputeHealth(routerResult, internetResult, internetPacketLoss, _options);
 
         var status = new NetworkStatus(
             health,
             routerResult,
             internetResult,
             DateTimeOffset.UtcNow,
-            message);
+            message,
+            targetResults);
 
         activity?.SetTag("health", health.ToString());
         activity?.SetTag("router.success", routerResult?.Success ?? false);
         activity?.SetTag("internet.success", internetResult.Success);
+        activity?.SetTag("target_count", targetResults.Count);
 
         // Fire event if status changed
         if (_lastStatus?.Health != status.Health)
@@ -129,7 +196,7 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         return status;
     }
 
-    private async Task<PingResult> PingWithAggregationAsync(
+    private async Task<(PingResult Result, double PacketLossPercent)> PingWithMetricsAsync(
         string target,
         CancellationToken cancellationToken)
     {
@@ -141,7 +208,12 @@ public sealed class NetworkMonitorService : INetworkMonitorService
                 _options.TimeoutMs,
                 cancellationToken);
 
-            return AggregateResults(results);
+            var packetLoss = results.Count > 0
+                ? (double)(results.Count - results.Count(r => r.Success)) / results.Count * 100
+                : 100.0;
+
+            var aggregated = AggregateResults(results);
+            return (aggregated, packetLoss);
         }
         catch (OperationCanceledException)
         {
@@ -150,8 +222,47 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Error pinging {Target}", target);
-            return PingResult.Failed(target, ex.Message);
+            return (PingResult.Failed(target, ex.Message), 100.0);
         }
+    }
+
+    private async Task<TargetCheckResult> CheckCustomTargetAsync(
+        CustomTargetConfig target,
+        CancellationToken cancellationToken)
+    {
+        PingResult? pingResult = null;
+        DnsResult? dnsResult = null;
+        double packetLoss = 0;
+
+        try
+        {
+            // DNS resolution for hostnames
+            if (_options.EnableDnsChecks && _dnsResolver != null && !IPAddress.TryParse(target.Address, out _))
+            {
+                dnsResult = await _dnsResolver.ResolveAsync(target.Address, cancellationToken);
+                DnsResolutionHistogram.Record(dnsResult.ResolutionTimeMs,
+                    new KeyValuePair<string, object?>("target", target.Name));
+            }
+
+            // Ping
+            (pingResult, packetLoss) = await PingWithMetricsAsync(target.Address, cancellationToken);
+            PacketLossHistogram.Record(packetLoss,
+                new KeyValuePair<string, object?>("target", target.Name));
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error checking custom target {Name} ({Address})", target.Name, target.Address);
+            pingResult = PingResult.Failed(target.Address, ex.Message);
+            packetLoss = 100;
+        }
+
+        return new TargetCheckResult(
+            new MonitorTarget(target.Name, target.Address, TargetCategory.Custom),
+            pingResult, null, dnsResult, packetLoss, DateTimeOffset.UtcNow);
     }
 
     private static PingResult AggregateResults(IReadOnlyList<PingResult> results)
@@ -186,12 +297,10 @@ public sealed class NetworkMonitorService : INetworkMonitorService
     /// <summary>
     /// Computes network health based on ping results.
     /// </summary>
-    /// <remarks>
-    /// This method is static as it does not access instance data (CA1822).
-    /// </remarks>
     private static (NetworkHealth Health, string Message) ComputeHealth(
         PingResult? routerResult,
         PingResult internetResult,
+        double packetLossPercent,
         MonitorOptions options)
     {
         // If we have a router configured and it's not responding, that's significant
@@ -208,6 +317,13 @@ public sealed class NetworkMonitorService : INetworkMonitorService
             return routerResult?.Success == true
                 ? (NetworkHealth.Poor, "Router OK but cannot reach internet")
                 : (NetworkHealth.Offline, "Cannot reach internet");
+        }
+
+        // Check packet loss
+        if (packetLossPercent >= options.DegradedPacketLossPercent)
+        {
+            return (NetworkHealth.Degraded,
+                $"High packet loss: {packetLossPercent:F0}%");
         }
 
         // Both are up - check latency

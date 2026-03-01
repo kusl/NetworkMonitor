@@ -33,6 +33,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IGatewayDetector, GatewayDetector>();
         services.AddSingleton<IInternetTargetProvider, InternetTargetProvider>();
         services.AddSingleton<INetworkConfigurationService, NetworkConfigurationService>();
+        services.AddSingleton<IDnsResolverService, DnsResolverService>();
         services.AddSingleton<INetworkMonitorService, NetworkMonitorService>();
         services.AddSingleton<IStatusDisplay, ConsoleStatusDisplay>();
         services.AddSingleton<IStorageService, SqliteStorageService>();

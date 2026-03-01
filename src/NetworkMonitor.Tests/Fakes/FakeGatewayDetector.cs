@@ -8,14 +8,24 @@ namespace NetworkMonitor.Tests.Fakes;
 public sealed class FakeGatewayDetector : IGatewayDetector
 {
     private string? _gatewayToReturn;
+    private string? _gatewayV6ToReturn;
     private readonly List<string> _commonGateways = ["192.168.1.1", "192.168.0.1", "10.0.0.1"];
 
     /// <summary>
-    /// Configures the detector to return a specific gateway.
+    /// Configures the detector to return a specific IPv4 gateway.
     /// </summary>
     public FakeGatewayDetector WithGateway(string? gateway)
     {
         _gatewayToReturn = gateway;
+        return this;
+    }
+
+    /// <summary>
+    /// Configures the detector to return a specific IPv6 gateway.
+    /// </summary>
+    public FakeGatewayDetector WithGatewayV6(string? gateway)
+    {
+        _gatewayV6ToReturn = gateway;
         return this;
     }
 
@@ -25,6 +35,7 @@ public sealed class FakeGatewayDetector : IGatewayDetector
     public FakeGatewayDetector WithNoGateway()
     {
         _gatewayToReturn = null;
+        _gatewayV6ToReturn = null;
         return this;
     }
 
@@ -39,6 +50,8 @@ public sealed class FakeGatewayDetector : IGatewayDetector
     }
 
     public string? DetectDefaultGateway() => _gatewayToReturn;
+
+    public string? DetectDefaultGatewayV6() => _gatewayV6ToReturn;
 
     public IReadOnlyList<string> GetCommonGatewayAddresses() => _commonGateways;
 }

@@ -6,6 +6,7 @@ namespace NetworkMonitor.Core.Services;
 
 /// <summary>
 /// Cross-platform default gateway detector using System.Net.NetworkInformation.
+/// Supports both IPv4 and IPv6 gateway detection.
 /// </summary>
 /// <remarks>
 /// This implementation reads the default gateway from the OS routing table,
@@ -42,15 +43,29 @@ public sealed class GatewayDetector : IGatewayDetector
     /// <inheritdoc />
     public string? DetectDefaultGateway()
     {
+        return DetectGateway(AddressFamily.InterNetwork);
+    }
+
+    /// <inheritdoc />
+    public string? DetectDefaultGatewayV6()
+    {
+        return DetectGateway(AddressFamily.InterNetworkV6);
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> GetCommonGatewayAddresses() => CommonGateways;
+
+    private string? DetectGateway(AddressFamily addressFamily)
+    {
+        var label = addressFamily == AddressFamily.InterNetworkV6 ? "IPv6" : "IPv4";
+
         try
         {
-            _logger.LogDebug("Attempting to detect default gateway...");
+            _logger.LogDebug("Attempting to detect {Label} default gateway...", label);
 
-            // Get all network interfaces that are up and have IPv4 connectivity
             var interfaces = NetworkInterface.GetAllNetworkInterfaces()
                 .Where(nic => nic.OperationalStatus == OperationalStatus.Up)
                 .Where(nic => nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
-                .Where(nic => nic.Supports(NetworkInterfaceComponent.IPv4))
                 .ToList();
 
             _logger.LogDebug("Found {Count} active network interfaces", interfaces.Count);
@@ -62,32 +77,32 @@ public sealed class GatewayDetector : IGatewayDetector
 
                 foreach (var gateway in gateways)
                 {
-                    // Skip IPv6 gateways and 0.0.0.0 (no gateway)
-                    if (gateway.Address.AddressFamily != AddressFamily.InterNetwork)
+                    if (gateway.Address.AddressFamily != addressFamily)
                         continue;
 
                     var address = gateway.Address.ToString();
-                    if (address == "0.0.0.0")
+
+                    // Skip zero/unspecified addresses
+                    if (address == "0.0.0.0" || address == "::")
                         continue;
 
+                    // Skip link-local IPv6 for gateway detection (fe80::)
+                    // unless it's the only option — keep it for now
                     _logger.LogInformation(
-                        "Detected default gateway: {Gateway} on interface {Interface}",
-                        address, nic.Name);
+                        "Detected {Label} default gateway: {Gateway} on interface {Interface}",
+                        label, address, nic.Name);
 
                     return address;
                 }
             }
 
-            _logger.LogWarning("No default gateway found on any network interface");
+            _logger.LogWarning("No {Label} default gateway found on any network interface", label);
             return null;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to detect default gateway");
+            _logger.LogError(ex, "Failed to detect {Label} default gateway", label);
             return null;
         }
     }
-
-    /// <inheritdoc />
-    public IReadOnlyList<string> GetCommonGatewayAddresses() => CommonGateways;
 }

@@ -66,4 +66,19 @@ public sealed class InternetTargetProviderTests
         Assert.Equal("4.4.4.4", targets[0]);
         Assert.Contains("8.8.8.8", targets); // Default fallbacks still present
     }
+
+    [Fact]
+    public void GetIPv6Targets_ReturnsNonEmptyList()
+    {
+        // Arrange
+        var options = Options.Create(new MonitorOptions());
+        var provider = new InternetTargetProvider(options, NullLogger<InternetTargetProvider>.Instance);
+
+        // Act
+        var targets = provider.GetIPv6Targets();
+
+        // Assert
+        Assert.NotEmpty(targets);
+        Assert.Contains(targets, t => t.Contains(':'));
+    }
 }

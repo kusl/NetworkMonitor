@@ -5,6 +5,7 @@ namespace NetworkMonitor.Core.Services;
 /// <summary>
 /// Console-based status display with ANSI colors.
 /// Provides "at a glance" network status visualization.
+/// Shows extended info for custom targets and packet loss.
 /// </summary>
 public sealed class ConsoleStatusDisplay : IStatusDisplay
 {
@@ -57,6 +58,22 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
             else
             {
                 Console.Write($"{Red}FAIL{Reset}   ");
+            }
+
+            // Show custom target summary if any
+            if (status.TargetResults is { Count: > 0 })
+            {
+                var customResults = status.TargetResults
+                    .Where(r => r.Target.Category == TargetCategory.Custom)
+                    .ToList();
+
+                if (customResults.Count > 0)
+                {
+                    var ok = customResults.Count(r => r.PingResult?.Success == true);
+                    var total = customResults.Count;
+                    var customColor = ok == total ? Green : ok > 0 ? Yellow : Red;
+                    Console.Write($"{Cyan}Custom:{Reset} {customColor}{ok}/{total}{Reset} ");
+                }
             }
 
             Console.Write($"{Magenta}[{status.Timestamp:HH:mm:ss}]{Reset}");

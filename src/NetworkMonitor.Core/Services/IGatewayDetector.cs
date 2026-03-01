@@ -11,26 +11,23 @@ namespace NetworkMonitor.Core.Services;
 public interface IGatewayDetector
 {
     /// <summary>
-    /// Attempts to detect the default gateway IP address.
+    /// Attempts to detect the default gateway IP address (IPv4).
     /// </summary>
     /// <returns>
     /// The IP address of the default gateway, or null if it cannot be detected.
     /// </returns>
-    /// <remarks>
-    /// On most systems, this returns the router IP (e.g., 192.168.1.1, 192.168.0.1, 10.0.0.1).
-    /// Returns null if:
-    /// - No network interfaces are available
-    /// - No default gateway is configured (e.g., disconnected)
-    /// - The system doesn't support gateway detection
-    /// </remarks>
     string? DetectDefaultGateway();
+
+    /// <summary>
+    /// Attempts to detect the default gateway IPv6 address.
+    /// </summary>
+    /// <returns>
+    /// The IPv6 address of the default gateway, or null if not available.
+    /// </returns>
+    string? DetectDefaultGatewayV6();
 
     /// <summary>
     /// Gets a list of common gateway addresses to try as fallbacks.
     /// </summary>
-    /// <remarks>
-    /// If auto-detection fails, these are the most common gateway addresses
-    /// used by consumer routers. The list is ordered by popularity.
-    /// </remarks>
     IReadOnlyList<string> GetCommonGatewayAddresses();
 }

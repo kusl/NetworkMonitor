@@ -9,6 +9,7 @@ public sealed class FakeInternetTargetProvider : IInternetTargetProvider
 {
     private string _primaryTarget = "8.8.8.8";
     private List<string> _targets = ["8.8.8.8", "1.1.1.1", "208.67.222.222"];
+    private List<string> _ipv6Targets = ["2001:4860:4860::8888", "2606:4700:4700::1111"];
 
     public string PrimaryTarget => _primaryTarget;
 
@@ -35,5 +36,13 @@ public sealed class FakeInternetTargetProvider : IInternetTargetProvider
         return this;
     }
 
+    public FakeInternetTargetProvider WithIPv6Targets(params string[] targets)
+    {
+        _ipv6Targets = targets.ToList();
+        return this;
+    }
+
     public IReadOnlyList<string> GetTargets() => _targets;
+
+    public IReadOnlyList<string> GetIPv6Targets() => _ipv6Targets;
 }

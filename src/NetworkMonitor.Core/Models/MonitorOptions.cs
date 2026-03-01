@@ -86,9 +86,62 @@ public sealed class MonitorOptions
     public bool EnableFallbackTargets { get; set; } = true;
 
     /// <summary>
+    /// Whether to include IPv6 targets for monitoring.
+    /// Default: true
+    /// </summary>
+    public bool EnableIPv6 { get; set; } = true;
+
+    /// <summary>
+    /// Whether to perform DNS resolution checks on hostnames.
+    /// Default: true
+    /// </summary>
+    public bool EnableDnsChecks { get; set; } = true;
+
+    /// <summary>
+    /// Custom targets to monitor (services, private IPs, hostnames).
+    /// Each can be individually enabled/disabled at runtime.
+    /// </summary>
+    public List<CustomTargetConfig> CustomTargets { get; set; } = [];
+
+    /// <summary>
+    /// Names of checks to disable at runtime.
+    /// Matches against target names (case-insensitive).
+    /// Examples: "GoogleDNS", "CloudflareDNS", "Router", "Teams"
+    /// </summary>
+    public List<string> DisabledChecks { get; set; } = [];
+
+    /// <summary>
     /// Checks if router address should be auto-detected.
     /// </summary>
     public bool IsRouterAutoDetect =>
         string.IsNullOrWhiteSpace(RouterAddress) ||
         RouterAddress.Equals(AutoDetect, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Checks if a named check is disabled.
+    /// </summary>
+    public bool IsCheckDisabled(string name) =>
+        DisabledChecks.Exists(d => d.Equals(name, StringComparison.OrdinalIgnoreCase));
+}
+
+/// <summary>
+/// Configuration for a custom monitoring target.
+/// </summary>
+public sealed class CustomTargetConfig
+{
+    /// <summary>
+    /// Human-readable name for this target.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Address to monitor. Can be an IP (v4/v6) or hostname.
+    /// </summary>
+    public string Address { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Whether this target is currently enabled.
+    /// Can be toggled at runtime.
+    /// </summary>
+    public bool Enabled { get; set; } = true;
 }

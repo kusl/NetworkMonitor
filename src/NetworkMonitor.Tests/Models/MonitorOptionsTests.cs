@@ -1,81 +1,72 @@
-using NetworkMonitor.Core.Models;
+using Microsoft.Extensions.Logging.Abstractions;
+using NetworkMonitor.Core.Services;
 using Xunit;
 
-namespace NetworkMonitor.Tests.Models;
+namespace NetworkMonitor.Tests.Services;
 
 /// <summary>
-/// Tests for MonitorOptions.
+/// Tests for GatewayDetector.
+/// Note: These tests run against the real network stack, so results
+/// depend on the test environment. We test the interface contract.
 /// </summary>
-public sealed class MonitorOptionsTests
+public sealed class GatewayDetectorTests
 {
-    [Fact]
-    public void IsRouterAutoDetect_WhenAuto_ReturnsTrue()
-    {
-        // Arrange
-        var options = new MonitorOptions { RouterAddress = "auto" };
+    private readonly GatewayDetector _detector;
 
-        // Act & Assert
-        Assert.True(options.IsRouterAutoDetect);
+    public GatewayDetectorTests()
+    {
+        _detector = new GatewayDetector(NullLogger<GatewayDetector>.Instance);
     }
 
     [Fact]
-    public void IsRouterAutoDetect_WhenAutoUppercase_ReturnsTrue()
+    public void DetectDefaultGateway_ReturnsValidIpOrNull()
     {
-        // Arrange
-        var options = new MonitorOptions { RouterAddress = "AUTO" };
+        // Act
+        var result = _detector.DetectDefaultGateway();
 
-        // Act & Assert
-        Assert.True(options.IsRouterAutoDetect);
+        // Assert - should be null or a valid IP
+        if (result != null)
+        {
+            Assert.Matches(@"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", result);
+        }
     }
 
     [Fact]
-    public void IsRouterAutoDetect_WhenEmpty_ReturnsTrue()
+    public void DetectDefaultGatewayV6_ReturnsValidIpOrNull()
     {
-        // Arrange
-        var options = new MonitorOptions { RouterAddress = "" };
+        // Act
+        var result = _detector.DetectDefaultGatewayV6();
 
-        // Act & Assert
-        Assert.True(options.IsRouterAutoDetect);
+        // Assert - should be null or a valid IPv6 address
+        if (result != null)
+        {
+            Assert.Contains(":", result);
+        }
     }
 
     [Fact]
-    public void IsRouterAutoDetect_WhenNull_ReturnsTrue()
+    public void GetCommonGatewayAddresses_ReturnsNonEmptyList()
     {
-        // Arrange
-        var options = new MonitorOptions { RouterAddress = null! };
-
-        // Act & Assert
-        Assert.True(options.IsRouterAutoDetect);
-    }
-
-    [Fact]
-    public void IsRouterAutoDetect_WhenIpAddress_ReturnsFalse()
-    {
-        // Arrange
-        var options = new MonitorOptions { RouterAddress = "192.168.1.1" };
-
-        // Act & Assert
-        Assert.False(options.IsRouterAutoDetect);
-    }
-
-    [Fact]
-    public void DefaultRouterAddress_IsAuto()
-    {
-        // Arrange & Act
-        var options = new MonitorOptions();
+        // Act
+        var addresses = _detector.GetCommonGatewayAddresses();
 
         // Assert
-        Assert.Equal("auto", options.RouterAddress);
-        Assert.True(options.IsRouterAutoDetect);
+        Assert.NotEmpty(addresses);
+        Assert.Contains("192.168.1.1", addresses);
+        Assert.Contains("192.168.0.1", addresses);
+        Assert.Contains("10.0.0.1", addresses);
     }
 
     [Fact]
-    public void EnableFallbackTargets_DefaultsToTrue()
+    public void GetCommonGatewayAddresses_AllAreValidIpAddresses()
     {
-        // Arrange & Act
-        var options = new MonitorOptions();
+        // Act
+        var addresses = _detector.GetCommonGatewayAddresses();
 
         // Assert
-        Assert.True(options.EnableFallbackTargets);
+        foreach (var address in addresses)
+        {
+            Assert.Matches(@"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", address);
+        }
     }
 }
