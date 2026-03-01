@@ -21,18 +21,19 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     <OpenTelemetryVersion>1.15.0</OpenTelemetryVersion>
+    <ExtensionsVersions>10.0.3</ExtensionsVersions>
   </PropertyGroup>
   
   <ItemGroup>
     <!-- Microsoft.Extensions.* - Core DI and hosting (MIT License) -->
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.1" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.1" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(ExtensionsVersions)" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="$(ExtensionsVersions)" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="$(ExtensionsVersions)" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="$(ExtensionsVersions)" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="$(ExtensionsVersions)" />
     
     <!-- SQLite - Official Microsoft package (MIT License) -->
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="$(ExtensionsVersions)" />
     
     <!-- OpenTelemetry - Official packages (Apache 2.0 License) -->
     <PackageVersion Include="OpenTelemetry" Version="$(OpenTelemetryVersion)" />
