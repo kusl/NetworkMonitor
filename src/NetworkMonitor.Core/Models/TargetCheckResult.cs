@@ -17,4 +17,3 @@ public sealed record TargetCheckResult(
     DnsResult? DnsResult,
     double PacketLossPercent,
     DateTimeOffset Timestamp);
-    
