@@ -27,22 +27,23 @@ public sealed record NetworkStatus(
 }
 
 /// <summary>
-/// Network health classifications, from best to worst.
+/// Network health classifications, ordered from worst (0) to best (4).
+/// This ordering allows natural comparison: Excellent > Good > Degraded > Poor > Offline.
 /// </summary>
 public enum NetworkHealth
 {
-    /// <summary>All targets responding with very low latency.</summary>
-    Excellent,
-
-    /// <summary>All targets responding with acceptable latency.</summary>
-    Good,
-
-    /// <summary>Some issues detected (packet loss, high latency on some targets).</summary>
-    Degraded,
+    /// <summary>No network connectivity.</summary>
+    Offline = 0,
 
     /// <summary>Significant connectivity issues.</summary>
-    Poor,
+    Poor = 1,
 
-    /// <summary>No network connectivity.</summary>
-    Offline
+    /// <summary>Some issues detected (packet loss, high latency on some targets).</summary>
+    Degraded = 2,
+
+    /// <summary>All targets responding with acceptable latency.</summary>
+    Good = 3,
+
+    /// <summary>All targets responding with very low latency.</summary>
+    Excellent = 4
 }

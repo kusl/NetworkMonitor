@@ -137,8 +137,9 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService, 
     {
         if (!_options.EnableFallbackTargets)
         {
-            _logger.LogDebug("Fallback targets disabled. Using configured target: {Target}", _options.InternetTarget);
-            return _options.InternetTarget;
+            var primary = _internetTargetProvider.PrimaryTarget;
+            _logger.LogDebug("Fallback targets disabled. Using primary target: {Target}", primary);
+            return primary;
         }
 
         _logger.LogDebug("Finding reachable internet target...");

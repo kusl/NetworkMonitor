@@ -1166,5 +1166,4 @@ The given project `NetworkMonitor.Tests` has no updates given the current source
 real	0m1.594s
 user	0m1.539s
 sys	0m0.318s
-kushal@fedora:~/src/dotnet/network-monitor/src$ 
-
+kushal@fedora:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/src; time dotnet format; cd ~/src/dotnet/network-monitor/; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet build; time dotnet test; time dotnet list package; time dotnet list package --outdated;
