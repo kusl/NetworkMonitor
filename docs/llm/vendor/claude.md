@@ -4000,4 +4000,84 @@ public sealed class DnsResolverServiceTests
 
 25
 19
+Please fix all issues 
+  NetworkMonitor.Core net10.0 succeeded (0.0s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Tests net10.0 succeeded (0.1s) → NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.3)
+[xUnit.net 00:00:00.14]   Discovering: NetworkMonitor.Tests
+[xUnit.net 00:00:00.32]   Discovered:  NetworkMonitor.Tests
+[xUnit.net 00:00:00.46]   Starting:    NetworkMonitor.Tests
+[xUnit.net 00:00:00.58]     NetworkMonitor.Tests.Services.NetworkConfigurationServiceTests.GetInternetTargetAsync_ReturnsPrimaryTarget [FAIL]
+[xUnit.net 00:00:00.58]       Assert.Equal() Failure: Strings differ
+[xUnit.net 00:00:00.58]                  ↓ (pos 0)
+[xUnit.net 00:00:00.58]       Expected: "1.1.1.1"
+[xUnit.net 00:00:00.58]       Actual:   "8.8.8.8"
+[xUnit.net 00:00:00.58]                  ↑ (pos 0)
+[xUnit.net 00:00:00.58]       Stack Trace:
+[xUnit.net 00:00:00.58]         /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs(104,0): at NetworkMonitor.Tests.Services.NetworkConfigurationServiceTests.GetInternetTargetAsync_ReturnsPrimaryTarget()
+[xUnit.net 00:00:00.58]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.58]     NetworkMonitor.Tests.Models.NetworkHealthTests.NetworkHealth_ComparisonOperators_WorkCorrectly [FAIL]
+[xUnit.net 00:00:00.58]       Assert.True() Failure
+[xUnit.net 00:00:00.58]       Expected: True
+[xUnit.net 00:00:00.58]       Actual:   False
+[xUnit.net 00:00:00.58]       Stack Trace:
+[xUnit.net 00:00:00.58]         /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs(59,0): at NetworkMonitor.Tests.Models.NetworkHealthTests.NetworkHealth_ComparisonOperators_WorkCorrectly()
+[xUnit.net 00:00:00.58]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+[xUnit.net 00:00:00.58]            at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:00.58]     NetworkMonitor.Tests.Models.NetworkHealthTests.NetworkHealth_CanCompare [FAIL]
+[xUnit.net 00:00:00.58]       Assert.True() Failure
+[xUnit.net 00:00:00.58]       Expected: True
+[xUnit.net 00:00:00.58]       Actual:   False
+[xUnit.net 00:00:00.58]       Stack Trace:
+[xUnit.net 00:00:00.58]         /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs(38,0): at NetworkMonitor.Tests.Models.NetworkHealthTests.NetworkHealth_CanCompare()
+[xUnit.net 00:00:00.58]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+[xUnit.net 00:00:00.58]            at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:00.59]     NetworkMonitor.Tests.Models.NetworkHealthTests.NetworkHealth_HasExpectedValues [FAIL]
+[xUnit.net 00:00:00.59]       Assert.Equal() Failure: Values differ
+[xUnit.net 00:00:00.59]       Expected: 0
+[xUnit.net 00:00:00.59]       Actual:   4
+[xUnit.net 00:00:00.59]       Stack Trace:
+[xUnit.net 00:00:00.59]         /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs(16,0): at NetworkMonitor.Tests.Models.NetworkHealthTests.NetworkHealth_HasExpectedValues()
+[xUnit.net 00:00:00.59]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+[xUnit.net 00:00:00.59]            at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:00.61]   Finished:    NetworkMonitor.Tests (ID = '2e8f57cd5826539fc7a5cd3a97d27721fcb9a15ff7c496b1112166f6757858fe')
+  NetworkMonitor.Tests test net10.0 failed with 4 error(s) (1.1s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs(104): error TESTERROR: 
+      NetworkMonitor.Tests.Services.NetworkConfigurationServiceTests.GetInternetTargetAsync_ReturnsPrimaryTarget (22ms): Error Message: Assert.Equal() Failure: Strings differ
+                 ↓ (pos 0)
+      Expected: "1.1.1.1"
+      Actual:   "8.8.8.8"
+                 ↑ (pos 0)
+      Stack Trace:
+         at NetworkMonitor.Tests.Services.NetworkConfigurationServiceTests.GetInternetTargetAsync_ReturnsPrimaryTarget() in /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Services/NetworkConfigu
+      rationServiceTests.cs:line 104
+      --- End of stack trace from previous location ---
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs(59): error TESTERROR: 
+      NetworkMonitor.Tests.Models.NetworkHealthTests.NetworkHealth_ComparisonOperators_WorkCorrectly (15ms): Error Message: Assert.True() Failure
+      Expected: True
+      Actual:   False
+      Stack Trace:
+         at NetworkMonitor.Tests.Models.NetworkHealthTests.NetworkHealth_ComparisonOperators_WorkCorrectly() in /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs:line 5
+      9
+         at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+         at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs(38): error TESTERROR: 
+      NetworkMonitor.Tests.Models.NetworkHealthTests.NetworkHealth_CanCompare (< 1ms): Error Message: Assert.True() Failure
+      Expected: True
+      Actual:   False
+      Stack Trace:
+         at NetworkMonitor.Tests.Models.NetworkHealthTests.NetworkHealth_CanCompare() in /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs:line 38
+         at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+         at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs(16): error TESTERROR: 
+      NetworkMonitor.Tests.Models.NetworkHealthTests.NetworkHealth_HasExpectedValues (< 1ms): Error Message: Assert.Equal() Failure: Values differ
+      Expected: 0
+      Actual:   4
+      Stack Trace:
+         at NetworkMonitor.Tests.Models.NetworkHealthTests.NetworkHealth_HasExpectedValues() in /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs:line 16
+         at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+         at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
 
+Test summary: total: 71, failed: 4, succeeded: 67, skipped: 0, duration: 1.1s
+Build failed with 4 error(s) in 1.9s
+and remember to obey previous instructions such as do not hallucinate and return full files 
