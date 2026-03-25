@@ -7403,14 +7403,12 @@ The `GetValue<T>` extension method requires the `Microsoft.Extensions.Configurat
 
 This is excellent. 
 now, please fix with correct information or remove entirely if unsure from the following all that fail 
-
-● Excellent  Router:    1ms Internet:   17ms Targets: 50/59 [08:08:51]          
-  ⚠ 16 target(s) need attention:
-    ▲ Verisign-DNS-1               latency 27ms
-    ▲ CleanBrowsing                latency 36ms
-    ▲ AdGuard-DNS                  latency 38ms
-    ▲ NextDNS                      latency 39ms
-    ▲ RIPE-NCC                     latency 106ms
+it is 4:13 AM Eastern Time and none of these should be failing.
+network checks that fail all the time are worse than useless to me 
+because it demands attention when there is none due 
+● Excellent  Router:    1ms Internet:   17ms Targets: 50/59 [08:12:14]          
+  ⚠ 11 target(s) need attention:
+    ▲ RIPE-NCC                     latency 104ms
     ✗ ARIN                         FAIL: TimedOut
     ✗ APNIC                        FAIL: TimedOut
     ✗ MS-Azure-Portal              FAIL: TimedOut
@@ -7421,4 +7419,137 @@ now, please fix with correct information or remove entirely if unsure from the f
     ✗ Akamai-EdgeSuite             FAIL: DNS resolution failed: Name or service not known [DNS FAIL]
     ✗ Slack                        FAIL: TimedOut
     ▲ ICMP-info                    latency 114ms
-    ▲ Internet-NL                  latency 102ms
+● Excellent  Router:    1ms Internet:   17ms Targets: 50/59 [08:13:24]          
+  ⚠ 11 target(s) need attention:
+    ▲ RIPE-NCC                     latency 105ms
+    ✗ ARIN                         FAIL: TimedOut
+    ✗ APNIC                        FAIL: TimedOut
+    ✗ MS-Azure-Portal              FAIL: TimedOut
+    ✗ MS-DNS                       FAIL: DNS resolution failed: Name or service not known [DNS FAIL]
+    ✗ AWS-CloudFront               FAIL: DNS resolution failed: Name or service not known [DNS FAIL]
+    ✗ AWS-Route53                  FAIL: TimedOut
+    ✗ NuGet                        FAIL: TimedOut
+    ✗ Akamai-EdgeSuite             FAIL: DNS resolution failed: Name or service not known [DNS FAIL]
+    ✗ Slack                        FAIL: TimedOut
+    ▲ ICMP-info                    latency 109ms
+    ▲ ICMP-info                    latency 114ms
+● Excellent  Router:    2ms Internet:   17ms Targets: 50/59 [08:14:34]          
+  ⚠ 11 target(s) need attention:
+    ▲ RIPE-NCC                     latency 105ms
+    ✗ ARIN                         FAIL: TimedOut
+    ✗ APNIC                        FAIL: TimedOut
+    ✗ MS-Azure-Portal              FAIL: TimedOut
+    ✗ MS-DNS                       FAIL: DNS resolution failed: Name or service not known [DNS FAIL]
+    ✗ AWS-CloudFront               FAIL: DNS resolution failed: Name or service not known [DNS FAIL]
+    ✗ AWS-Route53                  FAIL: TimedOut
+    ✗ NuGet                        FAIL: TimedOut
+    ✗ Akamai-EdgeSuite             FAIL: DNS resolution failed: Name or service not known [DNS FAIL]
+    ✗ Slack                        FAIL: TimedOut
+    ▲ ICMP-info                    latency 112ms
+    ▲ ICMP-info                    latency 109ms
+    ▲ ICMP-info                    latency 114ms
+
+please return the full edited json 
+
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Error",
+      "Microsoft": "Error",
+      "NetworkMonitor": "Error"
+    }
+  },
+  "NetworkMonitor": {
+    "RouterAddress": "auto",
+    "InternetTarget": "8.8.8.8",
+    "TimeoutMs": 3000,
+    "IntervalMs": 5000,
+    "PingsPerCycle": 3,
+    "ExcellentLatencyMs": 20,
+    "GoodLatencyMs": 100,
+    "DegradedPacketLossPercent": 10,
+    "EnableFallbackTargets": true,
+    "EnableIPv6": true,
+    "EnableDnsChecks": true,
+    "QuietConsole": true,
+    "CustomTargets": [
+
+      { "Name": "Cloudflare-DNS-2",        "Address": "1.0.0.1",                          "Enabled": true },
+      { "Name": "Cloudflare-DNS",          "Address": "1.1.1.1",                          "Enabled": true },
+      { "Name": "Quad9",                   "Address": "9.9.9.9",                          "Enabled": true },
+      { "Name": "Quad9-Secondary",         "Address": "149.112.112.112",                  "Enabled": true },
+      { "Name": "Google-DNS-Secondary",    "Address": "8.8.4.4",                          "Enabled": true },
+      { "Name": "OpenDNS-1",               "Address": "208.67.222.222",                   "Enabled": true },
+      { "Name": "OpenDNS-2",               "Address": "208.67.220.220",                   "Enabled": true },
+      { "Name": "Verisign-DNS-1",          "Address": "64.6.64.6",                        "Enabled": true },
+      { "Name": "Verisign-DNS-2",          "Address": "64.6.65.6",                        "Enabled": true },
+      { "Name": "Level3-1",                "Address": "4.2.2.1",                          "Enabled": true },
+      { "Name": "Level3-2",                "Address": "4.2.2.2",                          "Enabled": true },
+      { "Name": "Level3-3",                "Address": "4.2.2.3",                          "Enabled": true },
+      { "Name": "CleanBrowsing",           "Address": "185.228.168.9",                    "Enabled": true },
+      { "Name": "Alternate-DNS",           "Address": "76.76.19.19",                      "Enabled": true },
+      { "Name": "AdGuard-DNS",             "Address": "94.140.14.14",                     "Enabled": true },
+      { "Name": "NextDNS",                 "Address": "45.90.28.0",                       "Enabled": true },
+
+      { "Name": "RIPE-NCC",                "Address": "193.0.6.1",                        "Enabled": true },
+      { "Name": "ARIN",                    "Address": "199.212.0.42",                     "Enabled": true },
+      { "Name": "APNIC",                   "Address": "203.119.101.1",                    "Enabled": true },
+
+      { "Name": "Cloudflare-DNS-Host",     "Address": "one.one.one.one",                  "Enabled": true },
+      { "Name": "Google-DNS-Host",         "Address": "dns.google",                       "Enabled": true },
+      { "Name": "Quad9-Host",              "Address": "dns.quad9.net",                    "Enabled": true },
+      { "Name": "OpenDNS-Host",            "Address": "resolver1.opendns.com",            "Enabled": true },
+      { "Name": "Cloudflare-Host",         "Address": "cloudflare.com",                   "Enabled": true },
+      { "Name": "Fastly-CDN",              "Address": "fastly.com",                       "Enabled": true },
+
+      { "Name": "MS-Teams",                "Address": "teams.microsoft.com",              "Enabled": true },
+      { "Name": "MS-Azure-Portal",         "Address": "portal.azure.com",                 "Enabled": true },
+      { "Name": "MS-Azure-Management",     "Address": "management.azure.com",             "Enabled": true },
+      { "Name": "MS-Office365",            "Address": "outlook.office365.com",            "Enabled": true },
+      { "Name": "MS-OneDrive",             "Address": "onedrive.live.com",                "Enabled": true },
+      { "Name": "MS-SharePoint",           "Address": "sharepoint.com",                   "Enabled": true },
+      { "Name": "MS-DNS",                  "Address": "dns.msft.net",                     "Enabled": true },
+      { "Name": "MS-Bing",                 "Address": "www.bing.com",                     "Enabled": true },
+
+      { "Name": "Google-Host",             "Address": "www.google.com",                   "Enabled": true },
+      { "Name": "Google-Workspace",        "Address": "mail.google.com",                  "Enabled": true },
+      { "Name": "Google-Cloud",            "Address": "cloud.google.com",                 "Enabled": true },
+      { "Name": "Google-APIs",             "Address": "googleapis.com",                   "Enabled": true },
+      { "Name": "YouTube",                 "Address": "www.youtube.com",                  "Enabled": true },
+
+      { "Name": "AWS-Host",                "Address": "aws.amazon.com",                   "Enabled": true },
+      { "Name": "AWS-S3",                  "Address": "s3.amazonaws.com",                 "Enabled": true },
+      { "Name": "AWS-CloudFront",          "Address": "cloudfront.net",                   "Enabled": true },
+      { "Name": "AWS-Route53",             "Address": "route53.amazonaws.com",            "Enabled": true },
+
+      { "Name": "GitHub",                  "Address": "github.com",                       "Enabled": true },
+      { "Name": "GitHub-API",              "Address": "api.github.com",                   "Enabled": true },
+      { "Name": "GitLab",                  "Address": "gitlab.com",                       "Enabled": true },
+      { "Name": "NPM-Registry",            "Address": "registry.npmjs.org",               "Enabled": true },
+      { "Name": "NuGet",                   "Address": "api.nuget.org",                    "Enabled": true },
+      { "Name": "PyPI",                    "Address": "pypi.org",                         "Enabled": true },
+      { "Name": "DockerHub",               "Address": "hub.docker.com",                   "Enabled": true },
+
+      { "Name": "Cloudflare-WARP",         "Address": "engage.cloudflareclient.com",      "Enabled": true },
+      { "Name": "Akamai-Host",             "Address": "akamai.com",                       "Enabled": true },
+      { "Name": "Akamai-EdgeSuite",        "Address": "edgesuite.net",                    "Enabled": true },
+
+      { "Name": "Slack",                   "Address": "slack.com",                        "Enabled": true },
+      { "Name": "Zoom",                    "Address": "zoom.us",                          "Enabled": true },
+      { "Name": "Zoom-CDN",                "Address": "cdn.zoom.us",                      "Enabled": true },
+      { "Name": "Dropbox",                 "Address": "www.dropbox.com",                  "Enabled": true },
+
+      { "Name": "Cloudflare-Radar",        "Address": "radar.cloudflare.com",             "Enabled": true },
+      { "Name": "ICMP-info",               "Address": "icmp.info",                        "Enabled": true },
+      { "Name": "Internet-NL",             "Address": "internet.nl",                      "Enabled": true }
+
+    ],
+    "DisabledChecks": []
+  },
+  "Storage": {
+    "RetentionDays": 30,
+    "DatabasePath": ""
+  }
+}
+```
