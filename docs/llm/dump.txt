@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Wed Mar 25 04:11:01 AM EDT 2026
+Generated: Wed Mar 25 04:18:50 AM EDT 2026
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -629,8 +629,8 @@ Project `NetworkMonitor.Tests` has the following updates to its packages
 
 ================================================================================
 FILE: src/NetworkMonitor.Console/appsettings.json
-SIZE: 6.90 KB
-MODIFIED: 2026-03-25 04:10:51
+SIZE: 5.73 KB
+MODIFIED: 2026-03-25 04:18:16
 ================================================================================
 
 {
@@ -648,7 +648,7 @@ MODIFIED: 2026-03-25 04:10:51
     "IntervalMs": 5000,
     "PingsPerCycle": 3,
     "ExcellentLatencyMs": 20,
-    "GoodLatencyMs": 100,
+    "GoodLatencyMs": 200,
     "DegradedPacketLossPercent": 10,
     "EnableFallbackTargets": true,
     "EnableIPv6": true,
@@ -673,10 +673,6 @@ MODIFIED: 2026-03-25 04:10:51
       { "Name": "AdGuard-DNS",             "Address": "94.140.14.14",                     "Enabled": true },
       { "Name": "NextDNS",                 "Address": "45.90.28.0",                       "Enabled": true },
 
-      { "Name": "RIPE-NCC",                "Address": "193.0.6.1",                        "Enabled": true },
-      { "Name": "ARIN",                    "Address": "199.212.0.42",                     "Enabled": true },
-      { "Name": "APNIC",                   "Address": "203.119.101.1",                    "Enabled": true },
-
       { "Name": "Cloudflare-DNS-Host",     "Address": "one.one.one.one",                  "Enabled": true },
       { "Name": "Google-DNS-Host",         "Address": "dns.google",                       "Enabled": true },
       { "Name": "Quad9-Host",              "Address": "dns.quad9.net",                    "Enabled": true },
@@ -685,12 +681,10 @@ MODIFIED: 2026-03-25 04:10:51
       { "Name": "Fastly-CDN",              "Address": "fastly.com",                       "Enabled": true },
 
       { "Name": "MS-Teams",                "Address": "teams.microsoft.com",              "Enabled": true },
-      { "Name": "MS-Azure-Portal",         "Address": "portal.azure.com",                 "Enabled": true },
       { "Name": "MS-Azure-Management",     "Address": "management.azure.com",             "Enabled": true },
       { "Name": "MS-Office365",            "Address": "outlook.office365.com",            "Enabled": true },
       { "Name": "MS-OneDrive",             "Address": "onedrive.live.com",                "Enabled": true },
       { "Name": "MS-SharePoint",           "Address": "sharepoint.com",                   "Enabled": true },
-      { "Name": "MS-DNS",                  "Address": "dns.msft.net",                     "Enabled": true },
       { "Name": "MS-Bing",                 "Address": "www.bing.com",                     "Enabled": true },
 
       { "Name": "Google-Host",             "Address": "www.google.com",                   "Enabled": true },
@@ -701,28 +695,22 @@ MODIFIED: 2026-03-25 04:10:51
 
       { "Name": "AWS-Host",                "Address": "aws.amazon.com",                   "Enabled": true },
       { "Name": "AWS-S3",                  "Address": "s3.amazonaws.com",                 "Enabled": true },
-      { "Name": "AWS-CloudFront",          "Address": "cloudfront.net",                   "Enabled": true },
-      { "Name": "AWS-Route53",             "Address": "route53.amazonaws.com",            "Enabled": true },
 
       { "Name": "GitHub",                  "Address": "github.com",                       "Enabled": true },
       { "Name": "GitHub-API",              "Address": "api.github.com",                   "Enabled": true },
       { "Name": "GitLab",                  "Address": "gitlab.com",                       "Enabled": true },
       { "Name": "NPM-Registry",            "Address": "registry.npmjs.org",               "Enabled": true },
-      { "Name": "NuGet",                   "Address": "api.nuget.org",                    "Enabled": true },
       { "Name": "PyPI",                    "Address": "pypi.org",                         "Enabled": true },
       { "Name": "DockerHub",               "Address": "hub.docker.com",                   "Enabled": true },
 
       { "Name": "Cloudflare-WARP",         "Address": "engage.cloudflareclient.com",      "Enabled": true },
       { "Name": "Akamai-Host",             "Address": "akamai.com",                       "Enabled": true },
-      { "Name": "Akamai-EdgeSuite",        "Address": "edgesuite.net",                    "Enabled": true },
 
-      { "Name": "Slack",                   "Address": "slack.com",                        "Enabled": true },
       { "Name": "Zoom",                    "Address": "zoom.us",                          "Enabled": true },
-      { "Name": "Zoom-CDN",                "Address": "cdn.zoom.us",                      "Enabled": true },
+      { "Name": "Zoom-CDN",               "Address": "cdn.zoom.us",                      "Enabled": true },
       { "Name": "Dropbox",                 "Address": "www.dropbox.com",                  "Enabled": true },
 
       { "Name": "Cloudflare-Radar",        "Address": "radar.cloudflare.com",             "Enabled": true },
-      { "Name": "ICMP-info",               "Address": "icmp.info",                        "Enabled": true },
       { "Name": "Internet-NL",             "Address": "internet.nl",                      "Enabled": true }
 
     ],
@@ -5733,7 +5721,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
 
 
 ===============================================================================
-EXPORT COMPLETED: Wed Mar 25 04:11:01 AM EDT 2026
+EXPORT COMPLETED: Wed Mar 25 04:18:51 AM EDT 2026
 Total Files Exported: 60
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
