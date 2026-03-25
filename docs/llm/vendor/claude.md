@@ -7598,3 +7598,183 @@ And `GoodLatencyMs` bumped from `100` → `200` so that legitimate overseas targ
 
 
 
+25
+40
+
+Nice 
+This is excellent work. 
+However, something is still not right with the display. 
+For example, the wifi access point rebooted as it does daily at about this time
+and the network monitor showed the error which is correct
+however, after the access point finished rebooting, 
+I still have strange straggler text in my terminal window
+please see below for this output. 
+I belive this is incorrect. 
+Please fix and return full files. 
+If it is not possible to fix due to dot net limitations, 
+please explain in full detail why it is not possible. 
+please cite your sources 
+📁 Telemetry: /home/kushal/.local/share/NetworkMonitor/telemetry
+○ Offline    Router: FAIL   Internet: FAIL   Targets: 0/48 [08:22:53]          
+  ⚠ 50 target(s) need attention:
+    ✗ Router                       FAIL: TimedOut
+    ✗ Internet                     FAIL: TimedOut
+    ✗ Cloudflare-DNS-2             FAIL: TimedOut
+    ✗ Cloudflare-DNS               FAIL: TimedOut
+    ✗ Quad9                        FAIL: TimedOut
+    ✗ Quad9-Secondary              FAIL: TimedOut
+    ✗ Google-DNS-Secondary         FAIL: TimedOut
+    ✗ OpenDNS-1                    FAIL: TimedOut
+    ✗ OpenDNS-2                    FAIL: TimedOut
+    ✗ Verisign-DNS-1               FAIL: TimedOut
+    ✗ Verisign-DNS-2               FAIL: TimedOut
+    ✗ Level3-1                     FAIL: TimedOut
+    ✗ Level3-2                     FAIL: TimedOut
+    ✗ Level3-3                     FAIL: TimedOut
+    ✗ CleanBrowsing                FAIL: TimedOut
+    ✗ Alternate-DNS                FAIL: TimedOut
+    ✗ AdGuard-DNS                  FAIL: TimedOut
+    ✗ NextDNS                      FAIL: TimedOut
+    ✗ Cloudflare-DNS-Host          FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Google-DNS-Host              FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Quad9-Host                   FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ OpenDNS-Host                 FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Cloudflare-Host              FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Fastly-CDN                   FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ MS-Teams                     FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ MS-Azure-Management          FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ MS-Office365                 FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ MS-OneDrive                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ MS-SharePoint                FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ MS-Bing                      FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Google-Host                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Google-Workspace             FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Google-Cloud                 FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Google-APIs                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ YouTube                      FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ AWS-Host                     FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ AWS-S3                       FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ GitHub                       FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ GitHub-API                   FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ GitLab                       FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ NPM-Registry                 FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ PyPI                         FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ DockerHub                    FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Cloudflare-WARP              FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Akamai-Host                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Zoom                         FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Zoom-CDN                     FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Dropbox                      FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Cloudflare-Radar             FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Internet-NL                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Internet-NL                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+○ Offline    Router: FAIL   Internet: FAIL   Targets: 0/48 [08:23:03]          
+  ⚠ 50 target(s) need attention:
+    ✗ Router                       FAIL: TimedOut
+    ✗ Internet                     FAIL: TimedOut
+    ✗ Cloudflare-DNS-2             FAIL: TimedOut
+    ✗ Cloudflare-DNS               FAIL: TimedOut
+    ✗ Quad9                        FAIL: TimedOut
+    ✗ Quad9-Secondary              FAIL: TimedOut
+    ✗ Google-DNS-Secondary         FAIL: TimedOut
+    ✗ OpenDNS-1                    FAIL: TimedOut
+    ✗ OpenDNS-2                    FAIL: TimedOut
+    ✗ Verisign-DNS-1               FAIL: TimedOut
+    ✗ Verisign-DNS-2               FAIL: TimedOut
+    ✗ Level3-1                     FAIL: TimedOut
+    ✗ Level3-2                     FAIL: TimedOut
+    ✗ Level3-3                     FAIL: TimedOut
+    ✗ CleanBrowsing                FAIL: TimedOut
+    ✗ Alternate-DNS                FAIL: TimedOut
+    ✗ AdGuard-DNS                  FAIL: TimedOut
+    ✗ NextDNS                      FAIL: TimedOut
+    ✗ Cloudflare-DNS-Host          FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Google-DNS-Host              FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Quad9-Host                   FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ OpenDNS-Host                 FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Cloudflare-Host              FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Fastly-CDN                   FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ MS-Teams                     FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ MS-Azure-Management          FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ MS-Office365                 FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ MS-OneDrive                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ MS-SharePoint                FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ MS-Bing                      FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Google-Host                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Google-Workspace             FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Google-Cloud                 FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Google-APIs                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ YouTube                      FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ AWS-Host                     FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ AWS-S3                       FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ GitHub                       FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ GitHub-API                   FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ GitLab                       FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ NPM-Registry                 FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ PyPI                         FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ DockerHub                    FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Cloudflare-WARP              FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Akamai-Host                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Zoom                         FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Zoom-CDN                     FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Dropbox                      FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Cloudflare-Radar             FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Internet-NL                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Internet-NL                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Internet-NL                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+
+● Excellent  Router:    1ms Internet:   17ms Targets: 48/48 [08:24:26]          
+
+
+
+
+
+
+
+    ▲ Internet-NL                  loss 67% [DNS FAIL]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ✗ Internet-NL                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+
+
+
+
+
+
+
+
+
+
+
+    ✗ Internet-NL                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Internet-NL                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+    ✗ Internet-NL                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
