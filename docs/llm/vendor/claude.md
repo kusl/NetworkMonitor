@@ -6908,3 +6908,293 @@ public sealed class DnsResolverServiceTests
     }
 }
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+00
+37
+
+This is good. 
+Now, lets add a flag that will respect the app settings or environment variables wherever it is set 
+that by default now only writes to the console 
+if there is something that needs our attention 
+we will still write everything to our database 
+and to the files 
+but we only write to the display 
+if there is something that genuinely needs user attention 
+at that very moment 
+so if we have something like this 
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "NetworkMonitor": "Information"
+    }
+  },
+  "NetworkMonitor": {
+    "RouterAddress": "auto",
+    "InternetTarget": "8.8.8.8",
+    "TimeoutMs": 3000,
+    "IntervalMs": 5000,
+    "PingsPerCycle": 3,
+    "ExcellentLatencyMs": 20,
+    "GoodLatencyMs": 100,
+    "DegradedPacketLossPercent": 10,
+    "EnableFallbackTargets": true,
+    "EnableIPv6": true,
+    "EnableDnsChecks": true,
+    "CustomTargets": [
+
+      { "Name": "Cloudflare-DNS-2",        "Address": "1.0.0.1",                          "Enabled": true },
+      { "Name": "Cloudflare-DNS",          "Address": "1.1.1.1",                          "Enabled": true },
+      { "Name": "Quad9",                   "Address": "9.9.9.9",                          "Enabled": true },
+      { "Name": "Quad9-Secondary",         "Address": "149.112.112.112",                  "Enabled": true },
+      { "Name": "Google-DNS-Secondary",    "Address": "8.8.4.4",                          "Enabled": true },
+      { "Name": "OpenDNS-1",               "Address": "208.67.222.222",                   "Enabled": true },
+      { "Name": "OpenDNS-2",               "Address": "208.67.220.220",                   "Enabled": true },
+      { "Name": "Verisign-DNS-1",          "Address": "64.6.64.6",                        "Enabled": true },
+      { "Name": "Verisign-DNS-2",          "Address": "64.6.65.6",                        "Enabled": true },
+      { "Name": "Level3-1",                "Address": "4.2.2.1",                          "Enabled": true },
+      { "Name": "Level3-2",                "Address": "4.2.2.2",                          "Enabled": true },
+      { "Name": "Level3-3",                "Address": "4.2.2.3",                          "Enabled": true },
+      { "Name": "CleanBrowsing",           "Address": "185.228.168.9",                    "Enabled": true },
+      { "Name": "Alternate-DNS",           "Address": "76.76.19.19",                      "Enabled": true },
+      { "Name": "AdGuard-DNS",             "Address": "94.140.14.14",                     "Enabled": true },
+      { "Name": "NextDNS",                 "Address": "45.90.28.0",                       "Enabled": true },
+
+      { "Name": "RIPE-NCC",                "Address": "193.0.6.1",                        "Enabled": true },
+      { "Name": "ARIN",                    "Address": "199.212.0.42",                     "Enabled": true },
+      { "Name": "APNIC",                   "Address": "203.119.101.1",                    "Enabled": true },
+
+      { "Name": "Cloudflare-DNS-Host",     "Address": "one.one.one.one",                  "Enabled": true },
+      { "Name": "Google-DNS-Host",         "Address": "dns.google",                       "Enabled": true },
+      { "Name": "Quad9-Host",              "Address": "dns.quad9.net",                    "Enabled": true },
+      { "Name": "OpenDNS-Host",            "Address": "resolver1.opendns.com",            "Enabled": true },
+      { "Name": "Cloudflare-Host",         "Address": "cloudflare.com",                   "Enabled": true },
+      { "Name": "Fastly-CDN",              "Address": "fastly.com",                       "Enabled": true },
+
+      { "Name": "MS-Teams",                "Address": "teams.microsoft.com",              "Enabled": true },
+      { "Name": "MS-Azure-Portal",         "Address": "portal.azure.com",                 "Enabled": true },
+      { "Name": "MS-Azure-Management",     "Address": "management.azure.com",             "Enabled": true },
+      { "Name": "MS-Office365",            "Address": "outlook.office365.com",            "Enabled": true },
+      { "Name": "MS-OneDrive",             "Address": "onedrive.live.com",                "Enabled": true },
+      { "Name": "MS-SharePoint",           "Address": "sharepoint.com",                   "Enabled": true },
+      { "Name": "MS-DNS",                  "Address": "dns.msft.net",                     "Enabled": true },
+      { "Name": "MS-Bing",                 "Address": "www.bing.com",                     "Enabled": true },
+
+      { "Name": "Google-Host",             "Address": "www.google.com",                   "Enabled": true },
+      { "Name": "Google-Workspace",        "Address": "mail.google.com",                  "Enabled": true },
+      { "Name": "Google-Cloud",            "Address": "cloud.google.com",                 "Enabled": true },
+      { "Name": "Google-APIs",             "Address": "googleapis.com",                   "Enabled": true },
+      { "Name": "YouTube",                 "Address": "www.youtube.com",                  "Enabled": true },
+
+      { "Name": "AWS-Host",                "Address": "aws.amazon.com",                   "Enabled": true },
+      { "Name": "AWS-S3",                  "Address": "s3.amazonaws.com",                 "Enabled": true },
+      { "Name": "AWS-CloudFront",          "Address": "cloudfront.net",                   "Enabled": true },
+      { "Name": "AWS-Route53",             "Address": "route53.amazonaws.com",            "Enabled": true },
+
+      { "Name": "GitHub",                  "Address": "github.com",                       "Enabled": true },
+      { "Name": "GitHub-API",              "Address": "api.github.com",                   "Enabled": true },
+      { "Name": "GitLab",                  "Address": "gitlab.com",                       "Enabled": true },
+      { "Name": "NPM-Registry",            "Address": "registry.npmjs.org",               "Enabled": true },
+      { "Name": "NuGet",                   "Address": "api.nuget.org",                    "Enabled": true },
+      { "Name": "PyPI",                    "Address": "pypi.org",                         "Enabled": true },
+      { "Name": "DockerHub",               "Address": "hub.docker.com",                   "Enabled": true },
+
+      { "Name": "Cloudflare-WARP",         "Address": "engage.cloudflareclient.com",      "Enabled": true },
+      { "Name": "Akamai-Host",             "Address": "akamai.com",                       "Enabled": true },
+      { "Name": "Akamai-EdgeSuite",        "Address": "edgesuite.net",                    "Enabled": true },
+
+      { "Name": "Slack",                   "Address": "slack.com",                        "Enabled": true },
+      { "Name": "Zoom",                    "Address": "zoom.us",                          "Enabled": true },
+      { "Name": "Zoom-CDN",                "Address": "cdn.zoom.us",                      "Enabled": true },
+      { "Name": "Dropbox",                 "Address": "www.dropbox.com",                  "Enabled": true },
+
+      { "Name": "Cloudflare-Radar",        "Address": "radar.cloudflare.com",             "Enabled": true },
+      { "Name": "ICMP-info",               "Address": "icmp.info",                        "Enabled": true },
+      { "Name": "Internet-NL",             "Address": "internet.nl",                      "Enabled": true }
+
+    ],
+    "DisabledChecks": []
+  },
+  "Storage": {
+    "RetentionDays": 30,
+    "DatabasePath": ""
+  }
+}
+```
+we don't need to see a histogram on the screen for every single one of these by default. 
+only display the ones that are problematic so if latency is higher than good or degraded packet loss percent exceeds the limit 
+now this is still opt in, but we opt in everyone by default 
+
+remember to return FULL files for all files that need to change 
+
+Looking at the codebase, I need to:
+
+1. Add a `QuietConsole` option to `MonitorOptions` (default `true`)
+2. Update `ConsoleStatusDisplay` to inject `MonitorOptions` and filter output — only showing problematic targets
+3. Update `appsettings.json` with the new setting
+4. Update the test for MonitorOptions defaults
+
+Here are the full files:
+
+**src/NetworkMonitor.Core/Models/MonitorOptions.cs****src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs****src/NetworkMonitor.Console/appsettings.json****src/NetworkMonitor.Tests/Models/MonitorOptionsTests.cs**Here's a summary of what changed across the four files:
+
+**MonitorOptions.cs** — Added `QuietConsole` property (default `true`) with full XML doc explaining the behavior. When true, the console only shows targets that need attention. Database and file writes are unaffected. Can also be set via environment variable `NetworkMonitor__QuietConsole=false`.
+
+**ConsoleStatusDisplay.cs** — Now takes `IOptions<MonitorOptions>` in the constructor (DI will resolve this automatically since `MonitorOptions` is already registered). Key changes:
+- Tracks `_previousExtraLines` so it can clear old output before each refresh cycle using ANSI escape codes (`\x1b[1A\x1b[2K` — move up, clear line)
+- When `QuietConsole` is true, calls `WriteProblematicTargets()` which filters to only targets where: ping failed, latency > `GoodLatencyMs`, packet loss ≥ `DegradedPacketLossPercent`, or DNS resolution failed
+- The main status line (health, router, internet, target summary count, timestamp) always displays regardless of the setting
+- Added `GetLatencyColor()` helper so even the main line colors latency values against thresholds
+
+**appsettings.json** — Added `"QuietConsole": true` to the `NetworkMonitor` section.
+
+**MonitorOptionsTests.cs** — Added `QuietConsole_DefaultsToTrue` and `QuietConsole_CanBeDisabled` tests, plus updated `DefaultValues_AreReasonable` to assert `QuietConsole` is true.
+
+No changes needed to `ServiceCollectionExtensions.cs` — the `IOptions<MonitorOptions>` dependency is already bound via `services.Configure<MonitorOptions>(...)`, so the DI container will inject it into the updated `ConsoleStatusDisplay` constructor automatically.
+
+10
+38
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -98,6 +98,29 @@ public sealed class MonitorOptions
     public bool EnableDnsChecks { get; set; } = true;
 
     /// <summary>
+    /// When true, console output only shows targets that need attention:
+    /// failed pings, latency exceeding GoodLatencyMs, or packet loss
+    /// exceeding DegradedPacketLossPercent.
+    /// 
+    /// All data is still written to the database and telemetry files
+    /// regardless of this setting. This only controls what appears
+    /// on the console display.
+    /// 
+    /// Default: true (opt everyone in, but user can set to false
+    /// to see all targets on every cycle).
+    /// </summary>
+    /// <remarks>
+    /// With dozens of custom targets configured, printing a status line
+    /// for every single one every 5 seconds creates noise that drowns out
+    /// the information that actually matters. This flag ensures the console
+    /// only surfaces problems that need human attention right now.
+    /// 
+    /// Can also be set via environment variable:
+    ///   NetworkMonitor__QuietConsole=true
+    /// </remarks>
+    public bool QuietConsole { get; set; } = true;
+
+    /// <summary>
     /// Custom targets to monitor (services, private IPs, hostnames).
     /// Each can be individually enabled/disabled at runtime.
     /// </summary>

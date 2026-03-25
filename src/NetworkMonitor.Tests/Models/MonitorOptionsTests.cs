@@ -71,8 +71,29 @@ public sealed class MonitorOptionsTests
         Assert.True(options.EnableFallbackTargets);
         Assert.True(options.EnableIPv6);
         Assert.True(options.EnableDnsChecks);
+        Assert.True(options.QuietConsole);
         Assert.Empty(options.CustomTargets);
         Assert.Empty(options.DisabledChecks);
+    }
+
+    [Fact]
+    public void QuietConsole_DefaultsToTrue()
+    {
+        // Arrange & Act
+        var options = new MonitorOptions();
+
+        // Assert — quiet mode is opt-in for everyone by default
+        Assert.True(options.QuietConsole);
+    }
+
+    [Fact]
+    public void QuietConsole_CanBeDisabled()
+    {
+        // Arrange & Act
+        var options = new MonitorOptions { QuietConsole = false };
+
+        // Assert
+        Assert.False(options.QuietConsole);
     }
 
     [Fact]
