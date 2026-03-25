@@ -7782,3 +7782,41 @@ please cite your sources
 The problem is clear: the old code counted **logical lines** (each `Console.Write` call) but terminal lines **wrap** when they exceed the terminal width. A 95-character target line on an 80-column terminal takes 2 physical rows, but we only counted it as 1. So when we moved the cursor up to clear, we didn't go up far enough, leaving stale text behind.
 
 The fix: build the entire output as a single string, then count **physical terminal rows** by measuring the visible length of each line (stripping ANSI color codes) and dividing by terminal width. On the next cycle, use `\x1b[J` (clear from cursor to end of screen) instead of clearing line-by-line.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+25
+40
+
+You returned an incomplete file. 
+Please do not hallucinate. 
+
+The bug is that `ClearExtraLines` counts *logical* lines written with `Console.WriteLine()`, but when a long error line wraps in the terminal, it occupies multiple *physical* terminal rows. `\x1b[1A` only moves up one physical row, so wrapped text gets left behind as stale ghost lines.
+
+The fix is to stop counting lines entirely and instead use **save cursor position** (`\x1b[s`) + **restore cursor position** (`\x1b[u`) + **clear from cursor to end of screen** (`\x1b[J`). This clears everything below the saved point regardless of wrapping.That's the only file that needs to change. Here's what was wrong and why this fixes it:
+
+**The bug:** The old code counted how many `Console.WriteLine()` calls it made (`_previousExtraLines`), then used `\x1b[1A` (cursor up one row) that many times to go back. But when a long error message like `FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]` wraps to a second physical row in the terminal, that physical row was never counted. So after 50 errors with wrapping, the clear loop might erase 52 rows when 70+ physical rows were actually used — leaving the bottom ~20 rows as stale ghost text.
+
+**The fix:** Instead of counting lines at all, the code now:
+
+1. **Before writing:** `\x1b[u` (restore cursor to saved position) + `\x1b[J` (erase from cursor to end of screen). This nukes *everything* below the saved point — doesn't matter how many physical rows there are, whether lines wrapped, or how wide the terminal is.
+
+2. **Before writing:** `\x1b[s` (save cursor position) so the next cycle knows where to jump back to.
+
+These are ECMA-48 standard sequences (CSI s, CSI u, CSI J) supported by every modern terminal — xterm, GNOME Terminal, Windows Terminal, macOS Terminal, iTerm2, etc. There are no .NET limitations here; `Console.Write` just passes the bytes through to the terminal.
+
+27
+41
