@@ -7922,3 +7922,79 @@ is correct but it is missing which target failed at that moment
 👋 Network Monitor stopped. Goodbye!
 kushal@fedora:~/src/dotnet/network-monitor/src/NetworkMonitor.Console$ 
 
+Got it. The idea is: when everything is healthy, overwrite in place. When there are problems, print them permanently and move on — so you have a scrollable history of every incident.The key change is splitting into two modes:
+
+**Healthy cycle** (no problematic targets): Save cursor → write status line. Next cycle restores cursor and overwrites it. The healthy line just quietly updates in place.
+
+**Problematic cycle** (any target failing): Write status line + all problem details → `Console.WriteLine()` → do NOT save cursor. This means the output is permanent — it scrolls into the terminal history. The next cycle has no saved cursor, so it just starts writing on the next fresh line below.
+
+The result in your terminal will look like:
+
+```
+● Excellent  Router: 1ms Internet: 16ms Targets: 48/48 [08:40:05]    ← keeps overwriting itself
+... wifi dies ...
+○ Offline    Router: FAIL  Internet: FAIL  Targets: 0/48 [08:41:00]
+  ⚠ 50 target(s) need attention:
+    ✗ Router                       FAIL: TimedOut
+    ✗ Internet                     FAIL: TimedOut
+    ...
+○ Offline    Router: FAIL  Internet: FAIL  Targets: 0/48 [08:41:10]
+  ⚠ 50 target(s) need attention:
+    ✗ Router                       FAIL: TimedOut
+    ...
+... wifi comes back ...
+● Excellent  Router: 1ms Internet: 16ms Targets: 48/48 [08:42:00]    ← overwrites itself again
+```
+
+You can scroll up and see every problematic cycle preserved. Clean cycles stay quiet on one line.
+
+30
+41
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -7,29 +7,32 @@ namespace NetworkMonitor.Core.Services;
 /// Console-based status display with ANSI colors.
 /// Provides "at a glance" network status visualization.
 /// 
-/// When QuietConsole is enabled (default), only targets with problems
-/// are shown on the console. Everything is still written to the database
-/// and telemetry files — this only controls what appears on screen.
+/// DISPLAY BEHAVIOR:
 /// 
-/// A target is considered "problematic" if any of the following are true:
-///   - Ping failed entirely
-///   - Latency exceeds GoodLatencyMs threshold
-///   - Packet loss exceeds DegradedPacketLossPercent threshold
-///   - DNS resolution failed (for hostname targets)
+///   Healthy cycle (no problematic targets):
+///     The status line is overwritten in place so the console stays clean.
+///     Uses ANSI save/restore cursor to avoid stale text.
 /// 
-/// DISPLAY STRATEGY:
-/// Uses ANSI save/restore cursor position + "erase to end of screen"
-/// to guarantee clean redraws. This avoids the stale-line problem that
-/// occurs when counting logical lines: if a long error message wraps
-/// across multiple physical terminal rows, a line-counting approach
-/// cannot clear them all.
+///   Problematic cycle (any target failing, high latency, packet loss, DNS failure):
+///     The status line AND full problem details are printed permanently,
+///     then the cursor advances past them. This preserves a scrollable
+///     history of every incident in the terminal.
+///     The next cycle starts on a fresh line below.
 /// 
-///   \x1b[s   — Save cursor position
-///   \x1b[u   — Restore cursor position
-///   \x1b[J   — Erase from cursor to end of screen (ED, mode 0)
-/// 
-/// These are standard ECMA-48 / ANSI X3.64 sequences supported by
-/// every modern terminal emulator on Windows 10+, macOS, and Linux.
+/// This means the terminal looks like:
+///   ● Excellent  Router: 1ms Internet: 16ms Targets: 48/48 [08:40:00]   ← overwrites itself
+///   ● Excellent  Router: 1ms Internet: 16ms Targets: 48/48 [08:40:05]   ← same line
+///   ... wifi goes down ...
+///   ○ Offline    Router: FAIL  Internet: FAIL  Targets: 0/48 [08:41:00]
+///     ⚠ 50 target(s) need attention:
+///       ✗ Router     FAIL: TimedOut
+///       ✗ Internet   FAIL: TimedOut
+///       ...
+///   ○ Offline    Router: FAIL  Internet: FAIL  Targets: 0/48 [08:41:10]
+///     ⚠ 50 target(s) need attention:
+///       ...
+///   ... wifi comes back ...
+///   ● Excellent  Router: 1ms Internet: 16ms Targets: 48/48 [08:42:00]   ← overwrites itself again
 /// </summary>
 public sealed class ConsoleStatusDisplay : IStatusDisplay
 {
@@ -47,7 +50,7 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
     private const string Cyan = "\x1b[36m";
     private const string Magenta = "\x1b[35m";
 
-    // Cursor control
+    // Cursor control (ECMA-48 / ANSI X3.64)
     private const string SaveCursor = "\x1b[s";
     private const string RestoreCursor = "\x1b[u";
     private const string EraseToEndOfScreen = "\x1b[J";
@@ -64,98 +67,110 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
 
         lock (_lock)
         {
-            // On every update after the first: jump back to the saved position
-            // and nuke everything from there to the bottom of the screen.
-            // This works regardless of how many physical rows were used,
-            // including rows caused by long lines wrapping in the terminal.
+            // If we saved a cursor from a previous clean cycle, jump back
+            // and erase so we overwrite the old healthy status in place.
             if (_cursorSaved)
             {
                 Console.Write(RestoreCursor);
                 Console.Write(EraseToEndOfScreen);
             }
 
-            // Save the cursor position at the start of our output region.
-            // Every subsequent update will restore to this exact point.
-            Console.Write(SaveCursor);
-            _cursorSaved = true;
+            // Determine if this cycle has problems
+            var problematic = (_options.QuietConsole && status.TargetResults is { Count: > 0 })
+                ? status.TargetResults.Where(IsProblematic).ToList()
+                : [];
 
-            // --- Main status line ---
-            var (color, symbol) = status.Health switch
+            bool hasProblems = problematic.Count > 0;
+
+            if (hasProblems)
             {
-                NetworkHealth.Excellent => (Green, "●"),
-                NetworkHealth.Good => (Green, "○"),
-                NetworkHealth.Degraded => (Yellow, "◐"),
-                NetworkHealth.Poor => (Red, "◑"),
-                NetworkHealth.Offline => (Red, "○"),
-                _ => (Reset, "?")
-            };
+                // PROBLEMATIC CYCLE:
+                // Don't save cursor — we want this output preserved permanently.
+                // The next cycle will start on a fresh line below.
+                _cursorSaved = false;
 
-            Console.Write($"{color}{Bold}{symbol} {status.Health,-10}{Reset} ");
-            Console.Write($"{Cyan}Router:{Reset} ");
+                WriteStatusLine(status);
+                WriteProblematicTargets(problematic);
 
-            if (status.RouterResult?.Success == true)
-            {
-                var routerColor = GetLatencyColor(status.RouterResult.RoundtripTimeMs);
-                Console.Write($"{routerColor}{status.RouterResult.RoundtripTimeMs,4}ms{Reset} ");
+                // End with a newline so the next cycle starts cleanly below
+                Console.WriteLine();
             }
             else
             {
-                Console.Write($"{Red}FAIL{Reset}   ");
-            }
+                // HEALTHY CYCLE:
+                // Save cursor position so the next cycle can overwrite this line.
+                Console.Write(SaveCursor);
+                _cursorSaved = true;
 
-            Console.Write($"{Cyan}Internet:{Reset} ");
-
-            if (status.InternetResult?.Success == true)
-            {
-                var internetColor = GetLatencyColor(status.InternetResult.RoundtripTimeMs);
-                Console.Write($"{internetColor}{status.InternetResult.RoundtripTimeMs,4}ms{Reset} ");
-            }
-            else
-            {
-                Console.Write($"{Red}FAIL{Reset}   ");
-            }
-
-            // Show custom target summary if any
-            if (status.TargetResults is { Count: > 0 })
-            {
-                var customResults = status.TargetResults
-                    .Where(r => r.Target.Category == TargetCategory.Custom)
-                    .ToList();
-
-                if (customResults.Count > 0)
-                {
-                    var ok = customResults.Count(r => r.PingResult?.Success == true);
-                    var total = customResults.Count;
-                    var customColor = ok == total ? Green : ok > 0 ? Yellow : Red;
-                    Console.Write($"{Cyan}Targets:{Reset} {customColor}{ok}/{total}{Reset} ");
-                }
-            }
-
-            Console.Write($"{Magenta}[{status.Timestamp:HH:mm:ss}]{Reset}");
-
-            // In quiet mode, show only problematic targets below the main line.
-            if (_options.QuietConsole && status.TargetResults is { Count: > 0 })
-            {
-                WriteProblematicTargets(status.TargetResults);
+                WriteStatusLine(status);
             }
         }
     }
 
     /// <summary>
-    /// Writes details for targets that need attention below the main status line.
-    /// Only called when QuietConsole is enabled.
+    /// Writes the main one-line status summary.
     /// </summary>
-    private void WriteProblematicTargets(IReadOnlyList<TargetCheckResult> targetResults)
+    private void WriteStatusLine(NetworkStatus status)
     {
-        var problematic = targetResults
-            .Where(IsProblematic)
-            .ToList();
-
-        if (problematic.Count == 0)
+        var (color, symbol) = status.Health switch
         {
-            return;
+            NetworkHealth.Excellent => (Green, "●"),
+            NetworkHealth.Good => (Green, "○"),
+            NetworkHealth.Degraded => (Yellow, "◐"),
+            NetworkHealth.Poor => (Red, "◑"),
+            NetworkHealth.Offline => (Red, "○"),
+            _ => (Reset, "?")
+        };
+
+        Console.Write($"{color}{Bold}{symbol} {status.Health,-10}{Reset} ");
+        Console.Write($"{Cyan}Router:{Reset} ");
+
+        if (status.RouterResult?.Success == true)
+        {
+            var routerColor = GetLatencyColor(status.RouterResult.RoundtripTimeMs);
+            Console.Write($"{routerColor}{status.RouterResult.RoundtripTimeMs,4}ms{Reset} ");
+        }
+        else
+        {
+            Console.Write($"{Red}FAIL{Reset}   ");
         }
 
+        Console.Write($"{Cyan}Internet:{Reset} ");
+
+        if (status.InternetResult?.Success == true)
+        {
+            var internetColor = GetLatencyColor(status.InternetResult.RoundtripTimeMs);
+            Console.Write($"{internetColor}{status.InternetResult.RoundtripTimeMs,4}ms{Reset} ");
+        }
+        else
+        {
+            Console.Write($"{Red}FAIL{Reset}   ");
+        }
+
+        // Show custom target summary if any
+        if (status.TargetResults is { Count: > 0 })
+        {
+            var customResults = status.TargetResults
+                .Where(r => r.Target.Category == TargetCategory.Custom)
+                .ToList();
+
+            if (customResults.Count > 0)
+            {
+                var ok = customResults.Count(r => r.PingResult?.Success == true);
+                var total = customResults.Count;
+                var customColor = ok == total ? Green : ok > 0 ? Yellow : Red;
+                Console.Write($"{Cyan}Targets:{Reset} {customColor}{ok}/{total}{Reset} ");
+            }
+        }
+
+        Console.Write($"{Magenta}[{status.Timestamp:HH:mm:ss}]{Reset}");
+    }
+
+    /// <summary>
+    /// Writes details for targets that need attention below the main status line.
+    /// </summary>
+    private void WriteProblematicTargets(List<TargetCheckResult> problematic)
+    {
         Console.WriteLine();
         Console.Write($"  {Yellow}{Bold}⚠ {problematic.Count} target(s) need attention:{Reset}");
 
@@ -204,25 +219,21 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
     /// </summary>
     private bool IsProblematic(TargetCheckResult result)
     {
-        // Ping failed entirely
         if (result.PingResult?.Success != true)
         {
             return true;
         }
 
-        // Latency exceeds the "good" threshold
         if (result.PingResult.RoundtripTimeMs > _options.GoodLatencyMs)
         {
             return true;
         }
 
-        // Packet loss exceeds the degraded threshold
         if (result.PacketLossPercent >= _options.DegradedPacketLossPercent)
         {
             return true;
         }
 
-        // DNS resolution failed for a hostname target
         if (result.DnsResult is { Success: false })
         {
             return true;
