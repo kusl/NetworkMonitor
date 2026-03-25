@@ -7198,3 +7198,10 @@ No changes needed to `ServiceCollectionExtensions.cs` — the `IOptions<MonitorO
 
 
 
+10
+38
+Something is still wrong here. 
+by default, we don't want to display the histogram at all. 
+only information on what is degraded, poor, or offline 
+once again, we still need to log everything all the time 
+this only affects the display 
