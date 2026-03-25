@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Wed Mar 25 04:02:14 AM EDT 2026
+Generated: Wed Mar 25 04:05:02 AM EDT 2026
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -772,10 +772,11 @@ MODIFIED: 2025-12-26 08:04:46
 
 ================================================================================
 FILE: src/NetworkMonitor.Console/Program.cs
-SIZE: 3.44 KB
-MODIFIED: 2026-03-25 04:01:34
+SIZE: 3.52 KB
+MODIFIED: 2026-03-25 04:04:47
 ================================================================================
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NetworkMonitor.Core;
@@ -829,8 +830,9 @@ builder.Services.AddNetworkMonitor(builder.Configuration);
 // When QuietConsole is true (default), only file export is active —
 // no histogram spam on the console. Set QuietConsole=false to get raw
 // OpenTelemetry output on stdout alongside the status display.
-var monitorSection = builder.Configuration.GetSection(MonitorOptions.SectionName);
-var quietConsole = monitorSection.GetValue("QuietConsole", defaultValue: true);
+var quietConsoleValue = builder.Configuration
+    .GetSection(MonitorOptions.SectionName)["QuietConsole"];
+var quietConsole = !string.Equals(quietConsoleValue, "false", StringComparison.OrdinalIgnoreCase);
 
 builder.Services.AddNetworkMonitorTelemetry(
     fileExporterOptions,
@@ -5731,7 +5733,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
 
 
 ===============================================================================
-EXPORT COMPLETED: Wed Mar 25 04:02:14 AM EDT 2026
+EXPORT COMPLETED: Wed Mar 25 04:05:03 AM EDT 2026
 Total Files Exported: 60
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
