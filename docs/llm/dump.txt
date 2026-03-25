@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Wed Mar 25 04:28:36 AM EDT 2026
+Generated: Wed Mar 25 04:39:47 AM EDT 2026
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -1863,8 +1863,8 @@ public static class ServiceCollectionExtensions
 
 ================================================================================
 FILE: src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs
-SIZE: 8.14 KB
-MODIFIED: 2026-03-25 03:43:59
+SIZE: 8.72 KB
+MODIFIED: 2026-03-25 04:39:16
 ================================================================================
 
 using Microsoft.Extensions.Options;
@@ -1885,22 +1885,41 @@ namespace NetworkMonitor.Core.Services;
 ///   - Latency exceeds GoodLatencyMs threshold
 ///   - Packet loss exceeds DegradedPacketLossPercent threshold
 ///   - DNS resolution failed (for hostname targets)
+/// 
+/// DISPLAY STRATEGY:
+/// Uses ANSI save/restore cursor position + "erase to end of screen"
+/// to guarantee clean redraws. This avoids the stale-line problem that
+/// occurs when counting logical lines: if a long error message wraps
+/// across multiple physical terminal rows, a line-counting approach
+/// cannot clear them all.
+/// 
+///   \x1b[s   — Save cursor position
+///   \x1b[u   — Restore cursor position
+///   \x1b[J   — Erase from cursor to end of screen (ED, mode 0)
+/// 
+/// These are standard ECMA-48 / ANSI X3.64 sequences supported by
+/// every modern terminal emulator on Windows 10+, macOS, and Linux.
 /// </summary>
 public sealed class ConsoleStatusDisplay : IStatusDisplay
 {
     private readonly Lock _lock = new();
     private readonly MonitorOptions _options;
-    private int _previousExtraLines;
+    private bool _cursorSaved;
 
-    // ANSI color codes
+    // ANSI escape sequences
     private const string Reset = "\x1b[0m";
     private const string Bold = "\x1b[1m";
+    private const string Dim = "\x1b[2m";
     private const string Green = "\x1b[32m";
     private const string Yellow = "\x1b[33m";
     private const string Red = "\x1b[31m";
     private const string Cyan = "\x1b[36m";
     private const string Magenta = "\x1b[35m";
-    private const string Dim = "\x1b[2m";
+
+    // Cursor control
+    private const string SaveCursor = "\x1b[s";
+    private const string RestoreCursor = "\x1b[u";
+    private const string EraseToEndOfScreen = "\x1b[J";
 
     public ConsoleStatusDisplay(IOptions<MonitorOptions> options)
     {
@@ -1914,9 +1933,22 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
 
         lock (_lock)
         {
-            // Clear any previously written extra lines before rewriting
-            ClearExtraLines();
+            // On every update after the first: jump back to the saved position
+            // and nuke everything from there to the bottom of the screen.
+            // This works regardless of how many physical rows were used,
+            // including rows caused by long lines wrapping in the terminal.
+            if (_cursorSaved)
+            {
+                Console.Write(RestoreCursor);
+                Console.Write(EraseToEndOfScreen);
+            }
 
+            // Save the cursor position at the start of our output region.
+            // Every subsequent update will restore to this exact point.
+            Console.Write(SaveCursor);
+            _cursorSaved = true;
+
+            // --- Main status line ---
             var (color, symbol) = status.Health switch
             {
                 NetworkHealth.Excellent => (Green, "●"),
@@ -1927,7 +1959,7 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
                 _ => (Reset, "?")
             };
 
-            Console.Write($"\r{color}{Bold}{symbol} {status.Health,-10}{Reset} ");
+            Console.Write($"{color}{Bold}{symbol} {status.Health,-10}{Reset} ");
             Console.Write($"{Cyan}Router:{Reset} ");
 
             if (status.RouterResult?.Success == true)
@@ -1970,11 +2002,7 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
 
             Console.Write($"{Magenta}[{status.Timestamp:HH:mm:ss}]{Reset}");
 
-            // Pad to clear any previous longer text on this line
-            Console.Write("          ");
-
             // In quiet mode, show only problematic targets below the main line.
-            // In verbose mode (!QuietConsole), the summary count above is sufficient.
             if (_options.QuietConsole && status.TargetResults is { Count: > 0 })
             {
                 WriteProblematicTargets(status.TargetResults);
@@ -1992,23 +2020,17 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
             .Where(IsProblematic)
             .ToList();
 
-        _previousExtraLines = 0;
-
         if (problematic.Count == 0)
         {
             return;
         }
 
         Console.WriteLine();
-        _previousExtraLines++;
-
         Console.Write($"  {Yellow}{Bold}⚠ {problematic.Count} target(s) need attention:{Reset}");
-        _previousExtraLines++;
 
         foreach (var result in problematic)
         {
             Console.WriteLine();
-            _previousExtraLines++;
 
             var name = result.Target.Name;
 
@@ -2089,35 +2111,17 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
         return Yellow;
     }
 
-    /// <summary>
-    /// Moves the cursor up and clears any extra lines written
-    /// by the previous update cycle (problematic target details).
-    /// </summary>
-    private void ClearExtraLines()
-    {
-        if (_previousExtraLines <= 0)
-        {
-            return;
-        }
-
-        for (var i = 0; i < _previousExtraLines; i++)
-        {
-            // Move cursor up one line and clear it
-            Console.Write("\x1b[1A\x1b[2K");
-        }
-
-        // Return to the start of the main status line
-        Console.Write("\r");
-        _previousExtraLines = 0;
-    }
-
     /// <inheritdoc />
     public void Clear()
     {
         lock (_lock)
         {
-            ClearExtraLines();
-            Console.Write("\r" + new string(' ', Console.WindowWidth - 1) + "\r");
+            if (_cursorSaved)
+            {
+                Console.Write(RestoreCursor);
+                Console.Write(EraseToEndOfScreen);
+                _cursorSaved = false;
+            }
         }
     }
 }
@@ -5721,7 +5725,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
 
 
 ===============================================================================
-EXPORT COMPLETED: Wed Mar 25 04:28:36 AM EDT 2026
+EXPORT COMPLETED: Wed Mar 25 04:39:47 AM EDT 2026
 Total Files Exported: 60
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================

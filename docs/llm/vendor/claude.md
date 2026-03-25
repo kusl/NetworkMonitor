@@ -7820,3 +7820,105 @@ These are ECMA-48 standard sequences (CSI s, CSI u, CSI J) supported by every mo
 
 27
 41
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+27
+41
+almost there 
+when there is a warning or an error, lets not overwrite that
+instead, lets keep that text and move on to the next line 
+so this below is partially correct 
+`  ⚠ 1 target(s) need attention:`
+is correct but it is missing which target failed at that moment 
+╔══════════════════════════════════════════════════════════════╗
+║           Network Monitor - Cross-Platform Edition           ║
+║                  Press Ctrl+C to stop                        ║
+╚══════════════════════════════════════════════════════════════╝
+
+📁 Telemetry: /home/kushal/.local/share/NetworkMonitor/telemetry
+🆔 Run ID: 20260325_083957
+
+● Excellent  Router:    2ms Internet:   16ms Targets: 48/48 [08:44:27]
+  ⚠ 1 target(s) need attention:
+● Excellent  Router:    1ms Internet:   16ms Targets: 48/48 [08:47:25]^C
+
+⏹️  Shutting down...
+👋 Network Monitor stopped. Goodbye!
+kushal@fedora:~/src/dotnet/network-monitor/src/NetworkMonitor.Console$ 
+
