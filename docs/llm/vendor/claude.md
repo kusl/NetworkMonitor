@@ -7309,3 +7309,116 @@ The `GetValue<T>` extension method requires the `Microsoft.Extensions.Configurat
 
 16
 39
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+16
+39
+
+This is excellent. 
+now, please fix with correct information or remove entirely if unsure from the following all that fail 
+
+● Excellent  Router:    1ms Internet:   17ms Targets: 50/59 [08:08:51]          
+  ⚠ 16 target(s) need attention:
+    ▲ Verisign-DNS-1               latency 27ms
+    ▲ CleanBrowsing                latency 36ms
+    ▲ AdGuard-DNS                  latency 38ms
+    ▲ NextDNS                      latency 39ms
+    ▲ RIPE-NCC                     latency 106ms
+    ✗ ARIN                         FAIL: TimedOut
+    ✗ APNIC                        FAIL: TimedOut
+    ✗ MS-Azure-Portal              FAIL: TimedOut
+    ✗ MS-DNS                       FAIL: DNS resolution failed: Name or service not known [DNS FAIL]
+    ✗ AWS-CloudFront               FAIL: DNS resolution failed: Name or service not known [DNS FAIL]
+    ✗ AWS-Route53                  FAIL: TimedOut
+    ✗ NuGet                        FAIL: TimedOut
+    ✗ Akamai-EdgeSuite             FAIL: DNS resolution failed: Name or service not known [DNS FAIL]
+    ✗ Slack                        FAIL: TimedOut
+    ▲ ICMP-info                    latency 114ms
+    ▲ Internet-NL                  latency 102ms
