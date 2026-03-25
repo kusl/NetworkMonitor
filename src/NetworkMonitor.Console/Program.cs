@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NetworkMonitor.Core;
@@ -51,8 +52,9 @@ builder.Services.AddNetworkMonitor(builder.Configuration);
 // When QuietConsole is true (default), only file export is active —
 // no histogram spam on the console. Set QuietConsole=false to get raw
 // OpenTelemetry output on stdout alongside the status display.
-var monitorSection = builder.Configuration.GetSection(MonitorOptions.SectionName);
-var quietConsole = monitorSection.GetValue("QuietConsole", defaultValue: true);
+var quietConsoleValue = builder.Configuration
+    .GetSection(MonitorOptions.SectionName)["QuietConsole"];
+var quietConsole = !string.Equals(quietConsoleValue, "false", StringComparison.OrdinalIgnoreCase);
 
 builder.Services.AddNetworkMonitorTelemetry(
     fileExporterOptions,

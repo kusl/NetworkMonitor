@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Wed Mar 25 03:55:28 AM EDT 2026
+Generated: Wed Mar 25 04:02:14 AM EDT 2026
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -772,15 +772,15 @@ MODIFIED: 2025-12-26 08:04:46
 
 ================================================================================
 FILE: src/NetworkMonitor.Console/Program.cs
-SIZE: 2.45 KB
-MODIFIED: 2025-12-26 08:08:12
+SIZE: 3.44 KB
+MODIFIED: 2026-03-25 04:01:34
 ================================================================================
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using NetworkMonitor.Core;
 using NetworkMonitor.Core.Exporters;
+using NetworkMonitor.Core.Models;
 
 // =============================================================================
 // Network Monitor Console Application
@@ -796,6 +796,13 @@ using NetworkMonitor.Core.Exporters;
 //   Ctrl+C                              # Graceful shutdown
 //
 // Configuration via appsettings.json or environment variables.
+//
+// Logging levels are controlled entirely by appsettings.json (or env vars).
+// By default everything is set to Error so the console stays clean —
+// only the status display and problematic targets are shown.
+// To see verbose output, change the log levels in appsettings.json:
+//   "NetworkMonitor": "Information"  — startup info, status changes
+//   "NetworkMonitor": "Debug"        — every ping, DNS lookup, etc.
 // =============================================================================
 
 Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
@@ -811,13 +818,23 @@ Console.WriteLine();
 
 var builder = Host.CreateApplicationBuilder(args);
 
-// Configure logging
-builder.Logging.SetMinimumLevel(LogLevel.Warning);
-builder.Logging.AddFilter("NetworkMonitor", LogLevel.Information);
+// Logging levels are driven by appsettings.json / environment variables.
+// No hardcoded overrides here — the config file is the single source of truth.
+// Default appsettings.json ships with Error level so the console stays quiet.
 
 // Register Network Monitor services
 builder.Services.AddNetworkMonitor(builder.Configuration);
-builder.Services.AddNetworkMonitorTelemetry(fileExporterOptions);
+
+// Read QuietConsole to decide whether to enable the OTel console exporter.
+// When QuietConsole is true (default), only file export is active —
+// no histogram spam on the console. Set QuietConsole=false to get raw
+// OpenTelemetry output on stdout alongside the status display.
+var monitorSection = builder.Configuration.GetSection(MonitorOptions.SectionName);
+var quietConsole = monitorSection.GetValue("QuietConsole", defaultValue: true);
+
+builder.Services.AddNetworkMonitorTelemetry(
+    fileExporterOptions,
+    enableConsoleExporter: !quietConsole);
 
 var host = builder.Build();
 
@@ -1760,8 +1777,8 @@ MODIFIED: 2025-12-26 08:26:48
 
 ================================================================================
 FILE: src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
-SIZE: 2.59 KB
-MODIFIED: 2026-03-01 13:13:47
+SIZE: 3.43 KB
+MODIFIED: 2026-03-25 04:01:48
 ================================================================================
 
 using Microsoft.Extensions.Configuration;
@@ -1811,11 +1828,20 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Adds OpenTelemetry metrics with file and console export.
+    /// Adds OpenTelemetry metrics with file export (always) and console export (opt-in).
     /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="fileOptions">File exporter options.</param>
+    /// <param name="enableConsoleExporter">
+    /// When false (default), OpenTelemetry metrics are only written to files.
+    /// When true, metrics are also dumped to the console (noisy with many targets).
+    /// This does NOT affect the status display or database — only the raw
+    /// OpenTelemetry histogram/counter output on stdout.
+    /// </param>
     public static IServiceCollection AddNetworkMonitorTelemetry(
         this IServiceCollection services,
-        FileExporterOptions? fileOptions = null)
+        FileExporterOptions? fileOptions = null,
+        bool enableConsoleExporter = false)
     {
         fileOptions ??= FileExporterOptions.Default;
 
@@ -1829,8 +1855,15 @@ public static class ServiceCollectionExtensions
                 metrics
                     .AddMeter("NetworkMonitor.Core")
                     .AddRuntimeInstrumentation()
-                    .AddConsoleExporter()
                     .AddFileExporter(fileOptions);
+
+                // Only add the console exporter when explicitly requested.
+                // With dozens of targets, the histogram output every 10 seconds
+                // drowns out the actual status display.
+                if (enableConsoleExporter)
+                {
+                    metrics.AddConsoleExporter();
+                }
             });
 
         return services;
@@ -5698,7 +5731,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
 
 
 ===============================================================================
-EXPORT COMPLETED: Wed Mar 25 03:55:29 AM EDT 2026
+EXPORT COMPLETED: Wed Mar 25 04:02:14 AM EDT 2026
 Total Files Exported: 60
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
