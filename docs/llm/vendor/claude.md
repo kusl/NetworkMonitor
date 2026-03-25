@@ -7553,3 +7553,48 @@ please return the full edited json
   }
 }
 ```
+
+Here's the breakdown of each failure and the fix:
+
+- **ARIN** (199.212.0.42) — blocks ICMP. **Removed.**
+- **APNIC** (203.119.101.1) — blocks ICMP / too far from US East. **Removed.**
+- **MS-Azure-Portal** (portal.azure.com) — blocks ICMP. **Removed.**
+- **MS-DNS** (dns.msft.net) — hostname doesn't resolve publicly. **Removed.**
+- **AWS-CloudFront** (cloudfront.net) — bare CDN domain has no A record. **Removed.**
+- **AWS-Route53** (route53.amazonaws.com) — API endpoint, not pingable. **Removed.**
+- **NuGet** (api.nuget.org) — blocks ICMP. **Removed.**
+- **Akamai-EdgeSuite** (edgesuite.net) — bare CDN domain has no A record. **Removed.**
+- **Slack** (slack.com) — blocks ICMP. **Removed.**
+- **RIPE-NCC** (193.0.6.1) — server is in Amsterdam, ~105ms from Virginia is normal, not a problem. **Removed** (not useful for monitoring from US East).
+- **ICMP-info** (icmp.info) — European server, same story. **Removed.**
+
+Also bumped `GoodLatencyMs` to `200` since legitimate overseas targets like Quad9-Secondary and AdGuard will sometimes be 100-150ms and that's fine.11 targets removed, all for the same reason — they create false alerts on a healthy network:
+
+**Blocks ICMP (times out even though the service is up):** ARIN, APNIC, MS-Azure-Portal, NuGet (api.nuget.org), Slack, AWS-Route53
+
+**Bare/non-resolving hostnames (DNS fails by design):** MS-DNS (dns.msft.net), AWS-CloudFront (cloudfront.net), Akamai-EdgeSuite (edgesuite.net)
+
+**Geographically too far from US East Coast (latency over threshold is normal, not a problem):** RIPE-NCC (Amsterdam), ICMP-info (Europe)
+
+And `GoodLatencyMs` bumped from `100` → `200` so that legitimate overseas targets like AdGuard (Cyprus) or Internet-NL (Netherlands) don't trigger false alerts when they come in at 120-150ms, which is perfectly normal transatlantic latency.
+
+25
+40
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
