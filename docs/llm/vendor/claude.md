@@ -7778,3 +7778,7 @@ please cite your sources
     ✗ Internet-NL                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
     ✗ Internet-NL                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
     ✗ Internet-NL                  FAIL: DNS resolution failed: Resource temporarily unavailable [DNS FAIL]
+
+The problem is clear: the old code counted **logical lines** (each `Console.Write` call) but terminal lines **wrap** when they exceed the terminal width. A 95-character target line on an 80-column terminal takes 2 physical rows, but we only counted it as 1. So when we moved the cursor up to clear, we didn't go up far enough, leaving stale text behind.
+
+The fix: build the entire output as a single string, then count **physical terminal rows** by measuring the visible length of each line (stripping ANSI color codes) and dividing by terminal width. On the next cycle, use `\x1b[J` (clear from cursor to end of screen) instead of clearing line-by-line.

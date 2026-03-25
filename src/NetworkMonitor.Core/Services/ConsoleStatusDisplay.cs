@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.Extensions.Options;
 using NetworkMonitor.Core.Models;
 
@@ -17,11 +18,39 @@ namespace NetworkMonitor.Core.Services;
 ///   - Packet loss exceeds DegradedPacketLossPercent threshold
 ///   - DNS resolution failed (for hostname targets)
 /// </summary>
+/// <remarks>
+/// Display refresh strategy:
+///
+/// Each update builds the entire output into a string, writes it with a single
+/// Console.Write call, then counts the physical terminal rows it consumed
+/// (accounting for ANSI escape codes and line wrapping at the terminal width).
+///
+/// On the next cycle, the cursor is moved up by exactly that many physical rows
+/// and "\x1b[J" (Erase in Display — clear from cursor to end of screen) wipes
+/// everything from the status line downward, regardless of wrapping or how many
+/// rows the previous output occupied. This avoids the stale-text problem that
+/// occurs when clearing by logical line count alone.
+///
+/// ANSI sequences used:
+///   \x1b[{n}A   — Cursor Up by n rows (CUU)
+///   \x1b[J      — Erase in Display: cursor to end of screen (ED, mode 0)
+///   \r          — Carriage return (move to column 0)
+///
+/// These are standard ECMA-48 / VT100 sequences supported by all modern
+/// terminals on Linux, macOS, and Windows (Terminal + ConHost since Win10 1511).
+/// .NET enables virtual terminal processing automatically on Windows.
+/// </remarks>
 public sealed class ConsoleStatusDisplay : IStatusDisplay
 {
     private readonly Lock _lock = new();
     private readonly MonitorOptions _options;
-    private int _previousExtraLines;
+
+    /// <summary>
+    /// Number of physical terminal rows our previous output occupied.
+    /// Used to move the cursor back to the start of the status line
+    /// before clearing and rewriting.
+    /// </summary>
+    private int _previousPhysicalRows;
 
     // ANSI color codes
     private const string Reset = "\x1b[0m";
@@ -45,108 +74,128 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
 
         lock (_lock)
         {
-            // Clear any previously written extra lines before rewriting
-            ClearExtraLines();
-
-            var (color, symbol) = status.Health switch
+            // Move cursor back to the start of our previous output.
+            // _previousPhysicalRows tracks how many physical terminal rows
+            // (accounting for line wrapping) the last update occupied.
+            // The cursor is on the last of those rows, so we go up (n-1).
+            if (_previousPhysicalRows > 1)
             {
-                NetworkHealth.Excellent => (Green, "●"),
-                NetworkHealth.Good => (Green, "○"),
-                NetworkHealth.Degraded => (Yellow, "◐"),
-                NetworkHealth.Poor => (Red, "◑"),
-                NetworkHealth.Offline => (Red, "○"),
-                _ => (Reset, "?")
-            };
-
-            Console.Write($"\r{color}{Bold}{symbol} {status.Health,-10}{Reset} ");
-            Console.Write($"{Cyan}Router:{Reset} ");
-
-            if (status.RouterResult?.Success == true)
-            {
-                var routerColor = GetLatencyColor(status.RouterResult.RoundtripTimeMs);
-                Console.Write($"{routerColor}{status.RouterResult.RoundtripTimeMs,4}ms{Reset} ");
-            }
-            else
-            {
-                Console.Write($"{Red}FAIL{Reset}   ");
+                Console.Write($"\x1b[{_previousPhysicalRows - 1}A");
             }
 
-            Console.Write($"{Cyan}Internet:{Reset} ");
+            // Column 0, then clear from cursor to end of screen.
+            // This single command wipes all stale text regardless of
+            // how many physical rows it spanned or whether lines wrapped.
+            Console.Write("\r\x1b[J");
 
-            if (status.InternetResult?.Success == true)
-            {
-                var internetColor = GetLatencyColor(status.InternetResult.RoundtripTimeMs);
-                Console.Write($"{internetColor}{status.InternetResult.RoundtripTimeMs,4}ms{Reset} ");
-            }
-            else
-            {
-                Console.Write($"{Red}FAIL{Reset}   ");
-            }
+            // Build the entire output into a single string so we can
+            // measure its physical row count accurately after writing.
+            var sb = new StringBuilder(512);
+            BuildStatusLine(sb, status);
 
-            // Show custom target summary if any
-            if (status.TargetResults is { Count: > 0 })
-            {
-                var customResults = status.TargetResults
-                    .Where(r => r.Target.Category == TargetCategory.Custom)
-                    .ToList();
-
-                if (customResults.Count > 0)
-                {
-                    var ok = customResults.Count(r => r.PingResult?.Success == true);
-                    var total = customResults.Count;
-                    var customColor = ok == total ? Green : ok > 0 ? Yellow : Red;
-                    Console.Write($"{Cyan}Targets:{Reset} {customColor}{ok}/{total}{Reset} ");
-                }
-            }
-
-            Console.Write($"{Magenta}[{status.Timestamp:HH:mm:ss}]{Reset}");
-
-            // Pad to clear any previous longer text on this line
-            Console.Write("          ");
-
-            // In quiet mode, show only problematic targets below the main line.
-            // In verbose mode (!QuietConsole), the summary count above is sufficient.
             if (_options.QuietConsole && status.TargetResults is { Count: > 0 })
             {
-                WriteProblematicTargets(status.TargetResults);
+                BuildProblematicTargets(sb, status.TargetResults);
             }
+
+            var output = sb.ToString();
+            Console.Write(output);
+
+            // Count how many physical terminal rows that output occupied,
+            // so the next cycle knows how far to move the cursor back up.
+            _previousPhysicalRows = CountPhysicalRows(output, GetTerminalWidth());
         }
     }
 
     /// <summary>
-    /// Writes details for targets that need attention below the main status line.
+    /// Builds the main one-line status summary into the StringBuilder.
+    /// </summary>
+    private void BuildStatusLine(StringBuilder sb, NetworkStatus status)
+    {
+        var (color, symbol) = status.Health switch
+        {
+            NetworkHealth.Excellent => (Green, "●"),
+            NetworkHealth.Good => (Green, "○"),
+            NetworkHealth.Degraded => (Yellow, "◐"),
+            NetworkHealth.Poor => (Red, "◑"),
+            NetworkHealth.Offline => (Red, "○"),
+            _ => (Reset, "?")
+        };
+
+        sb.Append($"{color}{Bold}{symbol} {status.Health,-10}{Reset} ");
+        sb.Append($"{Cyan}Router:{Reset} ");
+
+        if (status.RouterResult?.Success == true)
+        {
+            var c = GetLatencyColor(status.RouterResult.RoundtripTimeMs);
+            sb.Append($"{c}{status.RouterResult.RoundtripTimeMs,4}ms{Reset} ");
+        }
+        else
+        {
+            sb.Append($"{Red}FAIL{Reset}   ");
+        }
+
+        sb.Append($"{Cyan}Internet:{Reset} ");
+
+        if (status.InternetResult?.Success == true)
+        {
+            var c = GetLatencyColor(status.InternetResult.RoundtripTimeMs);
+            sb.Append($"{c}{status.InternetResult.RoundtripTimeMs,4}ms{Reset} ");
+        }
+        else
+        {
+            sb.Append($"{Red}FAIL{Reset}   ");
+        }
+
+        // Show custom target summary count
+        if (status.TargetResults is { Count: > 0 })
+        {
+            var customResults = status.TargetResults
+                .Where(r => r.Target.Category == TargetCategory.Custom)
+                .ToList();
+
+            if (customResults.Count > 0)
+            {
+                var ok = customResults.Count(r => r.PingResult?.Success == true);
+                var total = customResults.Count;
+                var c = ok == total ? Green : ok > 0 ? Yellow : Red;
+                sb.Append($"{Cyan}Targets:{Reset} {c}{ok}/{total}{Reset} ");
+            }
+        }
+
+        sb.Append($"{Magenta}[{status.Timestamp:HH:mm:ss}]{Reset}");
+    }
+
+    /// <summary>
+    /// Appends details for targets that need attention below the status line.
     /// Only called when QuietConsole is enabled.
     /// </summary>
-    private void WriteProblematicTargets(IReadOnlyList<TargetCheckResult> targetResults)
+    private void BuildProblematicTargets(
+        StringBuilder sb,
+        IReadOnlyList<TargetCheckResult> targetResults)
     {
         var problematic = targetResults
             .Where(IsProblematic)
             .ToList();
-
-        _previousExtraLines = 0;
 
         if (problematic.Count == 0)
         {
             return;
         }
 
-        Console.WriteLine();
-        _previousExtraLines++;
-
-        Console.Write($"  {Yellow}{Bold}⚠ {problematic.Count} target(s) need attention:{Reset}");
-        _previousExtraLines++;
+        sb.Append('\n');
+        sb.Append($"  {Yellow}{Bold}⚠ {problematic.Count} target(s) need attention:{Reset}");
 
         foreach (var result in problematic)
         {
-            Console.WriteLine();
-            _previousExtraLines++;
+            sb.Append('\n');
 
             var name = result.Target.Name;
 
             if (result.PingResult?.Success != true)
             {
                 var error = result.PingResult?.ErrorMessage ?? "No response";
-                Console.Write($"    {Red}✗ {name,-28}{Reset} {Dim}FAIL: {error}{Reset}");
+                sb.Append($"    {Red}✗ {name,-28}{Reset} {Dim}FAIL: {error}{Reset}");
             }
             else
             {
@@ -166,12 +215,12 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
 
                 var detail = parts.Count > 0 ? string.Join(", ", parts) : "degraded";
                 var targetColor = latency > _options.GoodLatencyMs ? Red : Yellow;
-                Console.Write($"    {targetColor}▲ {name,-28}{Reset} {Dim}{detail}{Reset}");
+                sb.Append($"    {targetColor}▲ {name,-28}{Reset} {Dim}{detail}{Reset}");
             }
 
             if (result.DnsResult is { Success: false })
             {
-                Console.Write($" {Red}[DNS FAIL]{Reset}");
+                sb.Append($" {Red}[DNS FAIL]{Reset}");
             }
         }
     }
@@ -221,34 +270,11 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
     }
 
     /// <summary>
-    /// Moves the cursor up and clears any extra lines written
-    /// by the previous update cycle (problematic target details).
+    /// Counts the number of physical terminal rows a string occupies,
+    /// accounting for embedded newlines and line wrapping at the terminal width.
+    /// ANSI escape sequences are stripped before measuring visible length.
     /// </summary>
-    private void ClearExtraLines()
-    {
-        if (_previousExtraLines <= 0)
-        {
-            return;
-        }
-
-        for (var i = 0; i < _previousExtraLines; i++)
-        {
-            // Move cursor up one line and clear it
-            Console.Write("\x1b[1A\x1b[2K");
-        }
-
-        // Return to the start of the main status line
-        Console.Write("\r");
-        _previousExtraLines = 0;
-    }
-
-    /// <inheritdoc />
-    public void Clear()
-    {
-        lock (_lock)
-        {
-            ClearExtraLines();
-            Console.Write("\r" + new string(' ', Console.WindowWidth - 1) + "\r");
-        }
-    }
-}
+    /// <param name="text">The output string (may contain ANSI codes and newlines).</param>
+    /// <param name="terminalWidth">Current terminal width in columns.</param>
+    /// <returns>Total physical rows the te
+    /// 
