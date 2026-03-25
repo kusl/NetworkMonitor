@@ -7205,3 +7205,24 @@ by default, we don't want to display the histogram at all.
 only information on what is degraded, poor, or offline 
 once again, we still need to log everything all the time 
 this only affects the display 
+
+Looking at the codebase, the problem is twofold:
+
+1. **`ServiceCollectionExtensions.cs`** calls `.AddConsoleExporter()` which dumps OpenTelemetry histogram data to stdout on every export cycle — that's the noise.
+2. **`Program.cs`** hardcodes logging levels that override `appsettings.json`, so your `"Error"` settings there are ignored.
+
+Here are the two files that need to change:
+
+**src/NetworkMonitor.Core/ServiceCollectionExtensions.cs****src/NetworkMonitor.Console/Program.cs**Two changes, both about what hits the console:
+
+**ServiceCollectionExtensions.cs** — `AddNetworkMonitorTelemetry` now takes `bool enableConsoleExporter = false`. The `.AddConsoleExporter()` call only happens when that's `true`. The file exporter always runs, so all histogram/counter data still gets written to the telemetry JSON files. The database still gets everything too (that's the storage service, completely separate).
+
+**Program.cs** — Two fixes:
+1. Removed the hardcoded `builder.Logging.SetMinimumLevel(LogLevel.Warning)` and `builder.Logging.AddFilter(...)` lines. These were overriding your `appsettings.json` settings (which already set everything to `Error`). Now the config file is the single source of truth for log levels.
+2. Reads `QuietConsole` from configuration and passes `enableConsoleExporter: !quietConsole` to the telemetry setup. So by default (quiet=true), no OpenTelemetry output on the console. Setting `QuietConsole: false` in config turns it back on.
+
+The net effect: with default settings, the only thing on the console is the status line from `ConsoleStatusDisplay` plus any problematic targets. Everything else — metrics, ping results, status history — still goes to the SQLite database and telemetry files silently.
+
+15
+39
+

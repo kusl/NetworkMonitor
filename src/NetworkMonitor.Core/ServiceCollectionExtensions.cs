@@ -45,11 +45,20 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Adds OpenTelemetry metrics with file and console export.
+    /// Adds OpenTelemetry metrics with file export (always) and console export (opt-in).
     /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="fileOptions">File exporter options.</param>
+    /// <param name="enableConsoleExporter">
+    /// When false (default), OpenTelemetry metrics are only written to files.
+    /// When true, metrics are also dumped to the console (noisy with many targets).
+    /// This does NOT affect the status display or database — only the raw
+    /// OpenTelemetry histogram/counter output on stdout.
+    /// </param>
     public static IServiceCollection AddNetworkMonitorTelemetry(
         this IServiceCollection services,
-        FileExporterOptions? fileOptions = null)
+        FileExporterOptions? fileOptions = null,
+        bool enableConsoleExporter = false)
     {
         fileOptions ??= FileExporterOptions.Default;
 
@@ -63,8 +72,15 @@ public static class ServiceCollectionExtensions
                 metrics
                     .AddMeter("NetworkMonitor.Core")
                     .AddRuntimeInstrumentation()
-                    .AddConsoleExporter()
                     .AddFileExporter(fileOptions);
+
+                // Only add the console exporter when explicitly requested.
+                // With dozens of targets, the histogram output every 10 seconds
+                // drowns out the actual status display.
+                if (enableConsoleExporter)
+                {
+                    metrics.AddConsoleExporter();
+                }
             });
 
         return services;

@@ -1,8 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using NetworkMonitor.Core;
 using NetworkMonitor.Core.Exporters;
+using NetworkMonitor.Core.Models;
 
 // =============================================================================
 // Network Monitor Console Application
@@ -18,6 +18,13 @@ using NetworkMonitor.Core.Exporters;
 //   Ctrl+C                              # Graceful shutdown
 //
 // Configuration via appsettings.json or environment variables.
+//
+// Logging levels are controlled entirely by appsettings.json (or env vars).
+// By default everything is set to Error so the console stays clean —
+// only the status display and problematic targets are shown.
+// To see verbose output, change the log levels in appsettings.json:
+//   "NetworkMonitor": "Information"  — startup info, status changes
+//   "NetworkMonitor": "Debug"        — every ping, DNS lookup, etc.
 // =============================================================================
 
 Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
@@ -33,13 +40,23 @@ Console.WriteLine();
 
 var builder = Host.CreateApplicationBuilder(args);
 
-// Configure logging
-builder.Logging.SetMinimumLevel(LogLevel.Warning);
-builder.Logging.AddFilter("NetworkMonitor", LogLevel.Information);
+// Logging levels are driven by appsettings.json / environment variables.
+// No hardcoded overrides here — the config file is the single source of truth.
+// Default appsettings.json ships with Error level so the console stays quiet.
 
 // Register Network Monitor services
 builder.Services.AddNetworkMonitor(builder.Configuration);
-builder.Services.AddNetworkMonitorTelemetry(fileExporterOptions);
+
+// Read QuietConsole to decide whether to enable the OTel console exporter.
+// When QuietConsole is true (default), only file export is active —
+// no histogram spam on the console. Set QuietConsole=false to get raw
+// OpenTelemetry output on stdout alongside the status display.
+var monitorSection = builder.Configuration.GetSection(MonitorOptions.SectionName);
+var quietConsole = monitorSection.GetValue("QuietConsole", defaultValue: true);
+
+builder.Services.AddNetworkMonitorTelemetry(
+    fileExporterOptions,
+    enableConsoleExporter: !quietConsole);
 
 var host = builder.Build();
 
