@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Wed Mar 25 02:25:32 AM EDT 2026
+Generated: Wed Mar 25 02:37:44 AM EDT 2026
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -629,16 +629,16 @@ Project `NetworkMonitor.Tests` has the following updates to its packages
 
 ================================================================================
 FILE: src/NetworkMonitor.Console/appsettings.json
-SIZE: 6.89 KB
-MODIFIED: 2026-03-25 02:24:51
+SIZE: 6.88 KB
+MODIFIED: 2026-03-25 02:37:30
 ================================================================================
 
 {
   "Logging": {
     "LogLevel": {
-      "Default": "Information",
+      "Default": "Warning",
       "Microsoft": "Warning",
-      "NetworkMonitor": "Information"
+      "NetworkMonitor": "Error"
     }
   },
   "NetworkMonitor": {
@@ -5492,7 +5492,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
 
 
 ===============================================================================
-EXPORT COMPLETED: Wed Mar 25 02:25:32 AM EDT 2026
+EXPORT COMPLETED: Wed Mar 25 02:37:45 AM EDT 2026
 Total Files Exported: 60
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
