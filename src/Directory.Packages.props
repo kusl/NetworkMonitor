@@ -20,7 +20,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <OpenTelemetryVersion>1.15.0</OpenTelemetryVersion>
+    <OpenTelemetryVersion>1.15.1</OpenTelemetryVersion>
     <ExtensionsVersions>10.0.5</ExtensionsVersions>
   </PropertyGroup>
   
@@ -49,29 +49,65 @@
 </Project>
 
 
-<!-- Project `NetworkMonitor.Console` has the following updates to its packages
+<!-- 
+
+Build succeeded in 0.5s
+Project 'NetworkMonitor.Console' has the following package references
    [net10.0]: 
-   Top-level Package                            Requested   Resolved   Latest
-   > Microsoft.Extensions.Hosting               10.0.1      10.0.1     10.0.3
-   > OpenTelemetry.Exporter.Console             1.14.0      1.14.0     1.15.0
-   > OpenTelemetry.Extensions.Hosting           1.14.0      1.14.0     1.15.0
-   > OpenTelemetry.Instrumentation.Runtime      1.14.0      1.14.0     1.15.0
+   Top-level Package                            Requested   Resolved
+   > Microsoft.Extensions.Hosting               10.0.5      10.0.5  
+   > OpenTelemetry.Exporter.Console             1.15.0      1.15.0  
+   > OpenTelemetry.Extensions.Hosting           1.15.0      1.15.0  
+   > OpenTelemetry.Instrumentation.Runtime      1.15.0      1.15.0  
+
+Project 'NetworkMonitor.Core' has the following package references
+   [net10.0]: 
+   Top-level Package                                Requested   Resolved
+   > Microsoft.Data.Sqlite                          10.0.5      10.0.5  
+   > Microsoft.Extensions.Hosting                   10.0.5      10.0.5  
+   > Microsoft.Extensions.Logging.Abstractions      10.0.5      10.0.5  
+   > Microsoft.Extensions.Options                   10.0.5      10.0.5  
+   > OpenTelemetry                                  1.15.0      1.15.0  
+   > OpenTelemetry.Exporter.Console                 1.15.0      1.15.0  
+   > OpenTelemetry.Extensions.Hosting               1.15.0      1.15.0  
+   > OpenTelemetry.Instrumentation.Runtime          1.15.0      1.15.0  
+
+Project 'NetworkMonitor.Tests' has the following package references
+   [net10.0]: 
+   Top-level Package                                Requested   Resolved
+   > Microsoft.Extensions.Logging.Abstractions      10.0.5      10.0.5  
+   > Microsoft.NET.Test.Sdk                         18.3.0      18.3.0  
+   > xunit.runner.visualstudio                      3.1.5       3.1.5   
+   > xunit.v3                                       3.2.2       3.2.2   
+
+
+real	0m1.409s
+user	0m1.351s
+sys	0m0.301s
+Restore complete (0.4s)
+
+Build succeeded in 0.5s
+
+The following sources were used:
+   https://api.nuget.org/v3/index.json
+
+Project `NetworkMonitor.Console` has the following updates to its packages
+   [net10.0]: 
+   Top-level Package                       Requested   Resolved   Latest
+   > OpenTelemetry.Exporter.Console        1.15.0      1.15.0     1.15.1
+   > OpenTelemetry.Extensions.Hosting      1.15.0      1.15.0     1.15.1
 
 Project `NetworkMonitor.Core` has the following updates to its packages
    [net10.0]: 
-   Top-level Package                                Requested   Resolved   Latest
-   > Microsoft.Data.Sqlite                          10.0.1      10.0.1     10.0.3
-   > Microsoft.Extensions.Hosting                   10.0.1      10.0.1     10.0.3
-   > Microsoft.Extensions.Logging.Abstractions      10.0.1      10.0.1     10.0.3
-   > Microsoft.Extensions.Options                   10.0.1      10.0.1     10.0.3
-   > OpenTelemetry                                  1.14.0      1.14.0     1.15.0
-   > OpenTelemetry.Exporter.Console                 1.14.0      1.14.0     1.15.0
-   > OpenTelemetry.Extensions.Hosting               1.14.0      1.14.0     1.15.0
-   > OpenTelemetry.Instrumentation.Runtime          1.14.0      1.14.0     1.15.0
+   Top-level Package                       Requested   Resolved   Latest
+   > OpenTelemetry                         1.15.0      1.15.0     1.15.1
+   > OpenTelemetry.Exporter.Console        1.15.0      1.15.0     1.15.1
+   > OpenTelemetry.Extensions.Hosting      1.15.0      1.15.0     1.15.1
 
-Project `NetworkMonitor.Tests` has the following updates to its packages
-   [net10.0]: 
-   Top-level Package                                Requested   Resolved   Latest
-   > Microsoft.Extensions.Logging.Abstractions      10.0.1      10.0.1     10.0.3
-   > Microsoft.NET.Test.Sdk                         18.0.1      18.0.1     18.3.0
-   > xunit.v3                                       3.2.1       3.2.1      3.2.2  -->
+The given project `NetworkMonitor.Tests` has no updates given the current sources.
+
+real	0m2.912s
+user	0m1.909s
+sys	0m0.344s
+
+-->
