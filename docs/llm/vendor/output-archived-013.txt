@@ -546,4 +546,8 @@ sys	0m0.302s
 ● Excellent  Router:    2ms Internet:   19ms Targets: 48/48 [01:54:30]
   ⚠ 1 target(s) need attention:
     ▲ Internet-NL                  latency 215ms
-● Excellent  Router:    7ms Internet:   15ms Targets: 48/48 [01:57:04]
+● Excellent  Router:    2ms Internet:   16ms Targets: 48/48 [01:57:32]^C
+
+⏹️  Shutting down...
+👋 Network Monitor stopped. Goodbye!
+kushal@fedora:~/src/dotnet/network-monitor/src/NetworkMonitor.Console$ 
