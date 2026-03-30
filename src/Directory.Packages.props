@@ -20,7 +20,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <OpenTelemetryVersion>1.15.1</OpenTelemetryVersion>
+    <OpenTelemetryVersion>1.15.0</OpenTelemetryVersion>
     <ExtensionsVersions>10.0.5</ExtensionsVersions>
   </PropertyGroup>
   

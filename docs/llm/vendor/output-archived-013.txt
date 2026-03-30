@@ -191,4 +191,176 @@ sys	0m0.344s
 
 ⏹️  Shutting down...
 👋 Network Monitor stopped. Goodbye!
+kushal@fedora:~/src/dotnet/network-monitor/src/NetworkMonitor.Console$ cd ~/src/dotnet/network-monitor/src; time dotnet format; cd ~/src/dotnet/network-monitor/; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet build; time dotnet test; time dotnet list package; time dotnet list package --outdated; cd /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Console; dotnet run
+Unhandled exception: System.Exception: Restore operation failed.
+   at Microsoft.CodeAnalysis.Tools.CodeFormatter.OpenMSBuildWorkspaceAsync(String solutionOrProjectPath, WorkspaceType workspaceType, Boolean noRestore, Boolean requiresSemantics, String binaryLogPath, Boolean logWorkspaceWarnings, ILogger logger, CancellationToken cancellationToken)
+   at Microsoft.CodeAnalysis.Tools.CodeFormatter.FormatWorkspaceAsync(FormatOptions formatOptions, ILogger logger, CancellationToken cancellationToken, String binaryLogPath)
+   at Microsoft.CodeAnalysis.Tools.FormatCommandCommon.FormatAsync(FormatOptions formatOptions, ILogger`1 logger, CancellationToken cancellationToken)
+   at Microsoft.CodeAnalysis.Tools.Commands.RootFormatCommand.FormatCommandDefaultHandler.InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken)
+   at System.CommandLine.Invocation.InvocationPipeline.InvokeAsync(ParseResult parseResult, CancellationToken cancellationToken)
+
+real	0m1.999s
+user	0m1.766s
+sys	0m0.378s
+Starting project export...
+Project Path: /home/kushal/src/dotnet/network-monitor
+Output File: docs/llm/dump.txt
+Generating directory structure...
+Collecting files...
+Found 60 files to export
+Processing (1/60): .github/workflows/build-and-test.yml
+Processing (2/60): .github/workflows/release.yml
+Processing (3/60): src/Directory.Build.props
+Processing (4/60): src/Directory.Packages.props
+Processing (5/60): src/NetworkMonitor.Console/appsettings.json
+Processing (6/60): src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
+Processing (7/60): src/NetworkMonitor.Console/Program.cs
+Processing (8/60): src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs
+Processing (9/60): src/NetworkMonitor.Core/Exporters/FileExporterOptions.cs
+Processing (10/60): src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs
+Processing (11/60): src/NetworkMonitor.Core/Models/DnsResult.cs
+Processing (12/60): src/NetworkMonitor.Core/Models/HistoricalData.cs
+Processing (13/60): src/NetworkMonitor.Core/Models/MonitorOptions.cs
+Processing (14/60): src/NetworkMonitor.Core/Models/MonitorTarget.cs
+Processing (15/60): src/NetworkMonitor.Core/Models/NetworkStatus.cs
+Processing (16/60): src/NetworkMonitor.Core/Models/NetworkStatusEventArgs.cs
+Processing (17/60): src/NetworkMonitor.Core/Models/PingResult.cs
+Processing (18/60): src/NetworkMonitor.Core/Models/StorageOptions.cs
+Processing (19/60): src/NetworkMonitor.Core/Models/TargetCheckResult.cs
+Processing (20/60): src/NetworkMonitor.Core/NetworkMonitor.Core.csproj
+Processing (21/60): src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
+Processing (22/60): src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs
+Processing (23/60): src/NetworkMonitor.Core/Services/DnsResolverService.cs
+Processing (24/60): src/NetworkMonitor.Core/Services/GatewayDetector.cs
+Processing (25/60): src/NetworkMonitor.Core/Services/IDnsResolverService.cs
+Processing (26/60): src/NetworkMonitor.Core/Services/IGatewayDetector.cs
+Processing (27/60): src/NetworkMonitor.Core/Services/IInternetTargetProvider.cs
+Processing (28/60): src/NetworkMonitor.Core/Services/INetworkConfigurationService.cs
+Processing (29/60): src/NetworkMonitor.Core/Services/INetworkMonitorService.cs
+Processing (30/60): src/NetworkMonitor.Core/Services/InternetTargetProvider.cs
+Processing (31/60): src/NetworkMonitor.Core/Services/IPingService.cs
+Processing (32/60): src/NetworkMonitor.Core/Services/IStatusDisplay.cs
+Processing (33/60): src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs
+Processing (34/60): src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs
+Processing (35/60): src/NetworkMonitor.Core/Services/NetworkMonitorService.cs
+Processing (36/60): src/NetworkMonitor.Core/Services/PingService.cs
+Processing (37/60): src/NetworkMonitor.Core/Storage/IStorageService.cs
+Processing (38/60): src/NetworkMonitor.Core/Storage/SqliteStorageService.cs
+Processing (39/60): src/NetworkMonitor.slnx
+Processing (40/60): src/NetworkMonitor.Tests/Fakes/FakeDnsResolverService.cs
+Processing (41/60): src/NetworkMonitor.Tests/Fakes/FakeGatewayDetector.cs
+Processing (42/60): src/NetworkMonitor.Tests/Fakes/FakeInternetTargetProvider.cs
+Processing (43/60): src/NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs
+Processing (44/60): src/NetworkMonitor.Tests/Fakes/FakePingService.cs
+Processing (45/60): src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs
+Processing (46/60): src/NetworkMonitor.Tests/Fakes/FakeStorageService.cs
+Processing (47/60): src/NetworkMonitor.Tests/Models/DnsResultTests.cs
+Processing (48/60): src/NetworkMonitor.Tests/Models/MonitorOptionsTests.cs
+Processing (49/60): src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs
+Processing (50/60): src/NetworkMonitor.Tests/Models/NetworkStatusEventArgsTests.cs
+Processing (51/60): src/NetworkMonitor.Tests/Models/PingResultTests.cs
+Processing (52/60): src/NetworkMonitor.Tests/Models/TargetCheckResultTests.cs
+Processing (53/60): src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj
+Processing (54/60): src/NetworkMonitor.Tests/NetworkStatusTests.cs
+Processing (55/60): src/NetworkMonitor.Tests/PingResultTests.cs
+Processing (56/60): src/NetworkMonitor.Tests/Services/DnsResolverServiceTests.cs
+Processing (57/60): src/NetworkMonitor.Tests/Services/GatewayDetectorTests.cs
+Processing (58/60): src/NetworkMonitor.Tests/Services/InternetTargetProviderTests.cs
+Processing (59/60): src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs
+Processing (60/60): src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs
+
+Export completed successfully!
+Output file: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
+Total files exported: 60
+Output file size: 0.19 MB
+
+real	0m0.550s
+user	0m0.268s
+sys	0m0.374s
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Console/NetworkMonitor.Console.csproj : error NU1102: 
+      Unable to find package OpenTelemetry.Instrumentation.Runtime with version (>= 1.15.1)
+        - Found 29 version(s) in nuget.org [ Nearest version: 1.15.0 ]
+        - Found 0 version(s) in /usr/lib64/dotnet/library-packs
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/NetworkMonitor.Core.csproj : error NU1102: 
+      Unable to find package OpenTelemetry.Instrumentation.Runtime with version (>= 1.15.1)
+        - Found 29 version(s) in nuget.org [ Nearest version: 1.15.0 ]
+        - Found 0 version(s) in /usr/lib64/dotnet/library-packs
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj : error NU1102: 
+      Unable to find package OpenTelemetry.Instrumentation.Runtime with version (>= 1.15.1)
+        - Found 29 version(s) in nuget.org [ Nearest version: 1.15.0 ]
+        - Found 0 version(s) in /usr/lib64/dotnet/library-packs
+    /usr/lib64/dotnet/sdk/10.0.104/NuGet.targets(196,5): error The given key 'OpenTelemetry.Instrumentation.Runtime' was not present in the dictionary.
+
+Restore failed with 4 error(s) in 0.9s
+
+real	0m1.031s
+user	0m1.178s
+sys	0m0.238s
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/NetworkMonitor.Core.csproj : error NU1102: 
+      Unable to find package OpenTelemetry.Instrumentation.Runtime with version (>= 1.15.1)
+        - Found 29 version(s) in nuget.org [ Nearest version: 1.15.0 ]
+        - Found 0 version(s) in /usr/lib64/dotnet/library-packs
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj : error NU1102: 
+      Unable to find package OpenTelemetry.Instrumentation.Runtime with version (>= 1.15.1)
+        - Found 29 version(s) in nuget.org [ Nearest version: 1.15.0 ]
+        - Found 0 version(s) in /usr/lib64/dotnet/library-packs
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Console/NetworkMonitor.Console.csproj : error NU1102: 
+      Unable to find package OpenTelemetry.Instrumentation.Runtime with version (>= 1.15.1)
+        - Found 29 version(s) in nuget.org [ Nearest version: 1.15.0 ]
+        - Found 0 version(s) in /usr/lib64/dotnet/library-packs
+    /usr/lib64/dotnet/sdk/10.0.104/NuGet.targets(196,5): error The given key 'OpenTelemetry.Instrumentation.Runtime' was not present in the dictionary.
+
+Restore failed with 4 error(s) in 0.9s
+
+real	0m1.022s
+user	0m1.242s
+sys	0m0.184s
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/NetworkMonitor.Core.csproj : error NU1102: 
+      Unable to find package OpenTelemetry.Instrumentation.Runtime with version (>= 1.15.1)
+        - Found 29 version(s) in nuget.org [ Nearest version: 1.15.0 ]
+        - Found 0 version(s) in /usr/lib64/dotnet/library-packs
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj : error NU1102: 
+      Unable to find package OpenTelemetry.Instrumentation.Runtime with version (>= 1.15.1)
+        - Found 29 version(s) in nuget.org [ Nearest version: 1.15.0 ]
+        - Found 0 version(s) in /usr/lib64/dotnet/library-packs
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Console/NetworkMonitor.Console.csproj : error NU1102: 
+      Unable to find package OpenTelemetry.Instrumentation.Runtime with version (>= 1.15.1)
+        - Found 29 version(s) in nuget.org [ Nearest version: 1.15.0 ]
+        - Found 0 version(s) in /usr/lib64/dotnet/library-packs
+    /usr/lib64/dotnet/sdk/10.0.104/NuGet.targets(196,5): error The given key 'OpenTelemetry.Instrumentation.Runtime' was not present in the dictionary.
+
+Restore failed with 4 error(s) in 0.9s
+
+real	0m0.999s
+user	0m1.140s
+sys	0m0.215s
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/NetworkMonitor.Core.csproj : error NU1102: 
+      Unable to find package OpenTelemetry.Instrumentation.Runtime with version (>= 1.15.1)
+        - Found 29 version(s) in nuget.org [ Nearest version: 1.15.0 ]
+        - Found 0 version(s) in /usr/lib64/dotnet/library-packs
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Console/NetworkMonitor.Console.csproj : error NU1102: 
+      Unable to find package OpenTelemetry.Instrumentation.Runtime with version (>= 1.15.1)
+        - Found 29 version(s) in nuget.org [ Nearest version: 1.15.0 ]
+        - Found 0 version(s) in /usr/lib64/dotnet/library-packs
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj : error NU1102: 
+      Unable to find package OpenTelemetry.Instrumentation.Runtime with version (>= 1.15.1)
+        - Found 29 version(s) in nuget.org [ Nearest version: 1.15.0 ]
+        - Found 0 version(s) in /usr/lib64/dotnet/library-packs
+    /usr/lib64/dotnet/sdk/10.0.104/NuGet.targets(196,5): error The given key 'OpenTelemetry.Instrumentation.Runtime' was not present in the dictionary.
+
+Restore failed with 4 error(s) in 0.9s
+
+real	0m1.015s
+user	0m1.183s
+sys	0m0.186s
+/home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Console/NetworkMonitor.Console.csproj : error NU1102: 
+  Unable to find package OpenTelemetry.Instrumentation.Runtime with version (>= 1.15.1)
+    - Found 29 version(s) in nuget.org [ Nearest version: 1.15.0 ]
+    - Found 0 version(s) in /usr/lib64/dotnet/library-packs
+/home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/NetworkMonitor.Core.csproj : error NU1102: 
+  Unable to find package OpenTelemetry.Instrumentation.Runtime with version (>= 1.15.1)
+    - Found 29 version(s) in nuget.org [ Nearest version: 1.15.0 ]
+    - Found 0 version(s) in /usr/lib64/dotnet/library-packs
+
+The build failed. Fix the build errors and run again.
 kushal@fedora:~/src/dotnet/network-monitor/src/NetworkMonitor.Console$ 
