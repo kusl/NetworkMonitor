@@ -1,6 +1,6 @@
 ===============================================================================
 PROJECT EXPORT
-Generated: Mon Apr 13 11:01:09 AM EDT 2026
+Generated: Mon Apr 13 01:07:43 PM EDT 2026
 Project Path: /home/kushal/src/dotnet/network-monitor
 ===============================================================================
 
@@ -666,7 +666,7 @@ sys	0m0.344s
 ================================================================================
 FILE: src/NetworkMonitor.Console/appsettings.json
 SIZE: 5.73 KB
-MODIFIED: 2026-03-25 04:19:08
+MODIFIED: 2026-04-13 13:06:51
 ================================================================================
 
 {
@@ -705,7 +705,7 @@ MODIFIED: 2026-03-25 04:19:08
       { "Name": "Level3-2",                "Address": "4.2.2.2",                          "Enabled": true },
       { "Name": "Level3-3",                "Address": "4.2.2.3",                          "Enabled": true },
       { "Name": "CleanBrowsing",           "Address": "185.228.168.9",                    "Enabled": true },
-      { "Name": "Alternate-DNS",           "Address": "76.76.19.19",                      "Enabled": true },
+      { "Name": "Control D (Unfiltered)",  "Address": "76.76.2.0",                        "Enabled": false },
       { "Name": "AdGuard-DNS",             "Address": "94.140.14.14",                     "Enabled": true },
       { "Name": "NextDNS",                 "Address": "45.90.28.0",                       "Enabled": true },
 
@@ -5772,7 +5772,7 @@ public sealed class NetworkMonitorServiceTests : IDisposable
 
 
 ===============================================================================
-EXPORT COMPLETED: Mon Apr 13 11:01:09 AM EDT 2026
+EXPORT COMPLETED: Mon Apr 13 01:07:44 PM EDT 2026
 Total Files Exported: 60
 Output File: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
