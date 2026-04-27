@@ -1,0 +1,1 @@
+cd ~/src/dotnet/network-monitor/src; time dotnet format; cd ~/src/dotnet/network-monitor/; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet build; time dotnet test; time dotnet list package; time dotnet list package --outdated; cd /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Console; dotnet run
