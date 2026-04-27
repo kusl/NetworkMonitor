@@ -20,8 +20,9 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <OpenTelemetryVersion>1.15.0</OpenTelemetryVersion>
-    <ExtensionsVersions>10.0.5</ExtensionsVersions>
+    <OpenTelemetryVersion>1.15.3</OpenTelemetryVersion>
+    <OpenTelemetryVersionStraggler>1.15.1</OpenTelemetryVersionStraggler>
+    <ExtensionsVersions>10.0.7</ExtensionsVersions>
   </PropertyGroup>
   
   <ItemGroup>
@@ -39,7 +40,7 @@
     <PackageVersion Include="OpenTelemetry" Version="$(OpenTelemetryVersion)" />
     <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="$(OpenTelemetryVersion)" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="$(OpenTelemetryVersion)" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OpenTelemetryVersion)" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OpenTelemetryVersionStraggler)" />
     
     <!-- Testing - xUnit 3 (Apache 2.0 License) -->
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
@@ -76,14 +77,14 @@ Project 'NetworkMonitor.Tests' has the following package references
    [net10.0]: 
    Top-level Package                                Requested   Resolved
    > Microsoft.Extensions.Logging.Abstractions      10.0.5      10.0.5  
-   > Microsoft.NET.Test.Sdk                         18.3.0      18.3.0  
+   > Microsoft.NET.Test.Sdk                         18.4.0      18.4.0  
    > xunit.runner.visualstudio                      3.1.5       3.1.5   
    > xunit.v3                                       3.2.2       3.2.2   
 
 
-real	0m1.409s
-user	0m1.351s
-sys	0m0.301s
+real	0m1.395s
+user	0m1.366s
+sys	0m0.269s
 Restore complete (0.4s)
 
 Build succeeded in 0.5s
@@ -93,21 +94,33 @@ The following sources were used:
 
 Project `NetworkMonitor.Console` has the following updates to its packages
    [net10.0]: 
-   Top-level Package                       Requested   Resolved   Latest
-   > OpenTelemetry.Exporter.Console        1.15.0      1.15.0     1.15.1
-   > OpenTelemetry.Extensions.Hosting      1.15.0      1.15.0     1.15.1
+   Top-level Package                            Requested   Resolved   Latest
+   > Microsoft.Extensions.Hosting               10.0.5      10.0.5     10.0.7
+   > OpenTelemetry.Exporter.Console             1.15.0      1.15.0     1.15.3
+   > OpenTelemetry.Extensions.Hosting           1.15.0      1.15.0     1.15.3
+   > OpenTelemetry.Instrumentation.Runtime      1.15.0      1.15.0     1.15.1
 
 Project `NetworkMonitor.Core` has the following updates to its packages
    [net10.0]: 
-   Top-level Package                       Requested   Resolved   Latest
-   > OpenTelemetry                         1.15.0      1.15.0     1.15.1
-   > OpenTelemetry.Exporter.Console        1.15.0      1.15.0     1.15.1
-   > OpenTelemetry.Extensions.Hosting      1.15.0      1.15.0     1.15.1
+   Top-level Package                                Requested   Resolved   Latest
+   > Microsoft.Data.Sqlite                          10.0.5      10.0.5     10.0.7
+   > Microsoft.Extensions.Hosting                   10.0.5      10.0.5     10.0.7
+   > Microsoft.Extensions.Logging.Abstractions      10.0.5      10.0.5     10.0.7
+   > Microsoft.Extensions.Options                   10.0.5      10.0.5     10.0.7
+   > OpenTelemetry                                  1.15.0      1.15.0     1.15.3
+   > OpenTelemetry.Exporter.Console                 1.15.0      1.15.0     1.15.3
+   > OpenTelemetry.Extensions.Hosting               1.15.0      1.15.0     1.15.3
+   > OpenTelemetry.Instrumentation.Runtime          1.15.0      1.15.0     1.15.1
 
-The given project `NetworkMonitor.Tests` has no updates given the current sources.
+Project `NetworkMonitor.Tests` has the following updates to its packages
+   [net10.0]: 
+   Top-level Package                                Requested   Resolved   Latest
+   > Microsoft.Extensions.Logging.Abstractions      10.0.5      10.0.5     10.0.7
 
-real	0m2.912s
-user	0m1.909s
-sys	0m0.344s
+
+real	0m2.296s
+user	0m1.840s
+sys	0m0.312s
+
 
 -->
