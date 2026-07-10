@@ -11698,3 +11698,18 @@ Claude is AI and can make mistakes. Please double-check responses.
 
 
 
+71
+70
+100
+
+This is good progress. 
+Now I have this 
+  NetworkMonitor.Core net10.0 failed with 1 error(s) (0.3s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(202,43): error CA1859: Change type of parameter 'targets' from 'System.Collections.Generic.IReadOnlyList<NetworkMonitor.Core.Models.CustomTargetConfig>' to 'System.Collections.Generic.List<NetworkMonitor.Core.Models.CustomTargetConfig>' for improved performance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1859)
+Build failed with 1 error(s) in 1.0s
+Please read the FULL output at `dump.txt` as well as `output-archived-018.txt`
+it is critical for you to give me FULL files for all files that need to change
+as well as the path for the file 
+because sometimes the same file name exists in multiple places 
+or the shell script idea works as well
+please and thank you
