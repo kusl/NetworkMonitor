@@ -8053,3 +8053,5 @@ kushal@fedora:~/src/dotnet/network-monitor/src/NetworkMonitor.Console$ git remot
 ```
 this application needs to work on both windows as well as linux and we should generate full release binaries, not pre release after every push 
 please make sure all documentation is up to date 
+this code might look slightly out of date compared to the dump but it is mostly in sync 
+
