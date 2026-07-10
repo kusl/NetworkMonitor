@@ -199,7 +199,7 @@ public sealed class NetworkMonitorService : INetworkMonitorService
     }
 
     private async Task<TargetCheckResult[]> CheckCustomTargetsAsync(
-        IReadOnlyList<CustomTargetConfig> targets,
+        List<CustomTargetConfig> targets,
         CancellationToken cancellationToken)
     {
         if (targets.Count == 0)
