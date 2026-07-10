@@ -7998,3 +7998,42 @@ You can scroll up and see every problematic cycle preserved. Clean cycles stay q
 
 
 
+34
+50
+91
+
+I have a problem. 
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Console/NetworkMonitor.Console.csproj : error NU1903: Warning As Error: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj : error NU1903: Warning As Error: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/NetworkMonitor.Core.csproj : error NU1903: Warning As Error: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+However, 2.1.12 has not landed yet and 3.53.3
+So that is the first problem. 
+After that is fixed, 
+I need you take a close look, a deep dive into this code 
+and find and fix all defects
+not just syntactic ones but also logical defects 
+for example, under what scenarios will we have ping to the local router take longer than ping to google or cloudflare 
+and if we get such a result, is that even valid? 
+also, for a feature request, I want users to optionally add a remote database that we sync to at least once a day for example, turso.tech
+so you have a database url like `libsql://[redacted].aws-us-east-1.turso.io` and a key like `[redacted]` in the app settings just like any other setting 
+if it is not present, it should no op 
+if it is present but malformed, it should also be a no op, not an error 
+if it is present and network is not working, it should not error out but silently wait until next time 
+it should not be too chatty and it should be resilient and fault tolerant meaning we never assume the remote database is in a good state 
+if something is wrong and the tables are not there, we create them again if possible 
+but no matter what, no error on this new module will prevent us from doing our main task which is network monitoring 
+also take a look at the export.sh script 
+it is pretty brittle too 
+we should add sha256 hash for each file we document in our dump.txt as well as any other extended information worth saving here 
+also, please take a look at our github actions 
+we should create a new release each time we push 
+but also we should keep a close eye at our dependencies 
+even if we have a "warning as error" scenario, our dependency checker should check for all possible updates to dependences 
+also we should use the absolute latest versions of nuget packages available, always
+also we should use the latest versions of github actions always 
+that doesn't mean write `6.1.0` we still use v6 if v6 is the latest, no need to write 6.1.0 
+because then we will have to update to 6.1.1 when that comes out 
+be smart 
+try to reduce extra effort for me 
+please and thank you 
+
