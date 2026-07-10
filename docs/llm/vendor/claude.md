@@ -8016,6 +8016,7 @@ for example, under what scenarios will we have ping to the local router take lon
 and if we get such a result, is that even valid? 
 also, for a feature request, I want users to optionally add a remote database that we sync to at least once a day for example, turso.tech
 so you have a database url like `libsql://[redacted].aws-us-east-1.turso.io` and a key like `[redacted]` in the app settings just like any other setting 
+I think it should work with another provider too if they have a similar api?
 if it is not present, it should no op 
 if it is present but malformed, it should also be a no op, not an error 
 if it is present and network is not working, it should not error out but silently wait until next time 
@@ -8035,5 +8036,20 @@ that doesn't mean write `6.1.0` we still use v6 if v6 is the latest, no need to 
 because then we will have to update to 6.1.1 when that comes out 
 be smart 
 try to reduce extra effort for me 
+the trunk of this repository is `master` to be clear
 please and thank you 
-
+```bash
+kushal@fedora:~/src/dotnet/network-monitor/src/NetworkMonitor.Console$ git remote show origin
+* remote origin
+  Fetch URL: git@github.com:kusl/NetworkMonitor.git
+  Push  URL: git@github.com:kusl/NetworkMonitor.git
+  HEAD branch: master
+  Remote branch:
+    master tracked
+  Local branch configured for 'git pull':
+    master merges with remote master
+  Local ref configured for 'git push':
+    master pushes to master (fast-forwardable)
+```
+this application needs to work on both windows as well as linux and we should generate full release binaries, not pre release after every push 
+please make sure all documentation is up to date 
