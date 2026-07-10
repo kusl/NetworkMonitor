@@ -15,24 +15,29 @@ on:
 permissions:
   contents: read
 
+# Don't pile up redundant runs for the same ref; cancel superseded ones.
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-test:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-    
+
     runs-on: ${{ matrix.os }}
-    
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
+          # .NET 10 is GA, so pin to the stable channel (no preview quality).
           dotnet-version: '10.0.x'
-          dotnet-quality: 'preview'
 
       - name: Display .NET info
         run: dotnet --info
@@ -47,7 +52,7 @@ jobs:
         run: dotnet test src/NetworkMonitor.slnx --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-results-${{ matrix.os }}

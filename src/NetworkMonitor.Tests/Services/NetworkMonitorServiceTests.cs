@@ -1,3 +1,4 @@
+
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NetworkMonitor.Core.Models;
@@ -337,5 +338,58 @@ public sealed class NetworkMonitorServiceTests : IDisposable
         // Assert - should have at least router and internet results
         Assert.NotNull(status.TargetResults);
         Assert.True(status.TargetResults.Count >= 2);
+    }
+
+    [Fact]
+    public async Task CheckNetworkAsync_RouterSlowerThanInternet_DoesNotDegradeHealth()
+    {
+        // A gateway can legitimately answer ICMP slowly (rate-limited control
+        // plane) while forwarding real traffic fine. A slow router paired with a
+        // fast internet path must NOT drag overall health down.
+        // Arrange
+        _configService.WithRouterAddress("192.168.1.1");
+        _configService.WithInternetTarget("8.8.8.8");
+
+        // Router is slow (300ms > GoodLatencyMs of 50); internet is fast (10ms).
+        _pingService.QueueResult(PingResult.Succeeded("192.168.1.1", 300));
+        _pingService.QueueResult(PingResult.Succeeded("8.8.8.8", 10));
+
+        var service = CreateService();
+
+        // Act
+        var status = await service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+
+        // Assert - internet is the primary signal, so this is healthy.
+        Assert.True(
+            status.Health is NetworkHealth.Excellent or NetworkHealth.Good,
+            $"Expected Excellent or Good but got {status.Health}");
+    }
+
+    [Fact]
+    public async Task CheckNetworkAsync_WithInternetDisabled_IsNotOfflineAndInternetResultIsNull()
+    {
+        // Arrange
+        _configService.WithRouterAddress("192.168.1.1");
+        _configService.WithInternetTarget("8.8.8.8");
+        _pingService.AlwaysSucceed(5);
+
+        var options = new MonitorOptions
+        {
+            PingsPerCycle = 1,
+            TimeoutMs = 1000,
+            ExcellentLatencyMs = 20,
+            GoodLatencyMs = 50,
+            DisabledChecks = ["Internet"]
+        };
+
+        var service = CreateService(options);
+
+        // Act
+        var status = await service.CheckNetworkAsync(TestContext.Current.CancellationToken);
+
+        // Assert - internet check is off, so health falls back to the router
+        // (reachable => not Offline) and there is no internet result recorded.
+        Assert.Null(status.InternetResult);
+        Assert.NotEqual(NetworkHealth.Offline, status.Health);
     }
 }

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -10,6 +11,13 @@ namespace NetworkMonitor.Core.Services;
 /// Background service that runs the continuous monitoring loop.
 /// Implements IHostedService for proper lifecycle management.
 /// </summary>
+/// <remarks>
+/// Cadence is measured start-to-start: the configured interval is the time
+/// between the beginning of successive cycles, not an extra gap tacked on after
+/// each cycle finishes. This keeps the effective period stable even as the work
+/// per cycle varies. If a cycle runs longer than the interval, the next one
+/// starts immediately and a one-time warning is logged.
+/// </remarks>
 public sealed class MonitorBackgroundService : BackgroundService
 {
     private readonly INetworkMonitorService _monitorService;
@@ -39,21 +47,28 @@ public sealed class MonitorBackgroundService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation(
-            "Network Monitor starting. Interval: {IntervalMs}ms, Router: {Router}, Internet: {Internet}, IPv6: {IPv6}, DNS: {Dns}, CustomTargets: {CustomCount}",
+            "Network Monitor starting. Interval: {IntervalMs}ms, Router: {Router}, Internet: {Internet}, " +
+            "IPv6: {IPv6}, DNS: {Dns}, CustomTargets: {CustomCount}, MaxConcurrentChecks: {MaxConcurrent}",
             _options.IntervalMs,
             _options.RouterAddress,
             _options.InternetTarget,
             _options.EnableIPv6,
             _options.EnableDnsChecks,
-            _options.CustomTargets.Count);
+            _options.CustomTargets.Count,
+            _options.MaxConcurrentChecks);
 
         // Subscribe to status changes for logging significant events
         _monitorService.StatusChanged += OnStatusChanged;
+
+        var interval = TimeSpan.FromMilliseconds(Math.Max(250, _options.IntervalMs));
+        var overrunWarned = false;
 
         try
         {
             while (!stoppingToken.IsCancellationRequested)
             {
+                var startedAt = Stopwatch.GetTimestamp();
+
                 try
                 {
                     var status = await _monitorService.CheckNetworkAsync(stoppingToken);
@@ -61,23 +76,45 @@ public sealed class MonitorBackgroundService : BackgroundService
                     // Update display
                     _display.UpdateStatus(status);
 
-                    // Persist results
+                    // Persist results (never throws - storage failures are swallowed)
                     await _storage.SaveStatusAsync(status, stoppingToken);
-
-                    // Wait for next cycle
-                    await Task.Delay(_options.IntervalMs, stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
-                    // Normal shutdown
                     break;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error during monitoring cycle");
-
                     // Continue monitoring even if one cycle fails
-                    await Task.Delay(_options.IntervalMs, stoppingToken);
+                    _logger.LogError(ex, "Error during monitoring cycle");
+                }
+
+                var elapsed = Stopwatch.GetElapsedTime(startedAt);
+                var remaining = interval - elapsed;
+
+                if (remaining <= TimeSpan.Zero)
+                {
+                    if (!overrunWarned)
+                    {
+                        _logger.LogWarning(
+                            "A monitoring cycle took {Elapsed:F0}ms, exceeding the configured interval of {Interval}ms. " +
+                            "Cycles will run back-to-back. Consider raising IntervalMs, lowering PingsPerCycle, " +
+                            "or trimming CustomTargets.",
+                            elapsed.TotalMilliseconds,
+                            _options.IntervalMs);
+                        overrunWarned = true;
+                    }
+
+                    continue; // start the next cycle immediately
+                }
+
+                try
+                {
+                    await Task.Delay(remaining, stoppingToken);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
                 }
             }
         }

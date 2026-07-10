@@ -6,33 +6,40 @@ namespace NetworkMonitor.Core.Services;
 /// <summary>
 /// Console-based status display with ANSI colors.
 /// Provides "at a glance" network status visualization.
-/// 
-/// DISPLAY BEHAVIOR:
-/// 
-///   Healthy cycle (no problematic targets):
-///     The status line is overwritten in place so the console stays clean.
-///     Uses ANSI save/restore cursor to avoid stale text.
-/// 
-///   Problematic cycle (any target failing, high latency, packet loss, DNS failure):
-///     The status line AND full problem details are printed permanently,
-///     then the cursor advances past them. This preserves a scrollable
-///     history of every incident in the terminal.
-///     The next cycle starts on a fresh line below.
-/// 
-/// This means the terminal looks like:
+///
+/// TWO DISPLAY MODES:
+///
+///   Quiet mode (QuietConsole = true, the default):
+///
+///     Healthy cycle (no problematic targets):
+///       The status line is overwritten in place so the console stays clean.
+///       Uses ANSI save/restore cursor to avoid stale text.
+///
+///     Problematic cycle (any target failing, high latency, packet loss,
+///     DNS failure):
+///       The status line AND full problem details are printed permanently,
+///       then the cursor advances past them. This preserves a scrollable
+///       history of every incident in the terminal.
+///
+///   Verbose mode (QuietConsole = false):
+///
+///     Every cycle prints the summary line followed by ONE line per target
+///     (router, internet, and every custom target), then scrolls. Nothing is
+///     overwritten — the user explicitly asked to see everything, so a full
+///     history is kept. Disabled/unmeasured targets render as "--".
+///
+/// In quiet mode the terminal looks like:
 ///   ● Excellent  Router: 1ms Internet: 16ms Targets: 48/48 [08:40:00]   ← overwrites itself
 ///   ● Excellent  Router: 1ms Internet: 16ms Targets: 48/48 [08:40:05]   ← same line
 ///   ... wifi goes down ...
 ///   ○ Offline    Router: FAIL  Internet: FAIL  Targets: 0/48 [08:41:00]
 ///     ⚠ 50 target(s) need attention:
 ///       ✗ Router     FAIL: TimedOut
-///       ✗ Internet   FAIL: TimedOut
 ///       ...
-///   ○ Offline    Router: FAIL  Internet: FAIL  Targets: 0/48 [08:41:10]
-///     ⚠ 50 target(s) need attention:
-///       ...
-///   ... wifi comes back ...
 ///   ● Excellent  Router: 1ms Internet: 16ms Targets: 48/48 [08:42:00]   ← overwrites itself again
+///
+/// All timestamps are rendered in local time for readability, even though the
+/// underlying data is stored in UTC.
 /// </summary>
 public sealed class ConsoleStatusDisplay : IStatusDisplay
 {
@@ -67,43 +74,82 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
 
         lock (_lock)
         {
-            // If we saved a cursor from a previous clean cycle, jump back
-            // and erase so we overwrite the old healthy status in place.
-            if (_cursorSaved)
+            if (!_options.QuietConsole)
             {
-                Console.Write(RestoreCursor);
-                Console.Write(EraseToEndOfScreen);
+                WriteVerbose(status);
+                return;
             }
 
-            // Determine if this cycle has problems
-            var problematic = (_options.QuietConsole && status.TargetResults is { Count: > 0 })
-                ? status.TargetResults.Where(IsProblematic).ToList()
-                : [];
+            WriteQuiet(status);
+        }
+    }
 
-            bool hasProblems = problematic.Count > 0;
+    /// <summary>
+    /// Verbose mode: print the full picture every cycle and let it scroll.
+    /// No in-place overwrite.
+    /// </summary>
+    private void WriteVerbose(NetworkStatus status)
+    {
+        // If we previously left a saved cursor from quiet mode, drop it so we
+        // don't clobber earlier verbose output.
+        if (_cursorSaved)
+        {
+            Console.Write(RestoreCursor);
+            Console.Write(EraseToEndOfScreen);
+            _cursorSaved = false;
+        }
 
-            if (hasProblems)
-            {
-                // PROBLEMATIC CYCLE:
-                // Don't save cursor — we want this output preserved permanently.
-                // The next cycle will start on a fresh line below.
-                _cursorSaved = false;
+        WriteStatusLine(status);
 
-                WriteStatusLine(status);
-                WriteProblematicTargets(problematic);
+        if (status.TargetResults is { Count: > 0 })
+        {
+            WriteAllTargets(status.TargetResults);
+        }
 
-                // End with a newline so the next cycle starts cleanly below
-                Console.WriteLine();
-            }
-            else
-            {
-                // HEALTHY CYCLE:
-                // Save cursor position so the next cycle can overwrite this line.
-                Console.Write(SaveCursor);
-                _cursorSaved = true;
+        // Blank line so consecutive cycles are visually separated.
+        Console.WriteLine();
+        Console.WriteLine();
+    }
 
-                WriteStatusLine(status);
-            }
+    /// <summary>
+    /// Quiet mode: overwrite the status line while healthy, but print and
+    /// preserve details whenever a target needs attention.
+    /// </summary>
+    private void WriteQuiet(NetworkStatus status)
+    {
+        // If we saved a cursor from a previous clean cycle, jump back and erase
+        // so we overwrite the old healthy status in place.
+        if (_cursorSaved)
+        {
+            Console.Write(RestoreCursor);
+            Console.Write(EraseToEndOfScreen);
+        }
+
+        var problematic = status.TargetResults is { Count: > 0 }
+            ? status.TargetResults.Where(IsProblematic).ToList()
+            : [];
+
+        bool hasProblems = problematic.Count > 0;
+
+        if (hasProblems)
+        {
+            // Don't save cursor — we want this output preserved permanently.
+            // The next cycle will start on a fresh line below.
+            _cursorSaved = false;
+
+            WriteStatusLine(status);
+            WriteProblematicTargets(problematic);
+
+            // End with a newline so the next cycle starts cleanly below.
+            Console.WriteLine();
+        }
+        else
+        {
+            // Save cursor position so the next cycle can overwrite this line.
+            Console.Write(SaveCursor);
+            _cursorSaved = true;
+
+            WriteStatusLine(status);
         }
     }
 
@@ -130,6 +176,10 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
             var routerColor = GetLatencyColor(status.RouterResult.RoundtripTimeMs);
             Console.Write($"{routerColor}{status.RouterResult.RoundtripTimeMs,4}ms{Reset} ");
         }
+        else if (status.RouterResult is null)
+        {
+            Console.Write($"{Dim}  --  {Reset}");
+        }
         else
         {
             Console.Write($"{Red}FAIL{Reset}   ");
@@ -141,6 +191,10 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
         {
             var internetColor = GetLatencyColor(status.InternetResult.RoundtripTimeMs);
             Console.Write($"{internetColor}{status.InternetResult.RoundtripTimeMs,4}ms{Reset} ");
+        }
+        else if (status.InternetResult is null)
+        {
+            Console.Write($"{Dim}  --  {Reset}");
         }
         else
         {
@@ -163,7 +217,69 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
             }
         }
 
-        Console.Write($"{Magenta}[{status.Timestamp:HH:mm:ss}]{Reset}");
+        // Timestamps are stored in UTC; show them in local time for humans.
+        Console.Write($"{Magenta}[{status.Timestamp.ToLocalTime():HH:mm:ss}]{Reset}");
+    }
+
+    /// <summary>
+    /// Writes one line per target (verbose mode). Every target is shown,
+    /// including healthy ones and any that were not measured.
+    /// </summary>
+    private void WriteAllTargets(IReadOnlyList<TargetCheckResult> results)
+    {
+        foreach (var result in results)
+        {
+            Console.WriteLine();
+            WriteTargetLine(result);
+        }
+    }
+
+    private void WriteTargetLine(TargetCheckResult result)
+    {
+        Console.Write("    ");
+        WriteResultCell(result);
+        Console.Write($" {result.Target.Name}");
+
+        if (result.PacketLossPercent > 0)
+        {
+            var lossColor = result.PacketLossPercent >= _options.DegradedPacketLossPercent ? Yellow : Dim;
+            Console.Write($" {lossColor}loss {result.PacketLossPercent:F0}%{Reset}");
+        }
+
+        if (result.DnsResult is { Success: false })
+        {
+            Console.Write($" {Red}[DNS FAIL]{Reset}");
+        }
+        else if (result.DnsResult is { Success: true } dns)
+        {
+            Console.Write($" {Dim}dns {dns.ResolutionTimeMs}ms{Reset}");
+        }
+    }
+
+    /// <summary>
+    /// Writes the fixed-width result cell for a target:
+    /// latency when it succeeded, FAIL when it failed, or "--" when there was
+    /// nothing to measure.
+    /// </summary>
+    private void WriteResultCell(TargetCheckResult result)
+    {
+        var ping = result.PingResult;
+
+        if (ping is null)
+        {
+            Console.Write($"{Dim}  --  {Reset}");
+            return;
+        }
+
+        if (ping.Success)
+        {
+            var color = GetLatencyColor(ping.RoundtripTimeMs);
+            Console.Write($"{color}{ping.RoundtripTimeMs,4}ms{Reset}");
+        }
+        else
+        {
+            Console.Write($"{Red} FAIL {Reset}");
+        }
     }
 
     /// <summary>
@@ -219,7 +335,20 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
     /// </summary>
     private bool IsProblematic(TargetCheckResult result)
     {
-        if (result.PingResult?.Success != true)
+        // A DNS failure is always worth surfacing.
+        if (result.DnsResult is { Success: false })
+        {
+            return true;
+        }
+
+        // A target that was never actually pinged (no ping result at all) is
+        // not a "problem" to report — there is nothing meaningful to show.
+        if (result.PingResult is null)
+        {
+            return false;
+        }
+
+        if (!result.PingResult.Success)
         {
             return true;
         }
@@ -230,11 +359,6 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
         }
 
         if (result.PacketLossPercent >= _options.DegradedPacketLossPercent)
-        {
-            return true;
-        }
-
-        if (result.DnsResult is { Success: false })
         {
             return true;
         }

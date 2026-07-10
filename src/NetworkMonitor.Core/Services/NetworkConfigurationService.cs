@@ -13,9 +13,14 @@ namespace NetworkMonitor.Core.Services;
 /// 2. Fall back to common gateway addresses if detection fails
 /// 3. Verify targets are reachable before using them
 /// 4. Cache resolved addresses to avoid repeated detection
+/// 5. Re-detect the gateway when it goes missing or after a run of failures
+///    (handles roaming between networks and resume-from-sleep)
 /// </remarks>
 public sealed class NetworkConfigurationService : INetworkConfigurationService, IDisposable
 {
+    private const int RouterFailuresBeforeRedetect = 5;
+    private static readonly TimeSpan RedetectCooldown = TimeSpan.FromSeconds(60);
+
     private readonly IGatewayDetector _gatewayDetector;
     private readonly IInternetTargetProvider _internetTargetProvider;
     private readonly IPingService _pingService;
@@ -27,6 +32,10 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService, 
     private readonly SemaphoreSlim _initLock = new(1, 1);
     private bool _initialized;
     private bool _disposed;
+
+    private DateTimeOffset _lastRouterResolveUtc = DateTimeOffset.MinValue;
+    private int _consecutiveRouterFailures;
+    private bool _redetectRequested;
 
     public NetworkConfigurationService(
         IGatewayDetector gatewayDetector,
@@ -47,6 +56,7 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService, 
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         await EnsureInitializedAsync(cancellationToken);
+        await MaybeRedetectRouterAsync(cancellationToken);
         return _resolvedRouterAddress;
     }
 
@@ -61,7 +71,25 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService, 
     /// <inheritdoc />
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         await EnsureInitializedAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public void ReportRouterCheckResult(bool reachable)
+    {
+        if (reachable)
+        {
+            _consecutiveRouterFailures = 0;
+            return;
+        }
+
+        _consecutiveRouterFailures++;
+        if (_consecutiveRouterFailures >= RouterFailuresBeforeRedetect)
+        {
+            // Ask GetRouterAddressAsync to re-run detection on its next call.
+            _redetectRequested = true;
+        }
     }
 
     private async Task EnsureInitializedAsync(CancellationToken cancellationToken)
@@ -75,10 +103,9 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService, 
 
             _logger.LogDebug("Initializing network configuration...");
 
-            // Resolve router address
             _resolvedRouterAddress = await ResolveRouterAddressAsync(cancellationToken);
+            _lastRouterResolveUtc = DateTimeOffset.UtcNow;
 
-            // Resolve internet target
             _resolvedInternetTarget = await ResolveInternetTargetAsync(cancellationToken);
 
             _initialized = true;
@@ -92,6 +119,70 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService, 
         {
             _initLock.Release();
         }
+    }
+
+    /// <summary>
+    /// Re-runs gateway detection when the router is unknown, or when a run of
+    /// failures has been reported - but only for auto-detected routers and no
+    /// more often than <see cref="RedetectCooldown"/>.
+    /// </summary>
+    private async Task MaybeRedetectRouterAsync(CancellationToken cancellationToken)
+    {
+        // A user-pinned address is authoritative; never second-guess it.
+        if (!_options.IsRouterAutoDetect) return;
+
+        if (!ShouldRedetectRouter()) return;
+
+        await _initLock.WaitAsync(cancellationToken);
+        try
+        {
+            // Re-evaluate under the lock in case another call already handled it.
+            if (!ShouldRedetectRouter()) return;
+
+            _lastRouterResolveUtc = DateTimeOffset.UtcNow;
+            var previous = _resolvedRouterAddress;
+
+            var detected = await ResolveRouterAddressAsync(cancellationToken);
+
+            if (!string.IsNullOrEmpty(detected))
+            {
+                if (!string.Equals(detected, previous, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogInformation(
+                        "Router address changed: {Old} -> {New}",
+                        previous ?? "(none)",
+                        detected);
+                }
+
+                _resolvedRouterAddress = detected;
+                _consecutiveRouterFailures = 0;
+                _redetectRequested = false;
+            }
+            else if (previous is not null)
+            {
+                // Keep the previous address so its failures stay visible on the
+                // display; we'll try to re-detect again after the cooldown.
+                _logger.LogDebug("Router re-detection found nothing; keeping {Old}.", previous);
+            }
+        }
+        finally
+        {
+            _initLock.Release();
+        }
+    }
+
+    private bool ShouldRedetectRouter()
+    {
+        var wantsRedetect =
+            _resolvedRouterAddress is null ||
+            (_redetectRequested && _consecutiveRouterFailures >= RouterFailuresBeforeRedetect);
+
+        if (!wantsRedetect)
+        {
+            return false;
+        }
+
+        return DateTimeOffset.UtcNow - _lastRouterResolveUtc >= RedetectCooldown;
     }
 
     private async Task<string?> ResolveRouterAddressAsync(CancellationToken cancellationToken)

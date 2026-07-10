@@ -8,7 +8,7 @@ namespace NetworkMonitor.Core.Services;
 /// - Auto-detecting the default gateway
 /// - Falling back to common gateway addresses
 /// - Finding a reachable internet target
-/// - Caching resolved addresses
+/// - Caching resolved addresses (and re-detecting them when the network changes)
 /// </remarks>
 public interface INetworkConfigurationService
 {
@@ -38,4 +38,16 @@ public interface INetworkConfigurationService
     /// explicitly during startup for eager initialization.
     /// </remarks>
     Task InitializeAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reports the outcome of the most recent router reachability check.
+    /// </summary>
+    /// <param name="reachable">True if the router responded, false otherwise.</param>
+    /// <remarks>
+    /// Implementations may use a run of failures as a signal to re-detect the
+    /// gateway (for example after roaming to a different network or coming back
+    /// from sleep). The default implementation is a no-op, so fakes and simple
+    /// implementations need do nothing.
+    /// </remarks>
+    void ReportRouterCheckResult(bool reachable) => _ = reachable;
 }

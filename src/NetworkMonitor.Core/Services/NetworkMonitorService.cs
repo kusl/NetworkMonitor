@@ -91,15 +91,16 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         var routerAddress = await _configService.GetRouterAddressAsync(cancellationToken);
         var internetTarget = await _configService.GetInternetTargetAsync(cancellationToken);
 
-        // Collect all target check results
         var targetResults = new List<TargetCheckResult>();
 
-        // Ping router (if we have one and it's not disabled)
+        // ---- Router (sequential, first) ----
+        var routerEnabled = !string.IsNullOrEmpty(routerAddress) && !_options.IsCheckDisabled("Router");
         PingResult? routerResult = null;
-        if (!string.IsNullOrEmpty(routerAddress) && !_options.IsCheckDisabled("Router"))
+        double routerPacketLoss = 0;
+
+        if (routerEnabled)
         {
-            var (pingResult, packetLoss) = await PingWithMetricsAsync(routerAddress, cancellationToken);
-            routerResult = pingResult;
+            (routerResult, routerPacketLoss) = await PingWithMetricsAsync(routerAddress!, cancellationToken);
 
             if (routerResult is { Success: true, RoundtripTimeMs: not null })
             {
@@ -110,17 +111,23 @@ public sealed class NetworkMonitorService : INetworkMonitorService
                 FailureCounter.Add(1, new KeyValuePair<string, object?>("target_type", "router"));
             }
 
-            PacketLossHistogram.Record(packetLoss, new KeyValuePair<string, object?>("target", "router"));
+            PacketLossHistogram.Record(routerPacketLoss, new KeyValuePair<string, object?>("target", "router"));
 
             targetResults.Add(new TargetCheckResult(
-                new MonitorTarget("Router", routerAddress, TargetCategory.Router),
-                routerResult, null, null, packetLoss, DateTimeOffset.UtcNow));
+                new MonitorTarget("Router", routerAddress!, TargetCategory.Router),
+                routerResult, null, null, routerPacketLoss, DateTimeOffset.UtcNow));
+
+            // Feed reachability back so config can re-detect a stale/changed
+            // gateway (roaming laptops) or one that only came up after startup.
+            _configService.ReportRouterCheckResult(routerResult?.Success == true);
         }
 
-        // Ping internet target (if not disabled)
+        // ---- Internet (sequential, second) ----
+        var internetEnabled = !_options.IsCheckDisabled("Internet");
         PingResult? internetResult = null;
         double internetPacketLoss = 0;
-        if (!_options.IsCheckDisabled("Internet"))
+
+        if (internetEnabled)
         {
             (internetResult, internetPacketLoss) = await PingWithMetricsAsync(internetTarget, cancellationToken);
 
@@ -135,7 +142,6 @@ public sealed class NetworkMonitorService : INetworkMonitorService
 
             PacketLossHistogram.Record(internetPacketLoss, new KeyValuePair<string, object?>("target", "internet"));
 
-            // DNS check for internet target (if it's a hostname)
             DnsResult? internetDns = null;
             if (_options.EnableDnsChecks && _dnsResolver != null && !IPAddress.TryParse(internetTarget, out _))
             {
@@ -148,24 +154,21 @@ public sealed class NetworkMonitorService : INetworkMonitorService
                 new MonitorTarget("Internet", internetTarget, TargetCategory.PublicDns),
                 internetResult, null, internetDns, internetPacketLoss, DateTimeOffset.UtcNow));
         }
-        else
-        {
-            // Need a non-null internetResult for health computation
-            internetResult = PingResult.Failed(internetTarget, "Check disabled");
-        }
 
-        // Check custom targets
-        foreach (var customTarget in _options.CustomTargets)
-        {
-            if (!customTarget.Enabled || _options.IsCheckDisabled(customTarget.Name))
-                continue;
+        // ---- Custom targets (bounded parallelism) ----
+        var enabledCustom = _options.CustomTargets
+            .Where(t => t.Enabled && !_options.IsCheckDisabled(t.Name))
+            .ToList();
 
-            var customResult = await CheckCustomTargetAsync(customTarget, cancellationToken);
-            targetResults.Add(customResult);
-        }
+        var customResults = await CheckCustomTargetsAsync(enabledCustom, cancellationToken);
+        targetResults.AddRange(customResults);
 
-        // Compute overall health
-        var (health, message) = ComputeHealth(routerResult, internetResult, internetPacketLoss, _options);
+        // ---- Overall health ----
+        var (health, message) = ComputeHealth(
+            routerResult, routerEnabled, routerPacketLoss,
+            internetResult, internetEnabled, internetPacketLoss,
+            customResults,
+            _options);
 
         var status = new NetworkStatus(
             health,
@@ -177,10 +180,9 @@ public sealed class NetworkMonitorService : INetworkMonitorService
 
         activity?.SetTag("health", health.ToString());
         activity?.SetTag("router.success", routerResult?.Success ?? false);
-        activity?.SetTag("internet.success", internetResult.Success);
+        activity?.SetTag("internet.success", internetResult?.Success ?? false);
         activity?.SetTag("target_count", targetResults.Count);
 
-        // Fire event if status changed
         if (_lastStatus?.Health != status.Health)
         {
             _logger.LogInformation(
@@ -194,6 +196,36 @@ public sealed class NetworkMonitorService : INetworkMonitorService
 
         _lastStatus = status;
         return status;
+    }
+
+    private async Task<TargetCheckResult[]> CheckCustomTargetsAsync(
+        IReadOnlyList<CustomTargetConfig> targets,
+        CancellationToken cancellationToken)
+    {
+        if (targets.Count == 0)
+        {
+            return [];
+        }
+
+        var maxConcurrency = Math.Max(1, _options.MaxConcurrentChecks);
+        using var gate = new SemaphoreSlim(maxConcurrency, maxConcurrency);
+
+        // Task.WhenAll preserves ordering by task position, so results line up
+        // with the configured target order regardless of completion order.
+        var tasks = targets.Select(async target =>
+        {
+            await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return await CheckCustomTargetAsync(target, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                gate.Release();
+            }
+        });
+
+        return await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
     private async Task<(PingResult Result, double PacketLossPercent)> PingWithMetricsAsync(
@@ -236,7 +268,6 @@ public sealed class NetworkMonitorService : INetworkMonitorService
 
         try
         {
-            // DNS resolution for hostnames
             if (_options.EnableDnsChecks && _dnsResolver != null && !IPAddress.TryParse(target.Address, out _))
             {
                 dnsResult = await _dnsResolver.ResolveAsync(target.Address, cancellationToken);
@@ -244,7 +275,6 @@ public sealed class NetworkMonitorService : INetworkMonitorService
                     new KeyValuePair<string, object?>("target", target.Name));
             }
 
-            // Ping
             (pingResult, packetLoss) = await PingWithMetricsAsync(target.Address, cancellationToken);
             PacketLossHistogram.Record(packetLoss,
                 new KeyValuePair<string, object?>("target", target.Name));
@@ -280,7 +310,8 @@ public sealed class NetworkMonitorService : INetworkMonitorService
             return PingResult.Failed(target, results[0].ErrorMessage ?? "All pings failed");
         }
 
-        // Return median latency of successful pings for stability
+        // Median latency of successful pings for stability. The median also
+        // dampens the "first ping in a Wi-Fi burst is slow" artifact.
         var sortedLatencies = successful
             .Where(r => r.RoundtripTimeMs.HasValue)
             .Select(r => r.RoundtripTimeMs!.Value)
@@ -295,63 +326,138 @@ public sealed class NetworkMonitorService : INetworkMonitorService
     }
 
     /// <summary>
-    /// Computes network health based on ping results.
+    /// Computes overall network health.
     /// </summary>
+    /// <remarks>
+    /// DESIGN NOTE — why internet latency is the primary signal:
+    ///
+    /// A consumer router answers ICMP echo on its control-plane CPU, which is
+    /// commonly rate-limited and de-prioritized, while it forwards real traffic
+    /// on a hardware fast path. So the gateway can legitimately reply SLOWER
+    /// than a distant server like 8.8.8.8 or 1.1.1.1 without anything being
+    /// wrong with the local link. Other causes of a slow gateway ping that do
+    /// NOT indicate a problem: Wi-Fi power-save wake-up on the first packet
+    /// (the router is pinged first each cycle), ARP resolution on the first
+    /// gateway ping, and NAT/CPU churn under load.
+    ///
+    /// Therefore high router latency, on its own, is treated as informational
+    /// and never degrades health. What actually matters for the LAN is whether
+    /// the gateway is REACHABLE (loss / reachability), not how fast it answers
+    /// pings. High latency only counts against health when the INTERNET is also
+    /// slow, which points at the local link rather than the router's CPU.
+    /// </remarks>
     private static (NetworkHealth Health, string Message) ComputeHealth(
         PingResult? routerResult,
-        PingResult internetResult,
-        double packetLossPercent,
+        bool routerEnabled,
+        double routerPacketLoss,
+        PingResult? internetResult,
+        bool internetEnabled,
+        double internetPacketLoss,
+        IReadOnlyList<TargetCheckResult> customResults,
         MonitorOptions options)
     {
-        // If we have a router configured and it's not responding, that's significant
-        if (routerResult != null && !routerResult.Success)
-        {
-            return !internetResult.Success
-                ? (NetworkHealth.Offline, "Cannot reach router or internet")
-                : (NetworkHealth.Degraded, "Cannot reach router but internet works");
-        }
-
-        // If internet is down
-        if (!internetResult.Success)
-        {
-            return routerResult?.Success == true
-                ? (NetworkHealth.Poor, "Router OK but cannot reach internet")
-                : (NetworkHealth.Offline, "Cannot reach internet");
-        }
-
-        // Check packet loss
-        if (packetLossPercent >= options.DegradedPacketLossPercent)
-        {
-            return (NetworkHealth.Degraded,
-                $"High packet loss: {packetLossPercent:F0}%");
-        }
-
-        // Both are up - check latency
-        var internetLatency = internetResult.RoundtripTimeMs ?? 0;
+        var routerReachable = routerResult?.Success == true;
+        var routerDown = routerEnabled && routerResult is { Success: false };
         var routerLatency = routerResult?.RoundtripTimeMs ?? 0;
+        var routerSlow = routerReachable && routerLatency > options.GoodLatencyMs;
 
-        if (internetLatency <= options.ExcellentLatencyMs &&
-            routerLatency <= options.ExcellentLatencyMs)
+        // Primary path: judge by the internet result when we have one.
+        if (internetEnabled && internetResult != null)
         {
-            return (NetworkHealth.Excellent,
-                $"Excellent - Router: {routerLatency}ms, Internet: {internetLatency}ms");
+            if (!internetResult.Success)
+            {
+                if (routerReachable)
+                {
+                    return (NetworkHealth.Poor, "Router OK but cannot reach internet");
+                }
+
+                return routerDown
+                    ? (NetworkHealth.Offline, "Cannot reach router or internet")
+                    : (NetworkHealth.Offline, "Cannot reach internet");
+            }
+
+            // Internet is up.
+            if (internetPacketLoss >= options.DegradedPacketLossPercent)
+            {
+                return (NetworkHealth.Degraded, $"High internet packet loss: {internetPacketLoss:F0}%");
+            }
+
+            // A reachable gateway that suddenly stops answering while the
+            // internet still works is a real local signal (stale gateway after
+            // roaming, LAN issue), so it degrades health.
+            if (routerDown)
+            {
+                return (NetworkHealth.Degraded, "Internet OK but cannot reach router");
+            }
+
+            var routerNote = routerSlow
+                ? $" (router replies slowly: {routerLatency}ms — likely ICMP de-prioritization, not a path problem)"
+                : string.Empty;
+
+            var internetLatency = internetResult.RoundtripTimeMs ?? 0;
+
+            if (internetLatency <= options.ExcellentLatencyMs)
+            {
+                return (NetworkHealth.Excellent, $"Excellent — Internet: {internetLatency}ms{routerNote}");
+            }
+
+            if (internetLatency <= options.GoodLatencyMs)
+            {
+                return (NetworkHealth.Good, $"Good — Internet: {internetLatency}ms{routerNote}");
+            }
+
+            // Internet latency itself is high. If the local hop is ALSO slow,
+            // the local link is the likely culprit; otherwise blame upstream.
+            return routerSlow
+                ? (NetworkHealth.Degraded,
+                    $"High latency on internet ({internetLatency}ms) and router ({routerLatency}ms) — possible local Wi-Fi/link issue")
+                : (NetworkHealth.Poor,
+                    $"High internet latency: {internetLatency}ms — likely upstream/ISP");
         }
 
-        if (internetLatency <= options.GoodLatencyMs &&
-            routerLatency <= options.GoodLatencyMs)
+        // Internet check disabled/unavailable: fall back to the router.
+        if (routerEnabled && routerResult != null)
         {
-            return (NetworkHealth.Good,
-                $"Good - Router: {routerLatency}ms, Internet: {internetLatency}ms");
+            if (!routerResult.Success)
+            {
+                return (NetworkHealth.Offline, "Cannot reach router (internet check disabled)");
+            }
+
+            if (routerPacketLoss >= options.DegradedPacketLossPercent)
+            {
+                return (NetworkHealth.Degraded,
+                    $"Router packet loss: {routerPacketLoss:F0}% (internet check disabled)");
+            }
+
+            return (NetworkHealth.Good, $"Router reachable: {routerLatency}ms (internet check disabled)");
         }
 
-        // High latency somewhere
-        if (routerLatency > options.GoodLatencyMs && routerResult != null)
+        // Neither router nor internet available to judge: derive a coarse health
+        // from custom targets if any, else report a neutral, honest state.
+        return DeriveHealthFromCustom(customResults);
+    }
+
+    private static (NetworkHealth Health, string Message) DeriveHealthFromCustom(
+        IReadOnlyList<TargetCheckResult> customResults)
+    {
+        if (customResults.Count == 0)
         {
-            return (NetworkHealth.Degraded,
-                $"High local latency: Router {routerLatency}ms - possible WiFi interference");
+            return (NetworkHealth.Good, "Router and internet checks are disabled");
         }
 
-        return (NetworkHealth.Poor,
-            $"High internet latency: {internetLatency}ms - possible ISP issues");
+        var reachable = customResults.Count(r => r.PingResult?.Success == true);
+        var total = customResults.Count;
+
+        if (reachable == 0)
+        {
+            return (NetworkHealth.Offline, $"No custom targets reachable (0/{total})");
+        }
+
+        if (reachable == total)
+        {
+            return (NetworkHealth.Good, $"All custom targets reachable ({reachable}/{total})");
+        }
+
+        return (NetworkHealth.Degraded, $"Some custom targets unreachable ({reachable}/{total})");
     }
 }

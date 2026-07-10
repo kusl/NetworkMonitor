@@ -22,10 +22,10 @@ public sealed class MonitorOptions
     /// <remarks>
     /// Set to "auto" (default) to automatically detect the default gateway.
     /// The gateway is advertised by DHCP and can be read from the OS.
-    /// 
+    ///
     /// If auto-detection fails, common gateway addresses will be tried:
     /// 192.168.1.1, 192.168.0.1, 10.0.0.1, etc.
-    /// 
+    ///
     /// Set to a specific IP address to override auto-detection.
     /// </remarks>
     public string RouterAddress { get; set; } = AutoDetect;
@@ -35,10 +35,10 @@ public sealed class MonitorOptions
     /// </summary>
     /// <remarks>
     /// Default: 8.8.8.8 (Google DNS - highly reliable)
-    /// 
+    ///
     /// If this target is unreachable, fallback targets will be tried:
     /// 1.1.1.1 (Cloudflare), 9.9.9.9 (Quad9), etc.
-    /// 
+    ///
     /// This is useful for networks that block specific DNS providers.
     /// </remarks>
     public string InternetTarget { get; set; } = "8.8.8.8";
@@ -53,12 +53,22 @@ public sealed class MonitorOptions
     /// Interval between monitoring cycles in milliseconds.
     /// Default: 5000ms (5 seconds)
     /// </summary>
+    /// <remarks>
+    /// This is the time between the START of one cycle and the start of the
+    /// next, not the gap after a cycle finishes. If a cycle takes longer than
+    /// this interval (common with a large custom target list), the next cycle
+    /// starts immediately and a one-time warning is logged.
+    /// </remarks>
     public int IntervalMs { get; set; } = 5000;
 
     /// <summary>
     /// Number of pings per target per cycle.
     /// Default: 3 (for statistical significance)
     /// </summary>
+    /// <remarks>
+    /// Keep this at 3 or higher. At 2 pings per cycle a single dropped packet
+    /// registers as 50% loss, which massively inflates alert frequency.
+    /// </remarks>
     public int PingsPerCycle { get; set; } = 3;
 
     /// <summary>
@@ -86,9 +96,17 @@ public sealed class MonitorOptions
     public bool EnableFallbackTargets { get; set; } = true;
 
     /// <summary>
-    /// Whether to include IPv6 targets for monitoring.
+    /// Whether to allow IPv6 addresses when resolving hostnames for pings.
     /// Default: true
     /// </summary>
+    /// <remarks>
+    /// When resolving a hostname, IPv4 is always preferred for stable,
+    /// comparable latency numbers. This flag only decides what happens when a
+    /// host resolves to IPv6 ONLY: if true, the IPv6 address is pinged; if
+    /// false, the target is reported as failed with a clear message instead of
+    /// silently pinging over IPv6. Explicit IPv6 literal targets are always
+    /// pinged regardless of this flag.
+    /// </remarks>
     public bool EnableIPv6 { get; set; } = true;
 
     /// <summary>
@@ -98,23 +116,41 @@ public sealed class MonitorOptions
     public bool EnableDnsChecks { get; set; } = true;
 
     /// <summary>
+    /// Maximum number of custom targets to check concurrently within a cycle.
+    /// Default: 6
+    /// </summary>
+    /// <remarks>
+    /// The router and internet checks always run sequentially and first, so
+    /// their latency measurements stay clean. Custom targets - which are mostly
+    /// reachability checks - run with this bounded concurrency so a large list
+    /// (dozens of hosts) does not push the cycle far past <see cref="IntervalMs"/>.
+    ///
+    /// Keep this modest on Wi-Fi: too much parallel ICMP causes airtime
+    /// contention that inflates the very latencies you are trying to measure.
+    /// Values are clamped to at least 1.
+    /// </remarks>
+    public int MaxConcurrentChecks { get; set; } = 6;
+
+    /// <summary>
     /// When true, console output only shows targets that need attention:
     /// failed pings, latency exceeding GoodLatencyMs, or packet loss
     /// exceeding DegradedPacketLossPercent.
-    /// 
+    ///
+    /// When false, every target is printed on every cycle.
+    ///
     /// All data is still written to the database and telemetry files
     /// regardless of this setting. This only controls what appears
     /// on the console display.
-    /// 
+    ///
     /// Default: true (opt everyone in, but user can set to false
     /// to see all targets on every cycle).
     /// </summary>
     /// <remarks>
     /// With dozens of custom targets configured, printing a status line
-    /// for every single one every 5 seconds creates noise that drowns out
+    /// for every single one every few seconds creates noise that drowns out
     /// the information that actually matters. This flag ensures the console
     /// only surfaces problems that need human attention right now.
-    /// 
+    ///
     /// Can also be set via environment variable:
     ///   NetworkMonitor__QuietConsole=true
     /// </remarks>

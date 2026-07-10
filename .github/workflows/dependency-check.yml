@@ -1,0 +1,85 @@
+# GitHub Actions Workflow: Dependency Check
+#
+# Reports every available dependency update, vulnerability, and deprecation.
+#
+# This workflow deliberately does NOT build the solution, so the repo's
+# TreatWarningsAsErrors setting cannot suppress or fail the report - it only
+# restores and inspects. Every step is continue-on-error so a single failure
+# (e.g. a transient NuGet outage) never blocks the rest of the report.
+
+name: Dependency Check
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # Every Monday at 06:00 UTC
+  workflow_dispatch: {}    # Allow manual runs from the Actions tab
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        continue-on-error: true
+        run: dotnet restore src/NetworkMonitor.slnx
+
+      - name: Report outdated packages (stable)
+        continue-on-error: true
+        run: |
+          {
+            echo "## Outdated packages (latest stable)"
+            echo ""
+            echo '```'
+            dotnet list src/NetworkMonitor.slnx package --outdated --include-transitive 2>&1 || true
+            echo '```'
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report outdated packages (including prerelease)
+        continue-on-error: true
+        run: |
+          {
+            echo "## Outdated packages (including prerelease)"
+            echo ""
+            echo "Absolute-latest versions, prerelease included:"
+            echo ""
+            echo '```'
+            dotnet list src/NetworkMonitor.slnx package --outdated --include-prerelease --include-transitive 2>&1 || true
+            echo '```'
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report vulnerable packages
+        continue-on-error: true
+        run: |
+          {
+            echo "## Vulnerable packages"
+            echo ""
+            echo '```'
+            dotnet list src/NetworkMonitor.slnx package --vulnerable --include-transitive 2>&1 || true
+            echo '```'
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report deprecated packages
+        continue-on-error: true
+        run: |
+          {
+            echo "## Deprecated packages"
+            echo ""
+            echo '```'
+            dotnet list src/NetworkMonitor.slnx package --deprecated --include-transitive 2>&1 || true
+            echo '```'
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"

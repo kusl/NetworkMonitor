@@ -2,29 +2,38 @@
   <!--
     Central Package Management (CPM)
     All NuGet package versions are defined here for consistency.
-    
+
     PACKAGE SELECTION CRITERIA:
     1. Must be free/open source (Apache 2.0, MIT, BSD, etc.)
     2. Must be actively maintained
     3. Prefer Microsoft/official packages where available
     4. Minimal footprint - only include what's truly needed
-    
+
     BANNED PACKAGES (DO NOT ADD):
     - FluentAssertions (restrictive license)
     - MassTransit (restrictive license)
     - Moq (controversial maintainer)
     - Any package with "non-commercial only" license
-    
-    LAST UPDATED: 2025-12-26
+
+    LAST UPDATED: 2026-07-10 (versions verified against upstream release feeds)
   -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!--
+      Transitive pinning lets the versions below override transitive
+      dependencies. This is how we force the SQLitePCLRaw native SQLite
+      package up to a patched build (see the SQLite section at the bottom).
+    -->
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <OpenTelemetryVersion>1.15.3</OpenTelemetryVersion>
-    <OpenTelemetryVersionStraggler>1.15.1</OpenTelemetryVersionStraggler>
-    <ExtensionsVersions>10.0.7</ExtensionsVersions>
+
+    <!--
+      One property per "family" so a single edit (or Dependabot bump) moves
+      every related package together and stays consistent.
+    -->
+    <OpenTelemetryVersion>1.16.0</OpenTelemetryVersion>
+    <ExtensionsVersions>10.0.9</ExtensionsVersions>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <!-- Microsoft.Extensions.* - Core DI and hosting (MIT License) -->
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(ExtensionsVersions)" />
@@ -32,95 +41,55 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="$(ExtensionsVersions)" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="$(ExtensionsVersions)" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="$(ExtensionsVersions)" />
-    
+
     <!-- SQLite - Official Microsoft package (MIT License) -->
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="$(ExtensionsVersions)" />
-    
+
     <!-- OpenTelemetry - Official packages (Apache 2.0 License) -->
     <PackageVersion Include="OpenTelemetry" Version="$(OpenTelemetryVersion)" />
     <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="$(OpenTelemetryVersion)" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="$(OpenTelemetryVersion)" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OpenTelemetryVersionStraggler)" />
-    
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OpenTelemetryVersion)" />
+
     <!-- Testing - xUnit 3 (Apache 2.0 License) -->
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.4.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.7.0" />
+
+    <!--
+      =========================================================================
+      SQLite native library - CVE-2025-6965 / GHSA-2m69-gcr7-jv3q fix
+      =========================================================================
+      Microsoft.Data.Sqlite pulls in SQLitePCLRaw.bundle_e_sqlite3 transitively.
+      Up through the 2.1.x line that bundle depended on the native package
+      'SQLitePCLRaw.lib.e_sqlite3', and every published 2.1.x build of that
+      native package (<= 2.1.11) ships a SQLite older than 3.50.2, which is
+      flagged by NU1903 (high severity, memory corruption in aggregate funcs).
+      There is no 2.1.12 yet, so we cannot fix it by staying on the 2.x line.
+
+      SQLitePCLRaw 3.0.x is API-compatible (no code changes in .core per the
+      upstream 3.0 release notes) and REDEFINES bundle_e_sqlite3 as just two
+      dependencies: SQLitePCLRaw.config.e_sqlite3 + SourceGear.sqlite3. The old
+      vulnerable 'lib.e_sqlite3' package leaves the graph entirely, so the
+      NU1903 warning disappears WITHOUT any audit suppression.
+
+      Because transitive pinning is enabled above, pinning the bundle to 3.0.3
+      pins the whole SQLitePCLRaw family, and pinning SourceGear.sqlite3 selects
+      the SQLite build (3.53.3 here - far newer than the 3.50.2 CVE fix).
+
+      The native base name is still 'e_sqlite3', so Microsoft.Data.Sqlite's
+      Batteries_V2.Init() and self-contained single-file publish keep working
+      unchanged.
+
+      To roll back later (e.g. once Microsoft.Data.Sqlite references 3.x itself),
+      delete these two lines. If a future 3.x ever regressed at runtime, the
+      alternative stop-gap is a targeted audit suppression:
+          <ItemGroup>
+            <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
+          </ItemGroup>
+      but the version pin below is the real fix and is preferred.
+    -->
+    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <PackageVersion Include="SourceGear.sqlite3" Version="3.53.3" />
   </ItemGroup>
 </Project>
-
-
-<!-- 
-
-Build succeeded in 0.5s
-Project 'NetworkMonitor.Console' has the following package references
-   [net10.0]: 
-   Top-level Package                            Requested   Resolved
-   > Microsoft.Extensions.Hosting               10.0.5      10.0.5  
-   > OpenTelemetry.Exporter.Console             1.15.0      1.15.0  
-   > OpenTelemetry.Extensions.Hosting           1.15.0      1.15.0  
-   > OpenTelemetry.Instrumentation.Runtime      1.15.0      1.15.0  
-
-Project 'NetworkMonitor.Core' has the following package references
-   [net10.0]: 
-   Top-level Package                                Requested   Resolved
-   > Microsoft.Data.Sqlite                          10.0.5      10.0.5  
-   > Microsoft.Extensions.Hosting                   10.0.5      10.0.5  
-   > Microsoft.Extensions.Logging.Abstractions      10.0.5      10.0.5  
-   > Microsoft.Extensions.Options                   10.0.5      10.0.5  
-   > OpenTelemetry                                  1.15.0      1.15.0  
-   > OpenTelemetry.Exporter.Console                 1.15.0      1.15.0  
-   > OpenTelemetry.Extensions.Hosting               1.15.0      1.15.0  
-   > OpenTelemetry.Instrumentation.Runtime          1.15.0      1.15.0  
-
-Project 'NetworkMonitor.Tests' has the following package references
-   [net10.0]: 
-   Top-level Package                                Requested   Resolved
-   > Microsoft.Extensions.Logging.Abstractions      10.0.5      10.0.5  
-   > Microsoft.NET.Test.Sdk                         18.4.0      18.4.0  
-   > xunit.runner.visualstudio                      3.1.5       3.1.5   
-   > xunit.v3                                       3.2.2       3.2.2   
-
-
-real	0m1.395s
-user	0m1.366s
-sys	0m0.269s
-Restore complete (0.4s)
-
-Build succeeded in 0.5s
-
-The following sources were used:
-   https://api.nuget.org/v3/index.json
-
-Project `NetworkMonitor.Console` has the following updates to its packages
-   [net10.0]: 
-   Top-level Package                            Requested   Resolved   Latest
-   > Microsoft.Extensions.Hosting               10.0.5      10.0.5     10.0.7
-   > OpenTelemetry.Exporter.Console             1.15.0      1.15.0     1.15.3
-   > OpenTelemetry.Extensions.Hosting           1.15.0      1.15.0     1.15.3
-   > OpenTelemetry.Instrumentation.Runtime      1.15.0      1.15.0     1.15.1
-
-Project `NetworkMonitor.Core` has the following updates to its packages
-   [net10.0]: 
-   Top-level Package                                Requested   Resolved   Latest
-   > Microsoft.Data.Sqlite                          10.0.5      10.0.5     10.0.7
-   > Microsoft.Extensions.Hosting                   10.0.5      10.0.5     10.0.7
-   > Microsoft.Extensions.Logging.Abstractions      10.0.5      10.0.5     10.0.7
-   > Microsoft.Extensions.Options                   10.0.5      10.0.5     10.0.7
-   > OpenTelemetry                                  1.15.0      1.15.0     1.15.3
-   > OpenTelemetry.Exporter.Console                 1.15.0      1.15.0     1.15.3
-   > OpenTelemetry.Extensions.Hosting               1.15.0      1.15.0     1.15.3
-   > OpenTelemetry.Instrumentation.Runtime          1.15.0      1.15.0     1.15.1
-
-Project `NetworkMonitor.Tests` has the following updates to its packages
-   [net10.0]: 
-   Top-level Package                                Requested   Resolved   Latest
-   > Microsoft.Extensions.Logging.Abstractions      10.0.5      10.0.5     10.0.7
-
-
-real	0m2.296s
-user	0m1.840s
-sys	0m0.312s
-
-
--->

@@ -1,0 +1,29 @@
+# Dependabot configuration
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates
+#
+# Keeps NuGet packages and GitHub Actions current, complementing the
+# dependency-check workflow (which only reports). NuGet packages are managed
+# centrally in src/Directory.Packages.props, so the nuget ecosystem points at
+# /src. GitHub Actions live in /.github/workflows, so that ecosystem points at
+# the repository root.
+
+version: 2
+
+updates:
+  # .NET / NuGet packages (central package management under src/)
+  - package-ecosystem: "nuget"
+    directory: "/src"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "nuget"
+
+  # GitHub Actions used by the workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "ci"

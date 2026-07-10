@@ -36,4 +36,28 @@ public interface IStorageService
     Task<IReadOnlyList<PingResult>> GetRecentPingsAsync(
         int count,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reads stored ping rows with an id strictly greater than <paramref name="afterId"/>,
+    /// ordered by id ascending. Used by the remote sync feature to page through
+    /// history that has not yet been replicated.
+    /// </summary>
+    /// <param name="afterId">Exclusive lower bound on the row id.</param>
+    /// <param name="limit">Maximum number of rows to return.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<IReadOnlyList<StoredPingResult>> GetPingResultsAfterAsync(
+        long afterId,
+        int limit,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reads a value from the small key/value sync-state store, or null if the
+    /// key is absent.
+    /// </summary>
+    Task<string?> GetSyncStateAsync(string key, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Writes (inserts or replaces) a value in the key/value sync-state store.
+    /// </summary>
+    Task SetSyncStateAsync(string key, string value, CancellationToken cancellationToken = default);
 }

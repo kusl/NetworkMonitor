@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NetworkMonitor.Core.Exporters;
 using NetworkMonitor.Core.Models;
+using NetworkMonitor.Core.RemoteSync;
 using NetworkMonitor.Core.Services;
 using NetworkMonitor.Core.Storage;
 using OpenTelemetry.Metrics;
@@ -27,6 +28,8 @@ public static class ServiceCollectionExtensions
             configuration.GetSection(MonitorOptions.SectionName));
         services.Configure<StorageOptions>(
             configuration.GetSection(StorageOptions.SectionName));
+        services.Configure<RemoteSyncOptions>(
+            configuration.GetSection(RemoteSyncOptions.SectionName));
 
         // Register core services
         services.AddSingleton<IPingService, PingService>();
@@ -38,8 +41,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IStatusDisplay, ConsoleStatusDisplay>();
         services.AddSingleton<IStorageService, SqliteStorageService>();
 
-        // Register background service
+        // Optional remote sync (no-op unless RemoteSync:Url and :AuthToken are set)
+        services.AddSingleton<IRemoteDatabaseClient, TursoHranaClient>();
+
+        // Register background services
         services.AddHostedService<MonitorBackgroundService>();
+        services.AddHostedService<RemoteSyncService>();
 
         return services;
     }
@@ -52,7 +59,7 @@ public static class ServiceCollectionExtensions
     /// <param name="enableConsoleExporter">
     /// When false (default), OpenTelemetry metrics are only written to files.
     /// When true, metrics are also dumped to the console (noisy with many targets).
-    /// This does NOT affect the status display or database — only the raw
+    /// This does NOT affect the status display or database - only the raw
     /// OpenTelemetry histogram/counter output on stdout.
     /// </param>
     public static IServiceCollection AddNetworkMonitorTelemetry(
