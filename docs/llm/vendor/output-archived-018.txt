@@ -1,0 +1,165 @@
+kushal@fedora:~/src/dotnet/network-monitor$ cd ~/src/dotnet/network-monitor/src; time dotnet format; cd ~/src/dotnet/network-monitor/; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet build; time dotnet test; time dotnet list package; time dotnet list package --outdated; cd /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Console; dotnet run
+
+real	0m6.480s
+user	0m9.846s
+sys	0m0.854s
+Starting project export...
+Project Path: /home/kushal/src/dotnet/network-monitor
+Output File:  /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
+Listing files via git...
+Found 76 files to export
+Processing (1/76): .github/dependabot.yml
+Processing (2/76): .github/workflows/build-and-test.yml
+Processing (3/76): .github/workflows/dependency-check.yml
+Processing (4/76): .github/workflows/release.yml
+Processing (5/76): README.md
+Processing (6/76): apply_fixes.sh
+Processing (7/76): export.sh
+Processing (8/76): src/Directory.Build.props
+Processing (9/76): src/Directory.Packages.props
+Processing (10/76): src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
+Processing (11/76): src/NetworkMonitor.Console/Program.cs
+Processing (12/76): src/NetworkMonitor.Console/appsettings.json
+Processing (13/76): src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs
+Processing (14/76): src/NetworkMonitor.Core/Exporters/FileExporterOptions.cs
+Processing (15/76): src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs
+Processing (16/76): src/NetworkMonitor.Core/Models/DnsResult.cs
+Processing (17/76): src/NetworkMonitor.Core/Models/HistoricalData.cs
+Processing (18/76): src/NetworkMonitor.Core/Models/MonitorOptions.cs
+Processing (19/76): src/NetworkMonitor.Core/Models/MonitorTarget.cs
+Processing (20/76): src/NetworkMonitor.Core/Models/NetworkStatus.cs
+Processing (21/76): src/NetworkMonitor.Core/Models/NetworkStatusEventArgs.cs
+Processing (22/76): src/NetworkMonitor.Core/Models/PingResult.cs
+Processing (23/76): src/NetworkMonitor.Core/Models/RemoteSyncOptions.cs
+Processing (24/76): src/NetworkMonitor.Core/Models/StorageOptions.cs
+Processing (25/76): src/NetworkMonitor.Core/Models/StoredPingResult.cs
+Processing (26/76): src/NetworkMonitor.Core/Models/TargetCheckResult.cs
+Processing (27/76): src/NetworkMonitor.Core/NetworkMonitor.Core.csproj
+Processing (28/76): src/NetworkMonitor.Core/RemoteSync/HranaStatement.cs
+Processing (29/76): src/NetworkMonitor.Core/RemoteSync/IRemoteDatabaseClient.cs
+Processing (30/76): src/NetworkMonitor.Core/RemoteSync/RemoteSyncService.cs
+Processing (31/76): src/NetworkMonitor.Core/RemoteSync/TursoHranaClient.cs
+Processing (32/76): src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
+Processing (33/76): src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs
+Processing (34/76): src/NetworkMonitor.Core/Services/DnsResolverService.cs
+Processing (35/76): src/NetworkMonitor.Core/Services/GatewayDetector.cs
+Processing (36/76): src/NetworkMonitor.Core/Services/IDnsResolverService.cs
+Processing (37/76): src/NetworkMonitor.Core/Services/IGatewayDetector.cs
+Processing (38/76): src/NetworkMonitor.Core/Services/IInternetTargetProvider.cs
+Processing (39/76): src/NetworkMonitor.Core/Services/INetworkConfigurationService.cs
+Processing (40/76): src/NetworkMonitor.Core/Services/INetworkMonitorService.cs
+Processing (41/76): src/NetworkMonitor.Core/Services/IPingService.cs
+Processing (42/76): src/NetworkMonitor.Core/Services/IStatusDisplay.cs
+Processing (43/76): src/NetworkMonitor.Core/Services/InternetTargetProvider.cs
+Processing (44/76): src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs
+Processing (45/76): src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs
+Processing (46/76): src/NetworkMonitor.Core/Services/NetworkMonitorService.cs
+Processing (47/76): src/NetworkMonitor.Core/Services/PingService.cs
+Processing (48/76): src/NetworkMonitor.Core/Storage/IStorageService.cs
+Processing (49/76): src/NetworkMonitor.Core/Storage/SqliteStorageService.cs
+Processing (50/76): src/NetworkMonitor.Tests/Fakes/FakeDnsResolverService.cs
+Processing (51/76): src/NetworkMonitor.Tests/Fakes/FakeGatewayDetector.cs
+Processing (52/76): src/NetworkMonitor.Tests/Fakes/FakeInternetTargetProvider.cs
+Processing (53/76): src/NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs
+Processing (54/76): src/NetworkMonitor.Tests/Fakes/FakePingService.cs
+Processing (55/76): src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs
+Processing (56/76): src/NetworkMonitor.Tests/Fakes/FakeRemoteDatabaseClient.cs
+Processing (57/76): src/NetworkMonitor.Tests/Fakes/FakeStorageService.cs
+Processing (58/76): src/NetworkMonitor.Tests/Models/DnsResultTests.cs
+Processing (59/76): src/NetworkMonitor.Tests/Models/MonitorOptionsTests.cs
+Processing (60/76): src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs
+Processing (61/76): src/NetworkMonitor.Tests/Models/NetworkStatusEventArgsTests.cs
+Processing (62/76): src/NetworkMonitor.Tests/Models/PingResultTests.cs
+Processing (63/76): src/NetworkMonitor.Tests/Models/TargetCheckResultTests.cs
+Processing (64/76): src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj
+Processing (65/76): src/NetworkMonitor.Tests/NetworkStatusTests.cs
+Processing (66/76): src/NetworkMonitor.Tests/PingResultTests.cs
+Processing (67/76): src/NetworkMonitor.Tests/RemoteSync/RemoteSyncServiceTests.cs
+Processing (68/76): src/NetworkMonitor.Tests/Services/DnsResolverServiceTests.cs
+Processing (69/76): src/NetworkMonitor.Tests/Services/GatewayDetectorTests.cs
+Processing (70/76): src/NetworkMonitor.Tests/Services/InternetTargetProviderTests.cs
+Processing (71/76): src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs
+Processing (72/76): src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs
+Processing (73/76): src/NetworkMonitor.Tests/Services/PingAddressSelectorTests.cs
+Processing (74/76): src/NetworkMonitor.slnx
+Processing (75/76): src/generate-network-monitor.sh
+Processing (76/76): src/run.sh
+
+Export completed successfully!
+Output file: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
+Total source size: 0.58 MB across 76 files
+
+real	0m0.919s
+user	0m0.452s
+sys	0m0.720s
+Restore complete (0.5s)
+  NetworkMonitor.Core net10.0 failed with 1 error(s) (0.3s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(202,43): error CA1859: Change type of parameter 'targets' from 'System.Collections.Generic.IReadOnlyList<NetworkMonitor.Core.Models.CustomTargetConfig>' to 'System.Collections.Generic.List<NetworkMonitor.Core.Models.CustomTargetConfig>' for improved performance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1859)
+
+Build failed with 1 error(s) in 1.0s
+
+real	0m1.135s
+user	0m0.951s
+sys	0m0.215s
+Restore complete (0.5s)
+  NetworkMonitor.Core net10.0 failed with 1 error(s) (0.3s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(202,43): error CA1859: Change type of parameter 'targets' from 'System.Collections.Generic.IReadOnlyList<NetworkMonitor.Core.Models.CustomTargetConfig>' to 'System.Collections.Generic.List<NetworkMonitor.Core.Models.CustomTargetConfig>' for improved performance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1859)
+
+Build failed with 1 error(s) in 1.0s
+
+real	0m1.139s
+user	0m0.927s
+sys	0m0.199s
+Restore complete (0.5s)
+
+Build succeeded in 0.6s
+Project 'NetworkMonitor.Console' has the following package references
+   [net10.0]: 
+   Top-level Package                            Requested   Resolved
+   > Microsoft.Extensions.Hosting               10.0.9      10.0.9  
+   > OpenTelemetry.Exporter.Console             1.16.0      1.16.0  
+   > OpenTelemetry.Extensions.Hosting           1.16.0      1.16.0  
+   > OpenTelemetry.Instrumentation.Runtime      1.16.0      1.16.0  
+
+Project 'NetworkMonitor.Core' has the following package references
+   [net10.0]: 
+   Top-level Package                                Requested   Resolved
+   > Microsoft.Data.Sqlite                          10.0.9      10.0.9  
+   > Microsoft.Extensions.Hosting                   10.0.9      10.0.9  
+   > Microsoft.Extensions.Logging.Abstractions      10.0.9      10.0.9  
+   > Microsoft.Extensions.Options                   10.0.9      10.0.9  
+   > OpenTelemetry                                  1.16.0      1.16.0  
+   > OpenTelemetry.Exporter.Console                 1.16.0      1.16.0  
+   > OpenTelemetry.Extensions.Hosting               1.16.0      1.16.0  
+   > OpenTelemetry.Instrumentation.Runtime          1.16.0      1.16.0  
+
+Project 'NetworkMonitor.Tests' has the following package references
+   [net10.0]: 
+   Top-level Package                                Requested   Resolved
+   > Microsoft.Extensions.Logging.Abstractions      10.0.9      10.0.9  
+   > Microsoft.NET.Test.Sdk                         18.7.0      18.7.0  
+   > xunit.runner.visualstudio                      3.1.5       3.1.5   
+   > xunit.v3                                       3.2.2       3.2.2   
+
+
+real	0m1.534s
+user	0m1.379s
+sys	0m0.403s
+Restore complete (0.5s)
+
+Build succeeded in 0.6s
+
+The following sources were used:
+   https://api.nuget.org/v3/index.json
+
+The given project `NetworkMonitor.Console` has no updates given the current sources.
+The given project `NetworkMonitor.Core` has no updates given the current sources.
+The given project `NetworkMonitor.Tests` has no updates given the current sources.
+
+real	0m4.409s
+user	0m2.881s
+sys	0m0.427s
+/home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/NetworkMonitorService.cs(202,43): error CA1859: Change type of parameter 'targets' from 'System.Collections.Generic.IReadOnlyList<NetworkMonitor.Core.Models.CustomTargetConfig>' to 'System.Collections.Generic.List<NetworkMonitor.Core.Models.CustomTargetConfig>' for improved performance (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1859)
+
+The build failed. Fix the build errors and run again.
+kushal@fedora:~/src/dotnet/network-monitor/src/NetworkMonitor.Console$ 
