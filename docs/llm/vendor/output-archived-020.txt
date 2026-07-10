@@ -1,122 +1,122 @@
 kushal@fedora:~/src/dotnet/network-monitor/src/NetworkMonitor.Console$ cd ~/src/dotnet/network-monitor/src; time dotnet format; cd ~/src/dotnet/network-monitor/; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet build; time dotnet test; time dotnet list package; time dotnet list package --outdated; cd /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Console; dotnet run
 
-real	0m6.180s
-user	0m9.947s
-sys	0m0.797s
+real	0m6.368s
+user	0m10.130s
+sys	0m0.856s
 Starting project export...
 Project Path: /home/kushal/src/dotnet/network-monitor
 Output File:  /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 Listing files via git...
-Found 76 files to export
-Processing (1/76): .github/dependabot.yml
-Processing (2/76): .github/workflows/build-and-test.yml
-Processing (3/76): .github/workflows/dependency-check.yml
-Processing (4/76): .github/workflows/release.yml
-Processing (5/76): README.md
-Processing (6/76): export.sh
-Processing (8/76): src/Directory.Build.props
-Processing (9/76): src/Directory.Packages.props
-Processing (10/76): src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
-Processing (11/76): src/NetworkMonitor.Console/Program.cs
-Processing (12/76): src/NetworkMonitor.Console/appsettings.json
-Processing (13/76): src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs
-Processing (14/76): src/NetworkMonitor.Core/Exporters/FileExporterOptions.cs
-Processing (15/76): src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs
-Processing (16/76): src/NetworkMonitor.Core/Models/DnsResult.cs
-Processing (17/76): src/NetworkMonitor.Core/Models/HistoricalData.cs
-Processing (18/76): src/NetworkMonitor.Core/Models/MonitorOptions.cs
-Processing (19/76): src/NetworkMonitor.Core/Models/MonitorTarget.cs
-Processing (20/76): src/NetworkMonitor.Core/Models/NetworkStatus.cs
-Processing (21/76): src/NetworkMonitor.Core/Models/NetworkStatusEventArgs.cs
-Processing (22/76): src/NetworkMonitor.Core/Models/PingResult.cs
-Processing (23/76): src/NetworkMonitor.Core/Models/RemoteSyncOptions.cs
-Processing (24/76): src/NetworkMonitor.Core/Models/StorageOptions.cs
-Processing (25/76): src/NetworkMonitor.Core/Models/StoredPingResult.cs
-Processing (26/76): src/NetworkMonitor.Core/Models/TargetCheckResult.cs
-Processing (27/76): src/NetworkMonitor.Core/NetworkMonitor.Core.csproj
-Processing (28/76): src/NetworkMonitor.Core/RemoteSync/HranaStatement.cs
-Processing (29/76): src/NetworkMonitor.Core/RemoteSync/IRemoteDatabaseClient.cs
-Processing (30/76): src/NetworkMonitor.Core/RemoteSync/RemoteSyncService.cs
-Processing (31/76): src/NetworkMonitor.Core/RemoteSync/TursoHranaClient.cs
-Processing (32/76): src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
-Processing (33/76): src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs
-Processing (34/76): src/NetworkMonitor.Core/Services/DnsResolverService.cs
-Processing (35/76): src/NetworkMonitor.Core/Services/GatewayDetector.cs
-Processing (36/76): src/NetworkMonitor.Core/Services/IDnsResolverService.cs
-Processing (37/76): src/NetworkMonitor.Core/Services/IGatewayDetector.cs
-Processing (38/76): src/NetworkMonitor.Core/Services/IInternetTargetProvider.cs
-Processing (39/76): src/NetworkMonitor.Core/Services/INetworkConfigurationService.cs
-Processing (40/76): src/NetworkMonitor.Core/Services/INetworkMonitorService.cs
-Processing (41/76): src/NetworkMonitor.Core/Services/IPingService.cs
-Processing (42/76): src/NetworkMonitor.Core/Services/IStatusDisplay.cs
-Processing (43/76): src/NetworkMonitor.Core/Services/InternetTargetProvider.cs
-Processing (44/76): src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs
-Processing (45/76): src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs
-Processing (46/76): src/NetworkMonitor.Core/Services/NetworkMonitorService.cs
-Processing (47/76): src/NetworkMonitor.Core/Services/PingService.cs
-Processing (48/76): src/NetworkMonitor.Core/Storage/IStorageService.cs
-Processing (49/76): src/NetworkMonitor.Core/Storage/SqliteStorageService.cs
-Processing (50/76): src/NetworkMonitor.Tests/Fakes/FakeDnsResolverService.cs
-Processing (51/76): src/NetworkMonitor.Tests/Fakes/FakeGatewayDetector.cs
-Processing (52/76): src/NetworkMonitor.Tests/Fakes/FakeInternetTargetProvider.cs
-Processing (53/76): src/NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs
-Processing (54/76): src/NetworkMonitor.Tests/Fakes/FakePingService.cs
-Processing (55/76): src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs
-Processing (56/76): src/NetworkMonitor.Tests/Fakes/FakeRemoteDatabaseClient.cs
-Processing (57/76): src/NetworkMonitor.Tests/Fakes/FakeStorageService.cs
-Processing (58/76): src/NetworkMonitor.Tests/Models/DnsResultTests.cs
-Processing (59/76): src/NetworkMonitor.Tests/Models/MonitorOptionsTests.cs
-Processing (60/76): src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs
-Processing (61/76): src/NetworkMonitor.Tests/Models/NetworkStatusEventArgsTests.cs
-Processing (62/76): src/NetworkMonitor.Tests/Models/PingResultTests.cs
-Processing (63/76): src/NetworkMonitor.Tests/Models/TargetCheckResultTests.cs
-Processing (64/76): src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj
-Processing (65/76): src/NetworkMonitor.Tests/NetworkStatusTests.cs
-Processing (66/76): src/NetworkMonitor.Tests/PingResultTests.cs
-Processing (67/76): src/NetworkMonitor.Tests/RemoteSync/RemoteSyncServiceTests.cs
-Processing (68/76): src/NetworkMonitor.Tests/Services/DnsResolverServiceTests.cs
-Processing (69/76): src/NetworkMonitor.Tests/Services/GatewayDetectorTests.cs
-Processing (70/76): src/NetworkMonitor.Tests/Services/InternetTargetProviderTests.cs
-Processing (71/76): src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs
-Processing (72/76): src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs
-Processing (73/76): src/NetworkMonitor.Tests/Services/PingAddressSelectorTests.cs
-Processing (74/76): src/NetworkMonitor.slnx
-Processing (75/76): src/generate-network-monitor.sh
-Processing (76/76): src/run.sh
+Found 75 files to export
+Processing (1/75): .github/dependabot.yml
+Processing (2/75): .github/workflows/build-and-test.yml
+Processing (3/75): .github/workflows/dependency-check.yml
+Processing (4/75): .github/workflows/release.yml
+Processing (5/75): README.md
+Processing (6/75): export.sh
+Processing (7/75): src/Directory.Build.props
+Processing (8/75): src/Directory.Packages.props
+Processing (9/75): src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
+Processing (10/75): src/NetworkMonitor.Console/Program.cs
+Processing (11/75): src/NetworkMonitor.Console/appsettings.json
+Processing (12/75): src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs
+Processing (13/75): src/NetworkMonitor.Core/Exporters/FileExporterOptions.cs
+Processing (14/75): src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs
+Processing (15/75): src/NetworkMonitor.Core/Models/DnsResult.cs
+Processing (16/75): src/NetworkMonitor.Core/Models/HistoricalData.cs
+Processing (17/75): src/NetworkMonitor.Core/Models/MonitorOptions.cs
+Processing (18/75): src/NetworkMonitor.Core/Models/MonitorTarget.cs
+Processing (19/75): src/NetworkMonitor.Core/Models/NetworkStatus.cs
+Processing (20/75): src/NetworkMonitor.Core/Models/NetworkStatusEventArgs.cs
+Processing (21/75): src/NetworkMonitor.Core/Models/PingResult.cs
+Processing (22/75): src/NetworkMonitor.Core/Models/RemoteSyncOptions.cs
+Processing (23/75): src/NetworkMonitor.Core/Models/StorageOptions.cs
+Processing (24/75): src/NetworkMonitor.Core/Models/StoredPingResult.cs
+Processing (25/75): src/NetworkMonitor.Core/Models/TargetCheckResult.cs
+Processing (26/75): src/NetworkMonitor.Core/NetworkMonitor.Core.csproj
+Processing (27/75): src/NetworkMonitor.Core/RemoteSync/HranaStatement.cs
+Processing (28/75): src/NetworkMonitor.Core/RemoteSync/IRemoteDatabaseClient.cs
+Processing (29/75): src/NetworkMonitor.Core/RemoteSync/RemoteSyncService.cs
+Processing (30/75): src/NetworkMonitor.Core/RemoteSync/TursoHranaClient.cs
+Processing (31/75): src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
+Processing (32/75): src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs
+Processing (33/75): src/NetworkMonitor.Core/Services/DnsResolverService.cs
+Processing (34/75): src/NetworkMonitor.Core/Services/GatewayDetector.cs
+Processing (35/75): src/NetworkMonitor.Core/Services/IDnsResolverService.cs
+Processing (36/75): src/NetworkMonitor.Core/Services/IGatewayDetector.cs
+Processing (37/75): src/NetworkMonitor.Core/Services/IInternetTargetProvider.cs
+Processing (38/75): src/NetworkMonitor.Core/Services/INetworkConfigurationService.cs
+Processing (39/75): src/NetworkMonitor.Core/Services/INetworkMonitorService.cs
+Processing (40/75): src/NetworkMonitor.Core/Services/IPingService.cs
+Processing (41/75): src/NetworkMonitor.Core/Services/IStatusDisplay.cs
+Processing (42/75): src/NetworkMonitor.Core/Services/InternetTargetProvider.cs
+Processing (43/75): src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs
+Processing (44/75): src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs
+Processing (45/75): src/NetworkMonitor.Core/Services/NetworkMonitorService.cs
+Processing (46/75): src/NetworkMonitor.Core/Services/PingService.cs
+Processing (47/75): src/NetworkMonitor.Core/Storage/IStorageService.cs
+Processing (48/75): src/NetworkMonitor.Core/Storage/SqliteStorageService.cs
+Processing (49/75): src/NetworkMonitor.Tests/Fakes/FakeDnsResolverService.cs
+Processing (50/75): src/NetworkMonitor.Tests/Fakes/FakeGatewayDetector.cs
+Processing (51/75): src/NetworkMonitor.Tests/Fakes/FakeInternetTargetProvider.cs
+Processing (52/75): src/NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs
+Processing (53/75): src/NetworkMonitor.Tests/Fakes/FakePingService.cs
+Processing (54/75): src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs
+Processing (55/75): src/NetworkMonitor.Tests/Fakes/FakeRemoteDatabaseClient.cs
+Processing (56/75): src/NetworkMonitor.Tests/Fakes/FakeStorageService.cs
+Processing (57/75): src/NetworkMonitor.Tests/Models/DnsResultTests.cs
+Processing (58/75): src/NetworkMonitor.Tests/Models/MonitorOptionsTests.cs
+Processing (59/75): src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs
+Processing (60/75): src/NetworkMonitor.Tests/Models/NetworkStatusEventArgsTests.cs
+Processing (61/75): src/NetworkMonitor.Tests/Models/PingResultTests.cs
+Processing (62/75): src/NetworkMonitor.Tests/Models/TargetCheckResultTests.cs
+Processing (63/75): src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj
+Processing (64/75): src/NetworkMonitor.Tests/NetworkStatusTests.cs
+Processing (65/75): src/NetworkMonitor.Tests/PingResultTests.cs
+Processing (66/75): src/NetworkMonitor.Tests/RemoteSync/RemoteSyncServiceTests.cs
+Processing (67/75): src/NetworkMonitor.Tests/Services/DnsResolverServiceTests.cs
+Processing (68/75): src/NetworkMonitor.Tests/Services/GatewayDetectorTests.cs
+Processing (69/75): src/NetworkMonitor.Tests/Services/InternetTargetProviderTests.cs
+Processing (70/75): src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs
+Processing (71/75): src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs
+Processing (72/75): src/NetworkMonitor.Tests/Services/PingAddressSelectorTests.cs
+Processing (73/75): src/NetworkMonitor.slnx
+Processing (74/75): src/generate-network-monitor.sh
+Processing (75/75): src/run.sh
 
 Export completed successfully!
 Output file: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
-Total source size: 0.30 MB across 76 files
+Total source size: 0.30 MB across 75 files
 
-real	0m0.904s
-user	0m0.494s
-sys	0m0.691s
+real	0m0.865s
+user	0m0.502s
+sys	0m0.642s
 Restore complete (0.5s)
-  NetworkMonitor.Core net10.0 succeeded (0.4s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
-  NetworkMonitor.Console net10.0 succeeded (0.3s) → NetworkMonitor.Console/bin/Debug/net10.0/NetworkMonitor.Console.dll
-  NetworkMonitor.Tests net10.0 succeeded (0.4s) → NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll
+  NetworkMonitor.Core net10.0 succeeded (0.2s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Console net10.0 succeeded (0.2s) → NetworkMonitor.Console/bin/Debug/net10.0/NetworkMonitor.Console.dll
+  NetworkMonitor.Tests net10.0 succeeded (0.2s) → NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll
 
-Build succeeded in 1.5s
+Build succeeded in 1.0s
 
-real	0m1.613s
-user	0m1.346s
-sys	0m0.283s
+real	0m1.189s
+user	0m1.239s
+sys	0m0.258s
 Restore complete (0.5s)
   NetworkMonitor.Core net10.0 succeeded (0.1s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
   NetworkMonitor.Tests net10.0 succeeded (0.1s) → NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll
 [xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.9)
-[xUnit.net 00:00:00.14]   Discovering: NetworkMonitor.Tests
-[xUnit.net 00:00:00.34]   Discovered:  NetworkMonitor.Tests
-[xUnit.net 00:00:00.51]   Starting:    NetworkMonitor.Tests
-[xUnit.net 00:00:00.65]   Finished:    NetworkMonitor.Tests (ID = '2e8f57cd5826539fc7a5cd3a97d27721fcb9a15ff7c496b1112166f6757858fe')
+[xUnit.net 00:00:00.15]   Discovering: NetworkMonitor.Tests
+[xUnit.net 00:00:00.36]   Discovered:  NetworkMonitor.Tests
+[xUnit.net 00:00:00.53]   Starting:    NetworkMonitor.Tests
+[xUnit.net 00:00:00.66]   Finished:    NetworkMonitor.Tests (ID = '2e8f57cd5826539fc7a5cd3a97d27721fcb9a15ff7c496b1112166f6757858fe')
   NetworkMonitor.Tests test net10.0 succeeded (1.2s)
 
-Test summary: total: 89, failed: 0, succeeded: 89, skipped: 0, duration: 1.1s
+Test summary: total: 89, failed: 0, succeeded: 89, skipped: 0, duration: 1.2s
 Build succeeded in 2.1s
 
-real	0m2.203s
-user	0m1.261s
-sys	0m0.249s
+real	0m2.242s
+user	0m1.185s
+sys	0m0.247s
 Restore complete (0.5s)
 
 Build succeeded in 0.6s
@@ -149,9 +149,9 @@ Project 'NetworkMonitor.Tests' has the following package references
    > xunit.v3                                       3.2.2       3.2.2   
 
 
-real	0m1.526s
-user	0m1.482s
-sys	0m0.340s
+real	0m1.485s
+user	0m1.456s
+sys	0m0.318s
 Restore complete (0.5s)
 
 Build succeeded in 0.6s
@@ -163,27 +163,18 @@ The given project `NetworkMonitor.Console` has no updates given the current sour
 The given project `NetworkMonitor.Core` has no updates given the current sources.
 The given project `NetworkMonitor.Tests` has no updates given the current sources.
 
-real	0m1.828s
-user	0m1.746s
-sys	0m0.363s
+real	0m2.566s
+user	0m1.984s
+sys	0m0.378s
 ╔══════════════════════════════════════════════════════════════╗
 ║           Network Monitor - Cross-Platform Edition           ║
 ║                  Press Ctrl+C to stop                        ║
 ╚══════════════════════════════════════════════════════════════╝
 
 📁 Telemetry: /home/kushal/.local/share/NetworkMonitor/telemetry
-🆔 Run ID: 20260710_231814
+🆔 Run ID: 20260710_233731
 
-● Excellent  Router:    1ms Internet:   17ms Targets: 48/48 [19:19:53]
-  ⚠ 1 target(s) need attention:
-    ▲ MS-SharePoint                loss 33%
-● Excellent  Router:    2ms Internet:   16ms Targets: 48/48 [19:24:12]
-  ⚠ 1 target(s) need attention:
-    ▲ Internet-NL                  latency 214ms
-● Excellent  Router:    1ms Internet:   18ms Targets: 48/48 [19:26:05]
-  ⚠ 1 target(s) need attention:
-    ▲ MS-Office365                 loss 33%
-^C
+● Excellent  Router:    1ms Internet:   18ms Targets: 48/48 [19:37:48]^C
 
 ⏹️  Shutting down...
 👋 Network Monitor stopped. Goodbye!
