@@ -30,7 +30,7 @@
       One property per "family" so a single edit (or Dependabot bump) moves
       every related package together and stays consistent.
     -->
-    <OpenTelemetryVersion>1.16.0</OpenTelemetryVersion>
+    <OpenTelemetryVersion>1.17.0</OpenTelemetryVersion>
     <ExtensionsVersions>10.0.9</ExtensionsVersions>
   </PropertyGroup>
 
