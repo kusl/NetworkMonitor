@@ -12006,3 +12006,295 @@ I updated the nuget packages and got this error
     /home/kushal/.nuget/packages/microsoft.testing.platform.msbuild/2.3.3/buildMultiTargeting/Microsoft.Testing.Platform.MSBuild.targets(320,5): error Testing with VSTest target is no longer supported by Microsoft.Testing.Platform on .NET 10 SDK and later. If you use dotnet test, you should opt-in to the new dotnet test experience. For more information, see https://aka.ms/dotnet-test-mtp-error
 Build failed with 1 error(s) in 0.6s
 please give me FULL files for all files that need to change. 
+
+
+/
+Claude finished the response
+I updated the nuget packages and got this error 
+  NetworkMonitor.Tests net10.0 failed with 1 error(s) (0.0s)
+    /home/kushal/.nuget/packages/microsoft.testing.platform.msbuild/2.3.3/buildMultiTargeting/Microsoft.Testing.Platform.MSBuild.targets(320,5): error Testing with VSTest target is no longer supported by Microsoft.Testing.Platform on .NET 10 SDK and later. If you use dotnet test, you should opt-in to the new dotnet test experience. For more information, see https://aka.ms/dotnet-test-mtp-error
+Build failed with 1 error(s) in 0.6s
+please give me FULL files for all files that need to change.
+
+Thought for 12s
+I'll review the current state of the codebase and figure out the exact fix for this .NET 10 test platform error.
+
+Ran 3 commands, viewed 2 files
+I have a clear picture of the test setup. This is the .NET 10 SDK change where dotnet test defaults to VSTest, but xUnit v3's Microsoft.Testing.Platform runner dropped VSTest-bridge support on .NET 10. Let me verify the current repo state and confirm the exact correct fix, since this is recent (.NET 10 GA) territory.
+
+Ran a command
+The dump.txt (modified today) is ahead of what's on GitHub master (last commit July 10). I'll trust dump.txt as the source of truth per your instructions. Now let me confirm the precise, current fix for this .NET 10 SDK change.
+
+Searched the web
+This is confirmed: the xUnit.v3 4.0.0 upgrade is the trigger. xUnit.v3 4.0.0 drops official support for Microsoft Testing Platform (MTP) v1, defaulting to MTP v2, and on .NET 10 SDK the VSTest target is no longer supported, requiring a global.json opt-in. Let me nail down two specifics before writing files: how TRX reporting works in MTP mode (your CI uses --logger trx) and how dotnet test takes a solution path in MTP mode. 
+daily.dev
+
+Searched the web
+Confirmed the critical details. Two things beyond the local fix matter for CI, because switching to MTP mode changes dotnet test behavior: MTP mode does not accept a bare positional path (needs --solution), and --logger trx is silently ignored (needs --report-trx, which requires the TrxReport extension package). Let me see the full CI workflow to know what actually consumes the trx file before deciding scope.
+
+View full build-and-test.yml and start of dependency-check.yml
+Now I understand the CI fully — it uploads test-results.trx as an artifact. Switching to MTP mode breaks the current dotnet test src/NetworkMonitor.slnx ... --logger trx (bare positional path rejected; --logger trx ignored). Before I decide whether I must add the TrxReport extension package (and pin a version I can't verify against nuget.org from this sandbox), let me confirm whether xunit.v3 4.0.0 already bundles TRX reporting.
+
+Searched the web
+Excellent — this changes my approach for the better. xUnit.v3 4.0.0 has its own built-in TRX report switch, --report-xunit-trx, which is unaffected by the MTP changes and (unlike Microsoft's --report-trx) records correct theory test names and needs no extra package. That keeps the footprint minimal — no new package, no Directory.Packages.props change. Let me confirm the exact filename switch and output location so the CI glob still matches.
+
+Searched the web
+I now have everything confirmed. The clean path is xUnit's native --report-xunit-trx (built into xunit.v3 4.0.0, no extra package, correct theory names), and reports land in a TestResults folder that the recursive CI glob already matches. Let me verify the release workflow doesn't also run dotnet test (which would need the same treatment) before finalizing the file list.
+
+Ran a command
+release.yml has no dotnet test — good. But there are dotnet test calls in helper scripts (around lines 9722, 9796) that will also switch to MTP mode once global.json exists. Let me inspect those so I don't leave you with broken dev scripts.
+
+Ran 3 commands, viewed a file
+The trigger is the xUnit bump, not anything wrong in your source. Support for Microsoft Testing Platform v1 was removed from xunit.v3 4.0.0 onward, and the default is now MTP v2, and on the .NET 10 SDK the VSTest bridge that dotnet test relied on is no longer supported — which is exactly the error you're seeing. The fix is to opt dotnet test into native MTP mode with a global.json. Since that mode is designed for MTP, neither TestingPlatformDotnetTestSupport nor any extra -- is required, and you don't need to add or pin a single package. 
+xUnit.net
+
+Three files change. Two are required — the opt-in, plus the CI workflow, which otherwise breaks in a different way once MTP mode is on. The third is a precautionary tweak to your local run script.
+
+global.json — repository root, new file
+
+json
+{
+  "test": {
+    "runner": "Microsoft.Testing.Platform"
+  }
+}
+This is the entire fix for the error you pasted. It must sit at the repo root (next to .github/ and src/), not inside src/, because dotnet discovers it by walking up from the working directory, and CI invokes dotnet test from the repo root. A root-level file is found whether you run from the root or from src/.
+
+.github/workflows/build-and-test.yml — full file
+
+yaml
+# GitHub Actions Workflow: Build and Test
+# Triggers on every push and pull request to any branch
+# Builds and tests on all major platforms
+
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+permissions:
+  contents: read
+
+# Don't pile up redundant runs for the same ref; cancel superseded ones.
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          # .NET 10 is GA, so pin to the stable channel (no preview quality).
+          dotnet-version: '10.0.x'
+
+      - name: Display .NET info
+        run: dotnet --info
+
+      - name: Restore dependencies
+        run: dotnet restore src/NetworkMonitor.slnx
+
+      - name: Build solution
+        run: dotnet build src/NetworkMonitor.slnx --configuration Release --no-restore
+
+      - name: Run tests
+        # .NET 10 SDK + xUnit v3 4.0.0 run on Microsoft.Testing.Platform (MTP).
+        # global.json opts `dotnet test` into native MTP mode, which:
+        #   * needs an explicit target (--solution), not a bare positional path
+        #   * ignores VSTest's --logger, so xUnit's own --report-xunit-trx is
+        #     used instead (built into xunit.v3 - no extra package required).
+        # Everything before `--` is a dotnet build/test option; everything
+        # after `--` is forwarded to the xUnit test application.
+        run: dotnet test --solution src/NetworkMonitor.slnx --configuration Release --no-build -- --report-xunit-trx --report-xunit-trx-filename test-results.trx
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}
+          path: '**/test-results.trx'
+          if-no-files-found: warn
+          retention-days: 30
+Only the Run tests step changed. Two things forced it: in native MTP mode the .NET 10+ dotnet test syntax does not accept a bare positional argument — you use --project, --solution, or --test-modules, so src/NetworkMonitor.slnx is now passed via --solution; and VSTest-specific options such as --logger are silently ignored in MTP mode. I switched to xUnit's own report switch, which is the clean choice here: the switches carrying xunit in their names (--report-xunit-html and --report-xunit-trx) are unaffected by the MTP change, it's built into xunit.v3 so nothing new is added, and unlike Microsoft's --report-trx extension it records the correct test names for theory data rows. Reports are written to the results folder, which defaults to TestResults under the output folder, so your existing recursive **/test-results.trx upload glob still matches. 
+Run .NET Tests skill | dotnet-skills +3
+
+src/run.sh — full file (recommended, not strictly required)
+
+bash
+#!/bin/bash
+# =============================================================================
+# Run Network Monitor
+# =============================================================================
+# Convenience script to build and run the network monitor.
+#
+# Usage:
+#   ./run.sh                # Build and run
+#   ./run.sh --no-build     # Run without building
+#   ./run.sh --test         # Run tests only
+# =============================================================================
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+case "${1:-}" in
+    --no-build)
+        echo "Running without build..."
+        dotnet run --project NetworkMonitor.Console --no-build
+        ;;
+    --test)
+        echo "Running tests..."
+        # .NET 10 SDK runs `dotnet test` on Microsoft.Testing.Platform (see the
+        # repo-root global.json). MTP mode wants an explicit target rather than
+        # relying on the current directory, so name the solution directly.
+        dotnet test --solution NetworkMonitor.slnx --verbosity normal
+        ;;
+    *)
+        echo "Building and running..."
+        dotnet build
+        dotnet run --project NetworkMonitor.Console
+        ;;
+esac
+Your ./run.sh --test shortcut calls dotnet test with no target. That very likely still auto-detects the solution in src/, but MTP mode is documented around explicit targets, so naming the solution is cheap insurance. If you don't use this script, skip it — it has no bearing on the error.
+
+A few notes, none needed for the fix:
+
+NetworkMonitor.Tests.csproj is untouched. Microsoft.NET.Test.Sdk is technically unnecessary for xUnit v3 (the project is already an MTP test app via xunit.v3), but it's dormant under the global.json opt-in and removing it is a larger, riskier change than your error warrants — so I left your package set exactly as is. If you ever want to slim it, that package and even xunit.runner.visualstudio can go, since MTP handles IDE integration.
+
+src/generate-network-monitor.sh (the one-shot script from your earlier test-fix session) also calls dotnet test; if you ever re-run it, the same --solution NetworkMonitor.slnx applies. And if TestResults/ isn't already in your .gitignore, add it — MTP writes reports there and there's already a stray TestResults/ folder committed under the test project.
+
+To verify from the repo root:
+
+dotnet restore src/NetworkMonitor.slnx
+dotnet build   src/NetworkMonitor.slnx -c Release
+dotnet test --solution src/NetworkMonitor.slnx -c Release --no-build
+Want me to repackage these as a single idempotent bash script — writes the files, runs build + test, prints a structured summary — in your usual format?
+
+
+
+Want to be notified when Claude responds?
+
+
+
+
+Claude is AI and can make mistakes. Please double-check cited sources.
+
+
+
+
+28
+19
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

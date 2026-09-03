@@ -22,7 +22,10 @@ case "${1:-}" in
         ;;
     --test)
         echo "Running tests..."
-        dotnet test --verbosity normal
+        # .NET 10 SDK runs `dotnet test` on Microsoft.Testing.Platform (see the
+        # repo-root global.json). MTP mode wants an explicit target rather than
+        # relying on the current directory, so name the solution directly.
+        dotnet test --solution NetworkMonitor.slnx --verbosity normal
         ;;
     *)
         echo "Building and running..."
