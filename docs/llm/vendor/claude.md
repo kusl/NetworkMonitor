@@ -12298,3 +12298,103 @@ Claude is AI and can make mistakes. Please double-check cited sources.
 
 
 
+kushal@fedora:~/src/dotnet/network-monitor/src$ time dotnet restore src/NetworkMonitor.slnx; dotnet build   src/NetworkMonitor.slnx -configuration Release; dotnet test --solution src/NetworkMonitor.slnx -configuration Release --no-build;
+MSBUILD : error MSB1009: Project file does not exist.
+Switch: src/NetworkMonitor.slnx
+
+real	0m0.177s
+user	0m0.090s
+sys	0m0.050s
+MSBUILD : error MSB1001: Unknown switch.
+    Full command line: '/usr/lib64/dotnet/sdk/10.0.111/MSBuild.dll -maxcpucount --verbosity:m -tlp:default=auto --property:NuGetInteractive=true --restoreProperty:NuGetInteractive=true --restoreProperty:EnableDefaultCompileItems=false --restoreProperty:EnableDefaultEmbeddedResourceItems=false --restoreProperty:EnableDefaultNoneItems=false src/NetworkMonitor.slnx -configuration Release -consoleloggerparameters:Summary -restore -nologo'
+  Switches appended by response files:
+Switch: -configuration
+
+For switch syntax, type "MSBuild -help"
+The provided file path does not exist: /home/kushal/src/dotnet/network-monitor/src/src/NetworkMonitor.slnx.
+kushal@fedora:~/src/dotnet/network-monitor/src$ time dotnet restore src/NetworkMonitor.slnx; dotnet build   src/NetworkMonitor.slnx --configuration Release; dotnet test --solution src/NetworkMonitor.slnx --configuration Release --no-build;
+MSBUILD : error MSB1009: Project file does not exist.
+Switch: src/NetworkMonitor.slnx
+
+real	0m0.107s
+user	0m0.083s
+sys	0m0.023s
+MSBUILD : error MSB1009: Project file does not exist.
+Switch: src/NetworkMonitor.slnx
+The provided file path does not exist: /home/kushal/src/dotnet/network-monitor/src/src/NetworkMonitor.slnx.
+kushal@fedora:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor; time dotnet restore src/NetworkMonitor.slnx; dotnet build   src/NetworkMonitor.slnx --configuration Release; dotnet test --solution src/NetworkMonitor.slnx --configuration Release --no-build;
+Restore complete (0.7s)
+
+Build succeeded in 0.8s
+
+real	0m0.920s
+user	0m0.714s
+sys	0m0.169s
+Restore complete (0.4s)
+  NetworkMonitor.Core net10.0 succeeded (2.9s) → src/NetworkMonitor.Core/bin/Release/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Console net10.0 succeeded (0.4s) → src/NetworkMonitor.Console/bin/Release/net10.0/NetworkMonitor.Console.dll
+  NetworkMonitor.Tests net10.0 succeeded (0.7s) → src/NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll
+
+Build succeeded in 4.2s
+Running tests from src/NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll (net10.0|x64)
+src/NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll (net10.0|x64) passed (598ms)
+
+Test run summary: Passed!
+  total: 89
+  failed: 0
+  succeeded: 89
+  skipped: 0
+  duration: 773ms
+kushal@fedora:~/src/dotnet/network-monitor$ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
