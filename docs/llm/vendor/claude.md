@@ -11998,3 +11998,11 @@ Claude is AI and can make mistakes. Please double-check responses.
 
 
 
+00
+16
+
+I updated the nuget packages and got this error 
+  NetworkMonitor.Tests net10.0 failed with 1 error(s) (0.0s)
+    /home/kushal/.nuget/packages/microsoft.testing.platform.msbuild/2.3.3/buildMultiTargeting/Microsoft.Testing.Platform.MSBuild.targets(320,5): error Testing with VSTest target is no longer supported by Microsoft.Testing.Platform on .NET 10 SDK and later. If you use dotnet test, you should opt-in to the new dotnet test experience. For more information, see https://aka.ms/dotnet-test-mtp-error
+Build failed with 1 error(s) in 0.6s
+please give me FULL files for all files that need to change. 
