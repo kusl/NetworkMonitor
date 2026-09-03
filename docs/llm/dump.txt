@@ -1,11 +1,11 @@
 ===============================================================================
 PROJECT EXPORT
-Generated (UTC): 2026-09-03 21:40:14
+Generated (UTC): 2026-09-03 22:12:05
 Project Path:    /home/kushal/src/dotnet/network-monitor
-Git Commit:      1dca778b258b69ac2c18fd2ff17ed140a3150b1d
+Git Commit:      e8bd5dde622b94084cda8879045f983672c74b18
 Git Branch:      master
 .NET SDK:        10.0.111
-Files Exported:  75
+Files Exported:  76
 ===============================================================================
 
 DIRECTORY STRUCTURE:
@@ -19,6 +19,7 @@ DIRECTORY STRUCTURE:
 │       ├── build-and-test.yml
 │       ├── dependency-check.yml
 │       └── release.yml
+├── global.json
 ├── README.md
 └── src
     ├── Directory.Build.props
@@ -152,10 +153,10 @@ updates:
 
 ================================================================================
 FILE:     .github/workflows/build-and-test.yml
-SIZE:     1.54 KB (1580 bytes)
-LINES:    61
-SHA256:   557a7938d036c8803ecd95426bcc98e2cab4c73990a71e378d1879aec3498b41
-MODIFIED: 2026-07-10 19:02:21
+SIZE:     2.07 KB (2121 bytes)
+LINES:    68
+SHA256:   a304619acb4771f9fb1bc559438c8f2af204584a918cbfcfbc00d7470163c691
+MODIFIED: 2026-09-03 18:08:14
 ================================================================================
 
 # GitHub Actions Workflow: Build and Test
@@ -209,7 +210,14 @@ jobs:
         run: dotnet build src/NetworkMonitor.slnx --configuration Release --no-restore
 
       - name: Run tests
-        run: dotnet test src/NetworkMonitor.slnx --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        # .NET 10 SDK + xUnit v3 4.0.0 run on Microsoft.Testing.Platform (MTP).
+        # global.json opts `dotnet test` into native MTP mode, which:
+        #   * needs an explicit target (--solution), not a bare positional path
+        #   * ignores VSTest's --logger, so xUnit's own --report-xunit-trx is
+        #     used instead (built into xunit.v3 - no extra package required).
+        # Everything before `--` is a dotnet build/test option; everything
+        # after `--` is forwarded to the xUnit test application.
+        run: dotnet test --solution src/NetworkMonitor.slnx --configuration Release --no-build -- --report-xunit-trx --report-xunit-trx-filename test-results.trx
 
       - name: Upload test results
         uses: actions/upload-artifact@v7
@@ -1385,6 +1393,21 @@ log "$GREEN" ""
 log "$GREEN" "Export completed successfully!"
 log "$YELLOW" "Output file: $OUTPUT_PATH"
 log "$CYAN" "Total source size: ${TOTAL_MB} MB across ${FILE_COUNT} files"
+
+
+================================================================================
+FILE:     global.json
+SIZE:     0.06 KB (63 bytes)
+LINES:    5
+SHA256:   9384d5f057ed52752aa3dc5407e75b2265495154fb3a6597afe70b79f8776f93
+MODIFIED: 2026-09-03 18:08:03
+================================================================================
+
+{
+  "test": {
+    "runner": "Microsoft.Testing.Platform"
+  }
+}
 
 
 ================================================================================
@@ -9763,10 +9786,10 @@ echo "==========================================================================
 
 ================================================================================
 FILE:     src/run.sh
-SIZE:     0.92 KB (946 bytes)
-LINES:    32
-SHA256:   9bc5f51859972b7405001f3f50ec1dca3471c4ee98b47eb1e2239b64d4c3a768
-MODIFIED: 2025-12-26 08:04:46
+SIZE:     1.18 KB (1212 bytes)
+LINES:    35
+SHA256:   e1b349f5e3cfd4556065af2e17a0f9c6ffcb483e447672da38cbb9229bf61e86
+MODIFIED: 2026-09-03 18:08:39
 ================================================================================
 
 #!/bin/bash
@@ -9793,7 +9816,10 @@ case "${1:-}" in
         ;;
     --test)
         echo "Running tests..."
-        dotnet test --verbosity normal
+        # .NET 10 SDK runs `dotnet test` on Microsoft.Testing.Platform (see the
+        # repo-root global.json). MTP mode wants an explicit target rather than
+        # relying on the current directory, so name the solution directly.
+        dotnet test --solution NetworkMonitor.slnx --verbosity normal
         ;;
     *)
         echo "Building and running..."
@@ -9804,9 +9830,9 @@ esac
 
 
 ===============================================================================
-EXPORT COMPLETED (UTC): 2026-09-03 21:40:15
-Total Files Exported:   75
-Total Source Size:      0.30 MB (317313 bytes)
+EXPORT COMPLETED (UTC): 2026-09-03 22:12:06
+Total Files Exported:   76
+Total Source Size:      0.30 MB (318183 bytes)
 Output File:            /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
-DUMP SHA256 (of all lines above this one): fc2228e64d20ed7256a50e5321b6e79671e42608166d67118356120c13843d66
+DUMP SHA256 (of all lines above this one): 177be0d05ceb9d996c9b2951b173220f10c3e5ac49219f71f608256255ea531f
