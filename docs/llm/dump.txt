@@ -1,8 +1,8 @@
 ===============================================================================
 PROJECT EXPORT
-Generated (UTC): 2026-09-04 17:39:35
+Generated (UTC): 2026-09-04 17:41:10
 Project Path:    /home/kushal/src/dotnet/network-monitor
-Git Commit:      505817b4be57b18b9b907f15e14ccc7e483b360d
+Git Commit:      897760f0653252476000ee537e49b57ec6ad41fd
 Git Branch:      master
 .NET SDK:        10.0.111
 Files Exported:  77
@@ -3082,10 +3082,10 @@ public interface IRemoteDatabaseClient
 
 ================================================================================
 FILE:     src/NetworkMonitor.Core/RemoteSync/RemoteSyncService.cs
-SIZE:     15.60 KB (15979 bytes)
+SIZE:     15.65 KB (16024 bytes)
 LINES:    450
-SHA256:   b2714de4a8170598cdb04731c16ef89ce5b67cb869fda3bb1f0533b49b77cf56
-MODIFIED: 2026-09-04 08:48:39
+SHA256:   6e7ab85a5ea41b8c364bca80a1bf4aee4722fd1cacee8d74000854acf42236b5
+MODIFIED: 2026-09-04 13:40:49
 ================================================================================
 
 using System.Globalization;
@@ -3456,7 +3456,7 @@ public sealed class RemoteSyncService : BackgroundService
         }
     }
 
-    private List<HranaStatement> BuildInsertStatements(IReadOnlyList<CheckRollup> rows)
+    private List<HranaStatement> BuildInsertStatements(System.Collections.Generic.List<NetworkMonitor.Core.Models.CheckRollup> rows)
     {
         var statements = new List<HranaStatement>();
         var syncedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -9868,9 +9868,9 @@ exit $OVERALL
 
 
 ===============================================================================
-EXPORT COMPLETED (UTC): 2026-09-04 17:39:36
+EXPORT COMPLETED (UTC): 2026-09-04 17:41:11
 Total Files Exported:   77
-Total Source Size:      0.31 MB (327756 bytes)
+Total Source Size:      0.31 MB (327801 bytes)
 Output File:            /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
-DUMP SHA256 (of all lines above this one): d1fcb4cb7d295a76eeb93db35609704e47060f55731538b439ff8b4c6b0b1e91
+DUMP SHA256 (of all lines above this one): fcb31dc0c328b3b360245199f0c7452bb8f19885d800ada4a1ab5194df06d9de

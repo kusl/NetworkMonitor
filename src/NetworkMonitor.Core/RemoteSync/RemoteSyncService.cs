@@ -366,7 +366,7 @@ public sealed class RemoteSyncService : BackgroundService
         }
     }
 
-    private List<HranaStatement> BuildInsertStatements(IReadOnlyList<CheckRollup> rows)
+    private List<HranaStatement> BuildInsertStatements(System.Collections.Generic.List<NetworkMonitor.Core.Models.CheckRollup> rows)
     {
         var statements = new List<HranaStatement>();
         var syncedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
