@@ -47,6 +47,11 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         unit: "%",
         description: "Packet loss percentage distribution");
 
+    private static readonly Histogram<double> JitterHistogram = Meter.CreateHistogram<double>(
+        "network_monitor.jitter_ms",
+        unit: "ms",
+        description: "Intra-cycle ping jitter distribution");
+
     private readonly IPingService _pingService;
     private readonly INetworkConfigurationService _configService;
     private readonly IDnsResolverService? _dnsResolver;
@@ -100,7 +105,9 @@ public sealed class NetworkMonitorService : INetworkMonitorService
 
         if (routerEnabled)
         {
-            (routerResult, routerPacketLoss) = await PingWithMetricsAsync(routerAddress!, cancellationToken);
+            var agg = await PingWithMetricsAsync(routerAddress!, cancellationToken);
+            routerResult = agg.Result;
+            routerPacketLoss = agg.PacketLossPercent;
 
             if (routerResult is { Success: true, RoundtripTimeMs: not null })
             {
@@ -112,10 +119,12 @@ public sealed class NetworkMonitorService : INetworkMonitorService
             }
 
             PacketLossHistogram.Record(routerPacketLoss, new KeyValuePair<string, object?>("target", "router"));
+            RecordJitter(agg.JitterMs, "router");
 
             targetResults.Add(new TargetCheckResult(
                 new MonitorTarget("Router", routerAddress!, TargetCategory.Router),
-                routerResult, null, null, routerPacketLoss, DateTimeOffset.UtcNow));
+                routerResult, null, null, routerPacketLoss, DateTimeOffset.UtcNow,
+                agg.MinMs, agg.MaxMs, agg.JitterMs, ResolvedAddress: null));
 
             // Feed reachability back so config can re-detect a stale/changed
             // gateway (roaming laptops) or one that only came up after startup.
@@ -129,7 +138,9 @@ public sealed class NetworkMonitorService : INetworkMonitorService
 
         if (internetEnabled)
         {
-            (internetResult, internetPacketLoss) = await PingWithMetricsAsync(internetTarget, cancellationToken);
+            var agg = await PingWithMetricsAsync(internetTarget, cancellationToken);
+            internetResult = agg.Result;
+            internetPacketLoss = agg.PacketLossPercent;
 
             if (internetResult is { Success: true, RoundtripTimeMs: not null })
             {
@@ -141,6 +152,7 @@ public sealed class NetworkMonitorService : INetworkMonitorService
             }
 
             PacketLossHistogram.Record(internetPacketLoss, new KeyValuePair<string, object?>("target", "internet"));
+            RecordJitter(agg.JitterMs, "internet");
 
             DnsResult? internetDns = null;
             if (_options.EnableDnsChecks && _dnsResolver != null && !IPAddress.TryParse(internetTarget, out _))
@@ -152,7 +164,8 @@ public sealed class NetworkMonitorService : INetworkMonitorService
 
             targetResults.Add(new TargetCheckResult(
                 new MonitorTarget("Internet", internetTarget, TargetCategory.PublicDns),
-                internetResult, null, internetDns, internetPacketLoss, DateTimeOffset.UtcNow));
+                internetResult, null, internetDns, internetPacketLoss, DateTimeOffset.UtcNow,
+                agg.MinMs, agg.MaxMs, agg.JitterMs, FirstResolved(internetDns)));
         }
 
         // ---- Custom targets (bounded parallelism) ----
@@ -228,7 +241,7 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         return await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
-    private async Task<(PingResult Result, double PacketLossPercent)> PingWithMetricsAsync(
+    private async Task<PingAggregate> PingWithMetricsAsync(
         string target,
         CancellationToken cancellationToken)
     {
@@ -240,12 +253,7 @@ public sealed class NetworkMonitorService : INetworkMonitorService
                 _options.TimeoutMs,
                 cancellationToken);
 
-            var packetLoss = results.Count > 0
-                ? (double)(results.Count - results.Count(r => r.Success)) / results.Count * 100
-                : 100.0;
-
-            var aggregated = AggregateResults(results);
-            return (aggregated, packetLoss);
+            return ComputeAggregate(results);
         }
         catch (OperationCanceledException)
         {
@@ -254,7 +262,7 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Error pinging {Target}", target);
-            return (PingResult.Failed(target, ex.Message), 100.0);
+            return new PingAggregate(PingResult.Failed(target, ex.Message), 100.0, null, null, null);
         }
     }
 
@@ -262,9 +270,8 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         CustomTargetConfig target,
         CancellationToken cancellationToken)
     {
-        PingResult? pingResult = null;
         DnsResult? dnsResult = null;
-        double packetLoss = 0;
+        var agg = new PingAggregate(PingResult.Failed(target.Address, "not checked"), 100, null, null, null);
 
         try
         {
@@ -275,9 +282,10 @@ public sealed class NetworkMonitorService : INetworkMonitorService
                     new KeyValuePair<string, object?>("target", target.Name));
             }
 
-            (pingResult, packetLoss) = await PingWithMetricsAsync(target.Address, cancellationToken);
-            PacketLossHistogram.Record(packetLoss,
+            agg = await PingWithMetricsAsync(target.Address, cancellationToken);
+            PacketLossHistogram.Record(agg.PacketLossPercent,
                 new KeyValuePair<string, object?>("target", target.Name));
+            RecordJitter(agg.JitterMs, target.Name);
         }
         catch (OperationCanceledException)
         {
@@ -286,50 +294,83 @@ public sealed class NetworkMonitorService : INetworkMonitorService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Error checking custom target {Name} ({Address})", target.Name, target.Address);
-            pingResult = PingResult.Failed(target.Address, ex.Message);
-            packetLoss = 100;
+            agg = new PingAggregate(PingResult.Failed(target.Address, ex.Message), 100, null, null, null);
         }
 
         return new TargetCheckResult(
             new MonitorTarget(target.Name, target.Address, TargetCategory.Custom),
-            pingResult, null, dnsResult, packetLoss, DateTimeOffset.UtcNow);
+            agg.Result, null, dnsResult, agg.PacketLossPercent, DateTimeOffset.UtcNow,
+            agg.MinMs, agg.MaxMs, agg.JitterMs, FirstResolved(dnsResult));
     }
 
-    private static PingResult AggregateResults(IReadOnlyList<PingResult> results)
+    private static void RecordJitter(long? jitterMs, string target)
+    {
+        if (jitterMs is { } j)
+        {
+            JitterHistogram.Record(j, new KeyValuePair<string, object?>("target", target));
+        }
+    }
+
+    private static string? FirstResolved(DnsResult? dns) =>
+        dns is { Success: true } d && d.ResolvedAddresses.Count > 0 ? d.ResolvedAddresses[0] : null;
+
+    /// <summary>
+    /// Reduces the pings sent this cycle to a single representative result plus
+    /// packet loss and intra-burst latency statistics (min, max, jitter).
+    /// </summary>
+    /// <remarks>
+    /// The representative latency is the MEDIAN of successful pings, which is
+    /// stable and dampens the "first ping in a Wi-Fi burst is slow" artifact.
+    /// Jitter is the mean absolute difference between successive successful pings
+    /// (classic ping jitter), computed in the order the pings were sent.
+    /// </remarks>
+    private static PingAggregate ComputeAggregate(IReadOnlyList<PingResult> results)
     {
         if (results.Count == 0)
         {
-            return PingResult.Failed("unknown", "No ping results");
+            return new PingAggregate(PingResult.Failed("unknown", "No ping results"), 100.0, null, null, null);
         }
 
-        var successful = results.Where(r => r.Success).ToList();
         var target = results[0].Target;
+        var packetLoss = (double)(results.Count - results.Count(r => r.Success)) / results.Count * 100;
 
-        if (successful.Count == 0)
-        {
-            return PingResult.Failed(target, results[0].ErrorMessage ?? "All pings failed");
-        }
-
-        // Median latency of successful pings for stability. The median also
-        // dampens the "first ping in a Wi-Fi burst is slow" artifact.
-        var sortedLatencies = successful
-            .Where(r => r.RoundtripTimeMs.HasValue)
+        var successfulLatencies = results
+            .Where(r => r.Success && r.RoundtripTimeMs.HasValue)
             .Select(r => r.RoundtripTimeMs!.Value)
-            .OrderBy(l => l)
             .ToList();
 
-        var medianLatency = sortedLatencies.Count > 0
-            ? sortedLatencies[sortedLatencies.Count / 2]
-            : 0;
+        if (successfulLatencies.Count == 0)
+        {
+            return new PingAggregate(
+                PingResult.Failed(target, results[0].ErrorMessage ?? "All pings failed"),
+                packetLoss, null, null, null);
+        }
 
-        return PingResult.Succeeded(target, medianLatency);
+        var sorted = successfulLatencies.OrderBy(l => l).ToList();
+        var median = sorted[sorted.Count / 2];
+        long min = sorted[0];
+        long max = sorted[^1];
+
+        long? jitter = null;
+        if (successfulLatencies.Count >= 2)
+        {
+            long sumAbsDiff = 0;
+            for (var i = 1; i < successfulLatencies.Count; i++)
+            {
+                sumAbsDiff += Math.Abs(successfulLatencies[i] - successfulLatencies[i - 1]);
+            }
+
+            jitter = (long)Math.Round((double)sumAbsDiff / (successfulLatencies.Count - 1), MidpointRounding.AwayFromZero);
+        }
+
+        return new PingAggregate(PingResult.Succeeded(target, median), packetLoss, min, max, jitter);
     }
 
     /// <summary>
     /// Computes overall network health.
     /// </summary>
     /// <remarks>
-    /// DESIGN NOTE — why internet latency is the primary signal:
+    /// DESIGN NOTE - why internet latency is the primary signal:
     ///
     /// A consumer router answers ICMP echo on its control-plane CPU, which is
     /// commonly rate-limited and de-prioritized, while it forwards real traffic
@@ -391,28 +432,28 @@ public sealed class NetworkMonitorService : INetworkMonitorService
             }
 
             var routerNote = routerSlow
-                ? $" (router replies slowly: {routerLatency}ms — likely ICMP de-prioritization, not a path problem)"
+                ? $" (router replies slowly: {routerLatency}ms - likely ICMP de-prioritization, not a path problem)"
                 : string.Empty;
 
             var internetLatency = internetResult.RoundtripTimeMs ?? 0;
 
             if (internetLatency <= options.ExcellentLatencyMs)
             {
-                return (NetworkHealth.Excellent, $"Excellent — Internet: {internetLatency}ms{routerNote}");
+                return (NetworkHealth.Excellent, $"Excellent - Internet: {internetLatency}ms{routerNote}");
             }
 
             if (internetLatency <= options.GoodLatencyMs)
             {
-                return (NetworkHealth.Good, $"Good — Internet: {internetLatency}ms{routerNote}");
+                return (NetworkHealth.Good, $"Good - Internet: {internetLatency}ms{routerNote}");
             }
 
             // Internet latency itself is high. If the local hop is ALSO slow,
             // the local link is the likely culprit; otherwise blame upstream.
             return routerSlow
                 ? (NetworkHealth.Degraded,
-                    $"High latency on internet ({internetLatency}ms) and router ({routerLatency}ms) — possible local Wi-Fi/link issue")
+                    $"High latency on internet ({internetLatency}ms) and router ({routerLatency}ms) - possible local Wi-Fi/link issue")
                 : (NetworkHealth.Poor,
-                    $"High internet latency: {internetLatency}ms — likely upstream/ISP");
+                    $"High internet latency: {internetLatency}ms - likely upstream/ISP");
         }
 
         // Internet check disabled/unavailable: fall back to the router.
@@ -460,4 +501,16 @@ public sealed class NetworkMonitorService : INetworkMonitorService
 
         return (NetworkHealth.Degraded, $"Some custom targets unreachable ({reachable}/{total})");
     }
+
+    /// <summary>
+    /// Representative outcome of a cycle's ping burst for one target: the median
+    /// result plus packet loss and intra-burst min/max/jitter (nullable when no
+    /// ping succeeded, or when fewer than two succeeded for jitter).
+    /// </summary>
+    private readonly record struct PingAggregate(
+        PingResult Result,
+        double PacketLossPercent,
+        long? MinMs,
+        long? MaxMs,
+        long? JitterMs);
 }

@@ -119,21 +119,27 @@ Configuration is done via `appsettings.json` or environment variables. Out of th
     "MaxConcurrentChecks": 6
   },
   "Storage": {
-    "RetentionDays": 30,
-    "DatabasePath": ""
+    "ApplicationName": "NetworkMonitor",
+    "DatabaseFileName": "network-monitor.db",
+    "DataDirectoryOverride": "",
+    "RetentionDays": 30
   },
   "RemoteSync": {
     "Url": "",
     "AuthToken": "",
-    "SyncIntervalMinutes": 1440,
+    "Mode": "rollup",
+    "BucketMinutes": 60,
+    "SyncIntervalMinutes": 60,
     "InitialDelaySeconds": 60,
     "BatchSize": 500,
     "MaxRowsPerSync": 25000,
     "RequestTimeoutSeconds": 30,
-    "TableName": "ping_results"
+    "TableName": "check_rollups"
   }
 }
 ```
+
+> `DataDirectoryOverride` is normally left empty so the XDG-compliant per-user data directory is used; set it only to force a specific location (for example, in tests). The database file name defaults to `network-monitor.db`.
 
 ### Configuration Options
 
@@ -191,13 +197,16 @@ Because of this, a high **router** latency on its own is treated as informationa
 
 ### Database Schema
 
-The SQLite database (`network-monitor.db`) is opened in WAL (write-ahead logging) mode so a reader (such as a trendline query) can run concurrently with the writer. It contains:
+The SQLite database (`network-monitor.db`) uses a small **normalized** schema and is opened in WAL (write-ahead logging) mode so a reader (such as a trendline or rollup query) can run concurrently with the writer. It contains four tables:
 
-- `ping_results` - Individual ping results with timestamps. Columns include `target`, `target_name`, `success`, `roundtrip_ms`, `packet_loss`, `timestamp`, `error_message`, and `target_type`. A row is written for **every** target checked each cycle — router, internet, and all custom targets — not just router and internet.
-- `network_status` - Aggregated health status snapshots
-- `sync_state` - Small key/value table used by the optional remote sync feature to track its replication checkpoint
+- `targets` — one row per monitored target (`id`, `name`, `address`, `category`), with `UNIQUE(address, category)`. Each hostname/friendly-name/category is stored **once** and referenced by integer id, rather than being repeated on every measurement row.
+- `monitor_cycles` — one row per monitoring cycle (`id`, `ts_ms`, `health`, `message`). The timestamp is 64-bit Unix milliseconds; health is the enum's integer value.
+- `check_results` — one measurement per target per cycle (`cycle_id`, `target_id`, `success`, `rtt_ms`, `rtt_min_ms`, `rtt_max_ms`, `jitter_ms`, `dns_ms`, `loss_pct`, `resolved_ip`, `error_message`), keyed by `(cycle_id, target_id)`. Every measurement links to the exact cycle that produced it, and all measurements in a cycle share the cycle's single timestamp, so cycle/measurement joins are exact.
+- `sync_state` — small key/value table used by the optional remote sync feature to track its replication checkpoint.
 
-The `target_name` and `packet_loss` columns are added automatically to pre-existing databases on first run (an in-place, non-destructive migration). Historical data is automatically pruned based on the `RetentionDays` setting.
+This shape keeps full per-cycle fidelity — DNS resolution time, the pinged IP, and the intra-burst min/max/jitter are all retained — while eliminating the string duplication and write-only tables of the previous flat layout. Latency is stored once (on the measurement), not duplicated across a status table.
+
+**In-place upgrade.** On first run against a database created by an earlier version, the incompatible legacy tables (`ping_results`, `network_status`) and the old sync checkpoint key are dropped and the normalized tables are created — the file upgrades itself, so there is nothing to delete by hand. Legacy per-cycle rows are *not* migrated; they are discarded, which is acceptable because the data is transient telemetry. Historical data is automatically pruned based on the `RetentionDays` setting (measurements first, then their cycles), and freed pages are reclaimed with incremental vacuum.
 
 ### Telemetry Files
 
@@ -208,7 +217,9 @@ OpenTelemetry metrics are exported to JSON files in the `telemetry` subdirectory
 
 ## Remote Sync (optional)
 
-The monitor can replicate its local ping history to a remote [libSQL](https://github.com/tursodatabase/libsql) / [Turso](https://turso.tech/)-compatible database. This is entirely **opt-in**: with no URL and token configured, the feature does nothing.
+The monitor can replicate its local check history to a remote [libSQL](https://github.com/tursodatabase/libsql) / [Turso](https://turso.tech/)-compatible database. This is entirely **opt-in**: with no URL and token configured, the feature does nothing.
+
+**What gets synced: rollups, not raw rows.** The local database keeps every raw measurement, but replicating them one-for-one does not scale — at dozens of targets on a few-second cadence that is hundreds of thousands of rows per day, i.e. *millions* of remote row-writes per month, which permanently outruns any reasonable free-tier budget. So instead of shipping raw rows, sync ships one compact **rollup** per target per closed time bucket: a single aggregate row summarizing all of that target's cycles in the bucket (sample count, successes, average/min/max latency, average jitter, average DNS time, average packet loss). At the default hourly bucket that is at most *(number of targets)* rows per hour per machine — a few thousand rows a day rather than a million — while preserving the shape of the data for dashboards and trend queries. Only **fully-elapsed** buckets are shipped; the current, still-open bucket is held back until it closes.
 
 Configure it under the `RemoteSync` section of `appsettings.json`, or via environment variables (`RemoteSync__Url`, `RemoteSync__AuthToken`):
 
@@ -216,21 +227,23 @@ Configure it under the `RemoteSync` section of `appsettings.json`, or via enviro
 |--------|---------|-------------|
 | `Url` | *(empty)* | Remote database URL. Accepts `libsql://`, `wss://`, `ws://`, `https://`, or `http://`; the scheme is normalized to HTTP(S) internally. Empty disables the feature. |
 | `AuthToken` | *(empty)* | Bearer token for the remote database. Empty disables the feature. |
-| `SyncIntervalMinutes` | `1440` | Minimum minutes between sync attempts (clamped to a minimum of 5). Default syncs roughly once a day. |
+| `Mode` | `rollup` | Replication mode. `rollup` ships per-target, per-bucket aggregates (the only supported mode). |
+| `BucketMinutes` | `60` | Width of a rollup bucket in minutes (minimum 1). Smaller buckets give finer remote resolution at the cost of more rows. |
+| `SyncIntervalMinutes` | `60` | Minimum minutes between sync attempts (clamped to a minimum of 5). |
 | `InitialDelaySeconds` | `60` | Delay before the first sync after startup, giving the network stack time to come up. |
-| `BatchSize` | `500` | Rows read from the local database per batch. |
-| `MaxRowsPerSync` | `25000` | Upper bound on rows pushed in a single run so a large backlog can't monopolize the process. |
+| `BatchSize` | `500` | Rollup rows read from the local database per batch. |
+| `MaxRowsPerSync` | `25000` | Upper bound on rollup rows pushed in a single run so a large backlog can't monopolize the process. |
 | `RequestTimeoutSeconds` | `30` | HTTP timeout for a single pipeline request. |
-| `TableName` | `ping_results` | Remote table name (sanitized to a safe SQL identifier). |
+| `TableName` | `check_rollups` | Remote table name (sanitized to a safe SQL identifier). |
 
-Any provider that exposes the libSQL HTTP "Hrana" pipeline endpoint (`/v2/pipeline`) with bearer-token auth works, not just Turso.
+The remote table `check_rollups` is keyed by `(machine, target_address, bucket_start)` and written with `INSERT OR REPLACE`, so re-sending a bucket is idempotent. Any provider that exposes the libSQL HTTP "Hrana" pipeline endpoint (`/v2/pipeline`) with bearer-token auth works, not just Turso.
 
 **Design guarantees:**
 
 - Absent or malformed configuration is a no-op, never an error.
 - If the network or the remote is down, the attempt is skipped silently and retried on the next interval.
-- The remote is never assumed healthy: every batch re-creates the table and index with `IF NOT EXISTS`.
-- The local checkpoint only advances after the remote confirms success, so nothing is lost or duplicated across restarts.
+- The remote schema (table + index) is created **once per process run** with `IF NOT EXISTS` — not on every batch — and only rollup rows are shipped thereafter.
+- The local checkpoint (the next un-synced bucket) only advances to the last **complete** bucket that the remote confirms, so nothing is lost or duplicated across restarts; upserts make any re-send idempotent regardless.
 - **No failure in remote sync can ever interrupt network monitoring** — it runs independently and swallows all non-cancellation errors.
 - Rows are tagged with the machine name, so several machines can safely share one remote database.
 

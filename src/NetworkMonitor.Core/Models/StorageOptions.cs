@@ -2,7 +2,7 @@ using System.Globalization;
 namespace NetworkMonitor.Core.Models;
 
 /// <summary>
-/// Configuration for telemetry storage.
+/// Configuration for local SQLite storage.
 /// Follows XDG Base Directory Specification with graceful fallbacks.
 /// </summary>
 public sealed class StorageOptions
@@ -15,7 +15,21 @@ public sealed class StorageOptions
     public string ApplicationName { get; set; } = "NetworkMonitor";
 
     /// <summary>
-    /// Maximum file size in bytes before rotation (25MB default).
+    /// SQLite database file name (inside the resolved data directory).
+    /// </summary>
+    public string DatabaseFileName { get; set; } = "network-monitor.db";
+
+    /// <summary>
+    /// Explicit data directory override. When set to a writable path it is used
+    /// verbatim, bypassing XDG/app-data resolution. Primarily for tests and for
+    /// users who want the database in a specific location. Empty/null means
+    /// "resolve automatically".
+    /// </summary>
+    public string? DataDirectoryOverride { get; set; }
+
+    /// <summary>
+    /// Maximum file size in bytes before rotation (25MB default). Retained for
+    /// compatibility with the telemetry file exporter.
     /// </summary>
     public long MaxFileSizeBytes { get; set; } = 25 * 1024 * 1024;
 
@@ -28,12 +42,21 @@ public sealed class StorageOptions
     /// <summary>
     /// Get the data directory following XDG specification with fallbacks.
     /// Priority:
+    /// 0. DataDirectoryOverride (if set and writable)
     /// 1. XDG_DATA_HOME (Linux)
     /// 2. LocalApplicationData (Windows/macOS)
-    /// 3. Current directory (final fallback)
+    /// 3. ~/.local/share (Linux fallback)
+    /// 4. Current directory (final fallback)
     /// </summary>
     public string GetDataDirectory()
     {
+        // Explicit override wins when it is usable.
+        if (!string.IsNullOrWhiteSpace(DataDirectoryOverride) &&
+            CanWriteToDirectory(DataDirectoryOverride))
+        {
+            return DataDirectoryOverride;
+        }
+
         // Try XDG_DATA_HOME first (Linux)
         var xdgDataHome = Environment.GetEnvironmentVariable("XDG_DATA_HOME");
         if (!string.IsNullOrEmpty(xdgDataHome) && CanWriteToDirectory(xdgDataHome))

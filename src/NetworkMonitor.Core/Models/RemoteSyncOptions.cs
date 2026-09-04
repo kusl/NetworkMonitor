@@ -1,7 +1,7 @@
 namespace NetworkMonitor.Core.Models;
 
 /// <summary>
-/// Configuration for optional replication of local ping history to a remote
+/// Configuration for optional replication of local check history to a remote
 /// libSQL / Turso-compatible database.
 /// </summary>
 /// <remarks>
@@ -13,6 +13,15 @@ namespace NetworkMonitor.Core.Models;
 ///         and retried on the next interval.</item>
 ///   <item>No failure here ever interrupts network monitoring.</item>
 /// </list>
+///
+/// WHAT IS REPLICATED: compact per-target, per-time-bucket <em>rollups</em>, not
+/// raw per-cycle rows. Shipping raw samples (dozens of rows every few seconds)
+/// produces millions of remote row-writes per month and permanently outruns any
+/// reasonable sync budget. Rollups collapse a whole bucket of cycles for one
+/// target into a single row, so at the default hourly bucket the remote receives
+/// at most (number of targets) rows per hour per machine. The local database
+/// always keeps full per-cycle fidelity; only the replicated view is aggregated.
+///
 /// Any provider exposing the libSQL HTTP "Hrana" pipeline endpoint
 /// (<c>/v2/pipeline</c>) with bearer-token auth works, not just Turso.
 ///
@@ -38,10 +47,24 @@ public sealed class RemoteSyncOptions
     public string AuthToken { get; set; } = string.Empty;
 
     /// <summary>
-    /// Minimum time between sync attempts, in minutes. Default: 1440 (once a day).
-    /// Clamped to a minimum of 5 minutes.
+    /// Replication mode. Only <c>"rollup"</c> is currently supported; the value
+    /// is informational and documents intent. Reserved for future modes.
     /// </summary>
-    public int SyncIntervalMinutes { get; set; } = 1440;
+    public string Mode { get; set; } = "rollup";
+
+    /// <summary>
+    /// Width of each rollup bucket, in minutes. Default: 60 (hourly). Larger
+    /// buckets mean fewer remote rows and coarser resolution. Clamped to at
+    /// least 1 minute. Only fully-elapsed buckets are replicated, so the newest
+    /// (still-open) bucket is held back until it closes.
+    /// </summary>
+    public int BucketMinutes { get; set; } = 60;
+
+    /// <summary>
+    /// Minimum time between sync attempts, in minutes. Default: 60 (hourly), so
+    /// each bucket is pushed shortly after it closes. Clamped to a minimum of 5.
+    /// </summary>
+    public int SyncIntervalMinutes { get; set; } = 60;
 
     /// <summary>
     /// Delay before the first sync attempt after startup, in seconds. Default: 60.
@@ -50,13 +73,14 @@ public sealed class RemoteSyncOptions
     public int InitialDelaySeconds { get; set; } = 60;
 
     /// <summary>
-    /// How many rows to read from the local database per batch. Default: 500.
+    /// How many rollup rows to read/push per batch. Default: 500.
     /// </summary>
     public int BatchSize { get; set; } = 500;
 
     /// <summary>
-    /// Upper bound on rows pushed in a single sync run so a large backlog cannot
-    /// monopolize the process. Default: 25000. The remainder syncs next interval.
+    /// Upper bound on rollup rows pushed in a single sync run so a large backlog
+    /// cannot monopolize the process. Default: 25000. The remainder syncs next
+    /// interval.
     /// </summary>
     public int MaxRowsPerSync { get; set; } = 25000;
 
@@ -66,10 +90,10 @@ public sealed class RemoteSyncOptions
     public int RequestTimeoutSeconds { get; set; } = 30;
 
     /// <summary>
-    /// Remote table name for synced ping rows. Default: <c>ping_results</c>.
+    /// Remote table name for synced rollup rows. Default: <c>check_rollups</c>.
     /// Sanitized to a safe SQL identifier before use.
     /// </summary>
-    public string TableName { get; set; } = "ping_results";
+    public string TableName { get; set; } = "check_rollups";
 
     /// <summary>
     /// True when both a URL and an auth token are present. This is a necessary

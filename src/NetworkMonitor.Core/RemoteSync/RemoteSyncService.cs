@@ -9,8 +9,8 @@ using NetworkMonitor.Core.Storage;
 namespace NetworkMonitor.Core.RemoteSync;
 
 /// <summary>
-/// Background service that replicates local ping history to an optional remote
-/// libSQL / Turso-compatible database.
+/// Background service that replicates local check history to an optional remote
+/// libSQL / Turso-compatible database as compact per-target, per-bucket rollups.
 /// </summary>
 /// <remarks>
 /// Design guarantees (all enforced here):
@@ -19,23 +19,33 @@ namespace NetworkMonitor.Core.RemoteSync;
 ///         debug line and exits. It is a pure no-op, never an error.</item>
 ///   <item>Network or remote down: the attempt is skipped and retried on the
 ///         next interval. Nothing is thrown.</item>
-///   <item>The remote is never assumed healthy: every batch (re)creates the
-///         table and index with <c>IF NOT EXISTS</c>.</item>
-///   <item>A local checkpoint row id is only advanced after the remote confirms
-///         success, so nothing is lost or skipped across restarts.</item>
+///   <item>The remote schema is created once per process run (not on every
+///         batch), then only rollup rows are shipped.</item>
+///   <item>A local checkpoint (the next un-synced bucket start) is only advanced
+///         after the remote confirms success, so nothing is lost or double-sent
+///         across restarts. Upserts make re-sends idempotent regardless.</item>
 ///   <item>No failure in this service can interrupt network monitoring - it runs
 ///         independently and swallows all non-cancellation exceptions.</item>
 /// </list>
+///
+/// WHY ROLLUPS: at dozens of targets on a few-second cadence, raw per-cycle rows
+/// are hundreds of thousands per day - millions of remote row-writes per month,
+/// which permanently outruns any reasonable sync budget. A rollup collapses a
+/// whole bucket of cycles for one target into one row, so the remote receives at
+/// most (number of targets) rows per bucket per machine. Only fully-elapsed
+/// buckets are shipped; the current (open) bucket is held back until it closes.
+///
 /// Rows are tagged with <see cref="Environment.MachineName"/> so several machines
 /// can safely share one remote database.
 /// </remarks>
 public sealed class RemoteSyncService : BackgroundService
 {
-    private const string CheckpointKey = "remote_last_synced_id";
+    private const string CheckpointKey = "remote_rollup_next_bucket_ms";
 
-    // 11 columns per row; ~50 rows keeps us at ~550 bound parameters, well under
-    // the conservative 999-parameter limit older SQLite builds enforce.
-    private const int RowsPerInsertStatement = 50;
+    // 15 columns per rollup row; 50 rows keeps us to ~750 bound parameters,
+    // comfortably under the conservative 999-parameter limit older SQLite
+    // builds enforce.
+    private const int RollupsPerInsertStatement = 50;
 
     private readonly IRemoteDatabaseClient _client;
     private readonly IStorageService _storage;
@@ -43,7 +53,10 @@ public sealed class RemoteSyncService : BackgroundService
     private readonly ILogger<RemoteSyncService> _logger;
     private readonly string _machine;
     private readonly string _table;
+    private readonly int _bucketMinutes;
+    private readonly long _bucketMs;
 
+    private bool _schemaEnsured;
     private bool _firstSyncLogged;
 
     public RemoteSyncService(
@@ -59,6 +72,8 @@ public sealed class RemoteSyncService : BackgroundService
         _logger = logger;
         _machine = Environment.MachineName;
         _table = SanitizeTableName(_options.TableName);
+        _bucketMinutes = Math.Max(1, _options.BucketMinutes);
+        _bucketMs = _bucketMinutes * 60_000L;
     }
 
     /// <inheritdoc />
@@ -72,8 +87,9 @@ public sealed class RemoteSyncService : BackgroundService
         }
 
         _logger.LogInformation(
-            "Remote sync enabled (every {Minutes} min) to remote table '{Table}'.",
+            "Remote sync enabled (every {Minutes} min, {Bucket}-min rollups) to remote table '{Table}'.",
             Math.Max(5, _options.SyncIntervalMinutes),
+            _bucketMinutes,
             _table);
 
         try
@@ -90,7 +106,7 @@ public sealed class RemoteSyncService : BackgroundService
         var interval = TimeSpan.FromMinutes(Math.Max(5, _options.SyncIntervalMinutes));
         using var timer = new PeriodicTimer(interval);
 
-        // Run once shortly after startup (so machines that reboot daily still
+        // Run once shortly after startup (so machines that reboot regularly still
         // sync), then once per interval thereafter.
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -123,17 +139,33 @@ public sealed class RemoteSyncService : BackgroundService
     }
 
     /// <summary>
-    /// Performs a single sync pass: pages un-synced rows out of local storage and
-    /// pushes them to the remote database, advancing the checkpoint only on
-    /// confirmed success. Public to allow direct testing.
+    /// Performs a single sync pass: computes rollups for fully-elapsed buckets
+    /// that have not been replicated yet and pushes them to the remote database,
+    /// advancing the checkpoint only on confirmed success. Public to allow direct
+    /// testing.
     /// </summary>
-    /// <returns>The number of rows successfully pushed in this pass.</returns>
+    /// <returns>The number of rollup rows successfully pushed in this pass.</returns>
     public async Task<int> SyncOnceAsync(CancellationToken cancellationToken)
     {
         if (!_options.IsConfigured || !_client.IsConfigured)
         {
             return 0;
         }
+
+        // Ensure the remote schema exists exactly once per process run, before
+        // shipping any data. If this fails, retry it on the next interval.
+        if (!_schemaEnsured)
+        {
+            if (!await EnsureRemoteSchemaAsync(cancellationToken))
+            {
+                return 0;
+            }
+
+            _schemaEnsured = true;
+        }
+
+        var nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var currentBucketStart = nowMs - (nowMs % _bucketMs);
 
         var checkpoint = await ReadCheckpointAsync(cancellationToken);
         var batchSize = Math.Clamp(_options.BatchSize, 1, 5000);
@@ -142,12 +174,19 @@ public sealed class RemoteSyncService : BackgroundService
 
         while (totalSynced < maxRows && !cancellationToken.IsCancellationRequested)
         {
-            var take = Math.Min(batchSize, maxRows - totalSynced);
+            var from = checkpoint;
+            var to = currentBucketStart;
 
-            IReadOnlyList<StoredPingResult> rows;
+            if (from >= to)
+            {
+                break; // No fully-elapsed, un-synced buckets remain.
+            }
+
+            IReadOnlyList<CheckRollup> rows;
             try
             {
-                rows = await _storage.GetPingResultsAfterAsync(checkpoint, take, cancellationToken);
+                // Fetch one more than the batch so we can detect truncation.
+                rows = await _storage.GetRollupsAsync(from, to, _bucketMinutes, batchSize + 1, cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -155,30 +194,71 @@ public sealed class RemoteSyncService : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "Remote sync could not read local rows.");
+                _logger.LogDebug(ex, "Remote sync could not read local rollups.");
                 return totalSynced;
             }
 
             if (rows.Count == 0)
             {
+                // Nothing in this range: skip past the empty history so we don't
+                // rescan it next time. Cycles are monotonic in time, so no older
+                // data will arrive for [from, to) later.
+                checkpoint = to;
+                await WriteCheckpointAsync(checkpoint, cancellationToken);
                 break;
             }
 
-            var statements = BuildStatements(rows);
+            var truncated = rows.Count > batchSize;
+            var page = truncated ? rows.Take(batchSize).ToList() : rows;
+
+            List<CheckRollup> toPush;
+            long newCheckpoint;
+
+            if (truncated)
+            {
+                // The last bucket in a truncated page may be incomplete. Push only
+                // whole buckets: everything strictly before the last bucket start.
+                var lastBucket = page[^1].BucketStartMs;
+                var completeThrough = page
+                    .Where(r => r.BucketStartMs < lastBucket)
+                    .Select(r => r.BucketStartMs)
+                    .DefaultIfEmpty(long.MinValue)
+                    .Max();
+
+                if (completeThrough == long.MinValue)
+                {
+                    // A single bucket alone exceeded the batch (never happens while
+                    // targets-per-bucket < batch size). Push it whole to progress.
+                    toPush = page.ToList();
+                    newCheckpoint = lastBucket + _bucketMs;
+                }
+                else
+                {
+                    toPush = page.Where(r => r.BucketStartMs <= completeThrough).ToList();
+                    newCheckpoint = completeThrough + _bucketMs;
+                }
+            }
+            else
+            {
+                toPush = page.ToList();
+                newCheckpoint = page[^1].BucketStartMs + _bucketMs;
+            }
+
+            var statements = BuildInsertStatements(toPush);
             var ok = await _client.ExecutePipelineAsync(statements, cancellationToken);
             if (!ok)
             {
-                // Leave the checkpoint untouched so the same rows retry next time.
+                // Leave the checkpoint untouched so the same buckets retry next time.
                 return totalSynced;
             }
 
-            checkpoint = rows[^1].Id;
+            checkpoint = newCheckpoint;
             await WriteCheckpointAsync(checkpoint, cancellationToken);
-            totalSynced += rows.Count;
+            totalSynced += toPush.Count;
 
-            if (rows.Count < take)
+            if (!truncated)
             {
-                break; // Local backlog drained.
+                break; // Backlog drained.
             }
         }
 
@@ -187,17 +267,61 @@ public sealed class RemoteSyncService : BackgroundService
             if (!_firstSyncLogged)
             {
                 _logger.LogInformation(
-                    "Remote sync active: pushed {Count} row(s) to the remote database.",
+                    "Remote sync active: pushed {Count} rollup row(s) to the remote database.",
                     totalSynced);
                 _firstSyncLogged = true;
             }
             else
             {
-                _logger.LogDebug("Remote sync pushed {Count} row(s).", totalSynced);
+                _logger.LogDebug("Remote sync pushed {Count} rollup row(s).", totalSynced);
             }
         }
 
         return totalSynced;
+    }
+
+    private async Task<bool> EnsureRemoteSchemaAsync(CancellationToken cancellationToken)
+    {
+        var noArgs = Array.Empty<object?>();
+        var statements = new List<HranaStatement>
+        {
+            new(
+                $"CREATE TABLE IF NOT EXISTS {_table} (" +
+                "machine TEXT NOT NULL, " +
+                "bucket_start INTEGER NOT NULL, " +
+                "target_name TEXT NOT NULL, " +
+                "target_address TEXT NOT NULL, " +
+                "target_category TEXT NOT NULL, " +
+                "samples INTEGER NOT NULL, " +
+                "ok INTEGER NOT NULL, " +
+                "avg_rtt_ms REAL, " +
+                "min_rtt_ms INTEGER, " +
+                "max_rtt_ms INTEGER, " +
+                "avg_jitter_ms REAL, " +
+                "avg_dns_ms REAL, " +
+                "avg_loss_pct REAL NOT NULL, " +
+                "bucket_minutes INTEGER NOT NULL, " +
+                "synced_at INTEGER NOT NULL, " +
+                "PRIMARY KEY (machine, target_address, bucket_start))",
+                noArgs),
+            new(
+                $"CREATE INDEX IF NOT EXISTS idx_{_table}_bucket ON {_table}(bucket_start)",
+                noArgs),
+        };
+
+        try
+        {
+            return await _client.ExecutePipelineAsync(statements, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Remote sync could not ensure the remote schema.");
+            return false;
+        }
     }
 
     private async Task<long> ReadCheckpointAsync(CancellationToken cancellationToken)
@@ -242,39 +366,16 @@ public sealed class RemoteSyncService : BackgroundService
         }
     }
 
-    private List<HranaStatement> BuildStatements(IReadOnlyList<StoredPingResult> rows)
+    private List<HranaStatement> BuildInsertStatements(IReadOnlyList<CheckRollup> rows)
     {
-        var noArgs = Array.Empty<object?>();
+        var statements = new List<HranaStatement>();
+        var syncedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        var statements = new List<HranaStatement>
+        for (var offset = 0; offset < rows.Count; offset += RollupsPerInsertStatement)
         {
-            new(
-                $"CREATE TABLE IF NOT EXISTS {_table} (" +
-                "machine TEXT NOT NULL, " +
-                "id INTEGER NOT NULL, " +
-                "target TEXT NOT NULL, " +
-                "target_name TEXT, " +
-                "target_type TEXT NOT NULL, " +
-                "success INTEGER NOT NULL, " +
-                "roundtrip_ms INTEGER, " +
-                "packet_loss REAL NOT NULL, " +
-                "timestamp TEXT NOT NULL, " +
-                "error_message TEXT, " +
-                "synced_at TEXT NOT NULL, " +
-                "PRIMARY KEY (machine, id))",
-                noArgs),
-            new(
-                $"CREATE INDEX IF NOT EXISTS idx_{_table}_timestamp ON {_table}(timestamp)",
-                noArgs),
-        };
-
-        var syncedAt = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
-
-        for (var offset = 0; offset < rows.Count; offset += RowsPerInsertStatement)
-        {
-            var count = Math.Min(RowsPerInsertStatement, rows.Count - offset);
+            var count = Math.Min(RollupsPerInsertStatement, rows.Count - offset);
             var valuesSql = new StringBuilder();
-            var args = new List<object?>(count * 11);
+            var args = new List<object?>(count * 15);
 
             for (var i = 0; i < count; i++)
             {
@@ -283,25 +384,31 @@ public sealed class RemoteSyncService : BackgroundService
                     valuesSql.Append(", ");
                 }
 
-                valuesSql.Append("(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                valuesSql.Append("(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
                 var row = rows[offset + i];
                 args.Add(_machine);
-                args.Add(row.Id);
-                args.Add(row.Target);
+                args.Add(row.BucketStartMs);
                 args.Add(row.TargetName);
-                args.Add(row.TargetType);
-                args.Add(row.Success ? 1L : 0L);
-                args.Add(row.RoundtripMs);
-                args.Add(row.PacketLossPercent);
-                args.Add(row.Timestamp.ToString("O", CultureInfo.InvariantCulture));
-                args.Add(row.ErrorMessage);
+                args.Add(row.TargetAddress);
+                args.Add(row.TargetCategory);
+                args.Add((long)row.Samples);
+                args.Add((long)row.Ok);
+                args.Add(row.AvgRttMs);
+                args.Add(row.MinRttMs);
+                args.Add(row.MaxRttMs);
+                args.Add(row.AvgJitterMs);
+                args.Add(row.AvgDnsMs);
+                args.Add(row.AvgLossPct);
+                args.Add((long)row.BucketMinutes);
                 args.Add(syncedAt);
             }
 
             var sql =
-                $"INSERT OR IGNORE INTO {_table} " +
-                "(machine, id, target, target_name, target_type, success, roundtrip_ms, packet_loss, timestamp, error_message, synced_at) " +
+                $"INSERT OR REPLACE INTO {_table} " +
+                "(machine, bucket_start, target_name, target_address, target_category, " +
+                "samples, ok, avg_rtt_ms, min_rtt_ms, max_rtt_ms, avg_jitter_ms, avg_dns_ms, " +
+                "avg_loss_pct, bucket_minutes, synced_at) " +
                 $"VALUES {valuesSql}";
 
             statements.Add(new HranaStatement(sql, args));
@@ -312,11 +419,11 @@ public sealed class RemoteSyncService : BackgroundService
 
     /// <summary>
     /// Reduces a configured table name to a safe SQL identifier. Falls back to
-    /// <c>ping_results</c> when the input is empty or would start with a digit.
+    /// <c>check_rollups</c> when the input is empty or would start with a digit.
     /// </summary>
     private static string SanitizeTableName(string? name)
     {
-        const string fallback = "ping_results";
+        const string fallback = "check_rollups";
 
         if (string.IsNullOrWhiteSpace(name))
         {

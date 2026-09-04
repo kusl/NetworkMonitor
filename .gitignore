@@ -1,0 +1,50 @@
+## .NET build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+publish/
+[Pp]ublish/
+artifacts/
+
+## Test results
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coverage.json
+coverage/
+TestResults/
+
+## Rider / Visual Studio / VS Code
+.idea/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+!**/[Pp]ackages.props
+
+## OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Local runtime data produced by the app
+telemetry/
+*.db
+*.db-shm
+*.db-wal
+
+## Logs
+*.log

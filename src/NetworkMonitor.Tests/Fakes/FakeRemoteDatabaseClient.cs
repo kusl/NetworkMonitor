@@ -10,6 +10,9 @@ namespace NetworkMonitor.Tests.Fakes;
 /// </summary>
 internal sealed class FakeRemoteDatabaseClient : IRemoteDatabaseClient
 {
+    // Each rollup INSERT statement carries 15 bound arguments per row.
+    private const int ArgsPerRollupRow = 15;
+
     private readonly List<IReadOnlyList<HranaStatement>> _pipelines = new();
 
     /// <inheritdoc />
@@ -44,12 +47,12 @@ internal sealed class FakeRemoteDatabaseClient : IRemoteDatabaseClient
     }
 
     /// <summary>
-    /// Total number of rows inserted across every successful pipeline. Each
-    /// INSERT statement carries 11 bound arguments per row, so the row count is
-    /// the argument count divided by 11.
+    /// Total number of rollup rows inserted across every successful pipeline.
+    /// Each INSERT statement carries 15 bound arguments per row, so the row count
+    /// is the argument count divided by 15.
     /// </summary>
     public int TotalInsertedRows => _pipelines
         .SelectMany(p => p)
         .Where(s => s.Sql.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase))
-        .Sum(s => s.Args.Count / 11);
+        .Sum(s => s.Args.Count / ArgsPerRollupRow);
 }
