@@ -333,3 +333,276 @@ real	2m47.763s
 user	0m3.654s
 sys	0m0.896s
 kushal@fedora:~/src/dotnet/network-monitor/src$ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+kushal@fedora:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/src; time bash run.sh
+Building and running...
+Restore complete (0.7s)
+  NetworkMonitor.Core net10.0 succeeded (2.7s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Console net10.0 succeeded (0.3s) → NetworkMonitor.Console/bin/Debug/net10.0/NetworkMonitor.Console.dll
+  NetworkMonitor.Tests net10.0 succeeded (0.5s) → NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll
+
+Build succeeded in 4.1s
+╔══════════════════════════════════════════════════════════════╗
+║           Network Monitor - Cross-Platform Edition           ║
+║                  Press Ctrl+C to stop                        ║
+╚══════════════════════════════════════════════════════════════╝
+
+📁 Telemetry: /home/kushal/.local/share/NetworkMonitor/telemetry
+🆔 Run ID: 20260903_222830
+
+info: NetworkMonitor.Core.Storage.SqliteStorageService[0]
+      SQLite database path: /home/kushal/.local/share/NetworkMonitor/network-monitor.db
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /home/kushal/src/dotnet/network-monitor/src
+info: NetworkMonitor.Core.Services.MonitorBackgroundService[0]
+      Network Monitor starting. Interval: 5000ms, Router: auto, Internet: 8.8.8.8, IPv6: True, DNS: True, CustomTargets: 0, MaxConcurrentChecks: 6
+info: NetworkMonitor.Core.Services.GatewayDetector[0]
+      Detected IPv4 default gateway: 192.168.0.1 on interface wlp2s0
+info: NetworkMonitor.Core.Services.NetworkConfigurationService[0]
+      Using detected gateway: 192.168.0.1
+info: NetworkMonitor.Core.Services.NetworkConfigurationService[0]
+      Using internet target: 8.8.8.8
+info: NetworkMonitor.Core.Services.NetworkConfigurationService[0]
+      Network configuration initialized. Router: 192.168.0.1, Internet: 8.8.8.8
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Unknown -> Excellent: Excellent — Internet: 15ms
+warn: NetworkMonitor.Core.Services.MonitorBackgroundService[0]
+      Network is POOR: High internet latency: 105ms — likely upstream/ISP
+◑ Poor       Router:    1ms Internet:  105ms [18:36:30]
+  ⚠ 1 target(s) need attention:
+    ▲ Internet                     latency 105ms
+◐ Degraded   Router:  102ms Internet: info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Degraded: High latency on internet (154ms) and router (102ms) — possible local Wi-Fi/link issue
+ 154ms [18:51:06]
+  ⚠ 2 target(s) need attention:
+    ▲ Router                       latency 102ms
+    ▲ Internet                     latency 154ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Degraded -> Good: Good — Internet: 43ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent — Internet: 18ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good — Internet: 46ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent — Internet: 17ms
+warn: NetworkMonitor.Core.Services.MonitorBackgroundService[0]
+      Network is POOR: High internet latency: 166ms — likely upstream/ISP
+◑ Poor       Router:    1ms Internet:  166ms [19:06:31]
+  ⚠ 1 target(s) need attention:
+    ▲ Internet                     latency 166ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent — Internet: 16ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent — Internet: 18ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good — Internet: 28ms
+● Excellent  Router:  147ms Internet:   16ms [19:27:15]
+  ⚠ 1 target(s) need attention:
+    ▲ Router                       latency 147ms
+● Excellent  Router:  102ms Internet:   18ms [19:32:20]
+  ⚠ 1 target(s) need attention:
+    ▲ Router                       latency 102ms
+● Excellent  Router:  102ms Internet:   20ms [19:32:25]
+  ⚠ 1 target(s) need attention:
+    ▲ Router                       latency 102ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good — Internet: 50ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good — Internet: 50ms
+● Excellent  Router:  143ms Internet:   18ms [19:42:40]
+  ⚠ 1 target(s) need attention:
+    ▲ Router                       latency 143ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good — Internet: 21ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent — Internet: 18ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent — Internet: 18ms
+◑ Poor       Router:    1ms Internet:  122ms info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Poor: High internet latency: 122ms — likely upstream/ISP
+warn: NetworkMonitor.Core.Services.MonitorBackgroundService[0]
+      Network is POOR: High internet latency: 122ms — likely upstream/ISP
+[20:03:25]
+  ⚠ 1 target(s) need attention:
+    ▲ Internet                     latency 122ms
+● Excellent  Router:  127ms Internet:   18ms [20:13:45]
+  ⚠ 1 target(s) need attention:
+    ▲ Router                       latency 127ms
+◑ Poor       Router:    1ms Internet:  113ms info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Poor: High internet latency: 113ms — likely upstream/ISP
+warn: NetworkMonitor.Core.Services.MonitorBackgroundService[0]
+      Network is POOR: High internet latency: 113ms — likely upstream/ISP
+[20:26:25]
+  ⚠ 1 target(s) need attention:
+    ▲ Internet                     latency 113ms
+○ Good       Router:    1ms Internet:   21ms [20:26:30]info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Poor -> Good: Good — Internet: 21ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent — Internet: 16ms
+● Excellent  Router:  107ms Internet:   17ms [20:39:30]
+  ⚠ 1 target(s) need attention:
+    ▲ Router                       latency 107ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Poor: High internet latency: 110ms — likely upstream/ISP
+warn: NetworkMonitor.Core.Services.MonitorBackgroundService[0]
+      Network is POOR: High internet latency: 110ms — likely upstream/ISP
+◑ Poor       Router:    1ms Internet:  110ms [20:39:35]
+  ⚠ 1 target(s) need attention:
+    ▲ Internet                     latency 110ms
+● Excellent  Router:    1ms Internet: info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Poor -> Excellent: Excellent — Internet: 18ms
+○ Good       Router:    2ms Internet:   23ms [20:41:05]info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good — Internet: 23ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent — Internet: 16ms
+○ Good       Router:    2ms Internet:   21ms [20:42:35]info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good — Internet: 21ms
+● Excellent  Router:    1ms Internet: info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent — Internet: 16ms
+● Excellent  Router:  149ms Internet:   17ms [20:44:40]
+  ⚠ 1 target(s) need attention:
+    ▲ Router                       latency 149ms
+◑ Poor       Router: info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Poor: High internet latency: 116ms — likely upstream/ISP
+   1ms warn: NetworkMonitor.Core.Services.MonitorBackgroundService[0]
+      Network is POOR: High internet latency: 116ms — likely upstream/ISP
+Internet:  116ms [20:44:45]
+  ⚠ 1 target(s) need attention:
+    ▲ Internet                     latency 116ms
+● Excellent  Router: info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Poor -> Excellent: Excellent — Internet: 17ms
+○ Good       Router:    1ms Internet: info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good — Internet: 32ms
+● Excellent  Router:    2ms Internet:   20ms info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent — Internet: 20ms
+● Excellent  Router:  127ms Internet:   17ms [20:49:50]
+  ⚠ 1 target(s) need attention:
+    ▲ Router                       latency 127ms
+● Excellent  Router:    1ms Internet:   17ms [21:01:10]info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Poor: High internet latency: 125ms — likely upstream/ISP
+warn: NetworkMonitor.Core.Services.MonitorBackgroundService[0]
+      Network is POOR: High internet latency: 125ms — likely upstream/ISP
+◑ Poor       Router:    1ms Internet:  125ms [21:01:15]
+  ⚠ 1 target(s) need attention:
+    ▲ Internet                     latency 125ms
+● Excellent  Router:    1ms Internet: info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Poor -> Excellent: Excellent — Internet: 17ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good — Internet: 64ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent — Internet: 16ms
+○ Good       Router:    1ms Internet:   26ms info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good — Internet: 26ms
+● Excellent  Router:    1ms Internet:   16ms info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent — Internet: 16ms
+● Excellent  Router:  122ms Internet:   17ms [21:20:50]
+  ⚠ 1 target(s) need attention:
+    ▲ Router                       latency 122ms
+● Excellent  Router:  123ms Internet:   17ms [21:20:55]
+  ⚠ 1 target(s) need attention:
+    ▲ Router                       latency 123ms
+● Excellent  Router:  160ms Internet:   19ms [21:26:00]
+  ⚠ 1 target(s) need attention:
+    ▲ Router                       latency 160ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good — Internet: 28ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent — Internet: 16ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Degraded: High latency on internet (151ms) and router (148ms) — possible local Wi-Fi/link issue
+◐ Degraded   Router:  148ms Internet:  151ms [21:36:20]
+  ⚠ 2 target(s) need attention:
+    ▲ Router                       latency 148ms
+    ▲ Internet                     latency 151ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Degraded -> Excellent: Excellent — Internet: 17ms
+○ Good       Router:    1ms Internet:   94ms info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good — Internet: 94ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent — Internet: 17ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good — Internet: 22ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent — Internet: 17ms
+● Excellent  Router:    1ms Internet:   16ms [21:43:04]^Cinfo: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...
+
+
+⏹️  Shutting down...
+info: NetworkMonitor.Core.Services.MonitorBackgroundService[0]
+      Network Monitor stopped
+👋 Network Monitor stopped. Goodbye!
+
+real	194m44.084s
+user	0m19.758s
+sys	0m19.330s
+kushal@fedora:~/src/dotnet/network-monitor/src$ 
+
