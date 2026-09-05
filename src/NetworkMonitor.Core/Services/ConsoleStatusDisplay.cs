@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.Options;
 using NetworkMonitor.Core.Models;
@@ -42,8 +42,18 @@ namespace NetworkMonitor.Core.Services;
 ///
 /// All timestamps are rendered in local time for readability, even though the
 /// underlying data is stored in UTC.
+///
+/// FORMATTING / CULTURE:
+///
+/// Every numeric, enum, and timestamp value that ends up in a displayed string
+/// is formatted with <see cref="CultureInfo.InvariantCulture"/>. This keeps the
+/// output stable and greppable regardless of the operating system locale (e.g.
+/// a machine set to de-DE will not render "50,0%" or locale-specific digit
+/// grouping in latency values). Culture is specified explicitly on every
+/// interpolated <see cref="StringBuilder.Append(IFormatProvider, ref StringBuilder.AppendInterpolatedStringHandler)"/>
+/// call and on the two <see cref="string.Create(IFormatProvider, ref DefaultInterpolatedStringHandler)"/>
+/// helpers below, so no formatting silently depends on the ambient culture.
 /// </summary>
-[SuppressMessage("Globalization", "CA1305:Specify IFormatProvider")]
 public sealed class ConsoleStatusDisplay : IStatusDisplay
 {
     private readonly Lock _lock = new();
@@ -154,7 +164,7 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
         var sb = new StringBuilder(96);
 
         sb.Append(Ansi(color)).Append(Ansi(Bold)).Append(symbol).Append(' ')
-          .Append($"{status.Health,-10}").Append(Ansi(Reset)).Append(' ');
+          .Append(CultureInfo.InvariantCulture, $"{status.Health,-10}").Append(Ansi(Reset)).Append(' ');
 
         sb.Append(Ansi(Cyan)).Append("Router:").Append(Ansi(Reset)).Append(' ');
         AppendLatencyCell(sb, status.RouterResult);
@@ -176,12 +186,12 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
                 var customColor = ok == total ? Green : ok > 0 ? Yellow : Red;
 
                 sb.Append(Ansi(Cyan)).Append("Targets:").Append(Ansi(Reset)).Append(' ')
-                  .Append(Ansi(customColor)).Append($"{ok}/{total}").Append(Ansi(Reset)).Append(' ');
+                  .Append(Ansi(customColor)).Append(CultureInfo.InvariantCulture, $"{ok}/{total}").Append(Ansi(Reset)).Append(' ');
             }
         }
 
         // Timestamps are stored in UTC; show them in local time for humans.
-        sb.Append(Ansi(Magenta)).Append($"[{status.Timestamp.ToLocalTime():HH:mm:ss}]").Append(Ansi(Reset));
+        sb.Append(Ansi(Magenta)).Append(CultureInfo.InvariantCulture, $"[{status.Timestamp.ToLocalTime():HH:mm:ss}]").Append(Ansi(Reset));
 
         return sb.ToString();
     }
@@ -196,7 +206,7 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
         if (result?.Success == true)
         {
             var color = GetLatencyColor(result.RoundtripTimeMs);
-            sb.Append(Ansi(color)).Append($"{result.RoundtripTimeMs,4}ms").Append(Ansi(Reset)).Append(' ');
+            sb.Append(Ansi(color)).Append(CultureInfo.InvariantCulture, $"{result.RoundtripTimeMs,4}ms").Append(Ansi(Reset)).Append(' ');
         }
         else if (result is null)
         {
@@ -221,7 +231,7 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
         if (result.PacketLossPercent > 0)
         {
             var lossColor = result.PacketLossPercent >= _options.DegradedPacketLossPercent ? Yellow : Dim;
-            sb.Append(' ').Append(Ansi(lossColor)).Append($"loss {result.PacketLossPercent:F0}%").Append(Ansi(Reset));
+            sb.Append(' ').Append(Ansi(lossColor)).Append(CultureInfo.InvariantCulture, $"loss {result.PacketLossPercent:F0}%").Append(Ansi(Reset));
         }
 
         if (result.DnsResult is { Success: false })
@@ -230,7 +240,7 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
         }
         else if (result.DnsResult is { Success: true } dns)
         {
-            sb.Append(' ').Append(Ansi(Dim)).Append($"dns {dns.ResolutionTimeMs}ms").Append(Ansi(Reset));
+            sb.Append(' ').Append(Ansi(Dim)).Append(CultureInfo.InvariantCulture, $"dns {dns.ResolutionTimeMs}ms").Append(Ansi(Reset));
         }
     }
 
@@ -251,7 +261,7 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
         if (ping.Success)
         {
             var color = GetLatencyColor(ping.RoundtripTimeMs);
-            sb.Append(Ansi(color)).Append($"{ping.RoundtripTimeMs,4}ms").Append(Ansi(Reset));
+            sb.Append(Ansi(color)).Append(CultureInfo.InvariantCulture, $"{ping.RoundtripTimeMs,4}ms").Append(Ansi(Reset));
         }
         else
         {
@@ -266,7 +276,7 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
     {
         sb.Append('\n');
         sb.Append("  ").Append(Ansi(Yellow)).Append(Ansi(Bold))
-          .Append($"⚠ {problematic.Count} target(s) need attention:").Append(Ansi(Reset));
+          .Append(CultureInfo.InvariantCulture, $"⚠ {problematic.Count} target(s) need attention:").Append(Ansi(Reset));
 
         foreach (var result in problematic)
         {
@@ -277,8 +287,8 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
             if (result.PingResult?.Success != true)
             {
                 var error = result.PingResult?.ErrorMessage ?? "No response";
-                sb.Append("    ").Append(Ansi(Red)).Append($"✗ {name,-28}").Append(Ansi(Reset))
-                  .Append(' ').Append(Ansi(Dim)).Append($"FAIL: {error}").Append(Ansi(Reset));
+                sb.Append("    ").Append(Ansi(Red)).Append(CultureInfo.InvariantCulture, $"✗ {name,-28}").Append(Ansi(Reset))
+                  .Append(' ').Append(Ansi(Dim)).Append(CultureInfo.InvariantCulture, $"FAIL: {error}").Append(Ansi(Reset));
             }
             else
             {
@@ -288,18 +298,18 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
 
                 if (latency > _options.GoodLatencyMs)
                 {
-                    parts.Add($"latency {latency}ms");
+                    parts.Add(string.Create(CultureInfo.InvariantCulture, $"latency {latency}ms"));
                 }
 
                 if (loss >= _options.DegradedPacketLossPercent)
                 {
-                    parts.Add($"loss {loss:F0}%");
+                    parts.Add(string.Create(CultureInfo.InvariantCulture, $"loss {loss:F0}%"));
                 }
 
                 var detail = parts.Count > 0 ? string.Join(", ", parts) : "degraded";
                 var targetColor = latency > _options.GoodLatencyMs ? Red : Yellow;
 
-                sb.Append("    ").Append(Ansi(targetColor)).Append($"▲ {name,-28}").Append(Ansi(Reset))
+                sb.Append("    ").Append(Ansi(targetColor)).Append(CultureInfo.InvariantCulture, $"▲ {name,-28}").Append(Ansi(Reset))
                   .Append(' ').Append(Ansi(Dim)).Append(detail).Append(Ansi(Reset));
             }
 
