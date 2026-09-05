@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Microsoft.Extensions.Options;
 using NetworkMonitor.Core.Models;
@@ -42,6 +43,7 @@ namespace NetworkMonitor.Core.Services;
 /// All timestamps are rendered in local time for readability, even though the
 /// underlying data is stored in UTC.
 /// </summary>
+[SuppressMessage("Globalization", "CA1305:Specify IFormatProvider")]
 public sealed class ConsoleStatusDisplay : IStatusDisplay
 {
     private readonly Lock _lock = new();
