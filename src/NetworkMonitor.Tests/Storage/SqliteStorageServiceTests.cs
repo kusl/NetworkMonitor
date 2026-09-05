@@ -13,6 +13,14 @@ namespace NetworkMonitor.Tests.Storage;
 /// per-target historical aggregation, and the sync-state store.
 ///
 /// Timestamps are fixed and bucket-aligned so bucketing is fully deterministic.
+///
+/// Periodic retention pruning is DISABLED here (PruneEveryNSaves = 0). The
+/// fixtures deliberately timestamp their cycles at <see cref="Base"/>
+/// (2026-01-01), which is far outside the default 30-day retention window
+/// relative to the wall clock. With pruning enabled, a prune firing between
+/// saves would delete the freshly written rows and make these tests flaky
+/// (e.g. yielding 3 or 0 rollup rows instead of 6). Disabling it keeps every
+/// test in this class independent of the current date.
 /// </summary>
 public sealed class SqliteStorageServiceTests : IDisposable
 {
@@ -47,7 +55,10 @@ public sealed class SqliteStorageServiceTests : IDisposable
         {
             DataDirectoryOverride = _dir,
             DatabaseFileName = "test.db",
-            RetentionDays = 30
+            RetentionDays = 30,
+            // Deterministic tests: never sweep fixture data that is intentionally
+            // dated in the past. 0 disables the periodic retention prune.
+            PruneEveryNSaves = 0
         };
         return new SqliteStorageService(Options.Create(options), NullLogger<SqliteStorageService>.Instance);
     }

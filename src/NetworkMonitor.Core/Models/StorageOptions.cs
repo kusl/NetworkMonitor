@@ -40,6 +40,21 @@ public sealed class StorageOptions
     public int RetentionDays { get; set; } = 30;
 
     /// <summary>
+    /// How often the periodic retention prune runs, measured in successful saves.
+    /// The prune deletes cycles/measurements older than <see cref="RetentionDays"/>
+    /// relative to the current time, then reclaims free pages.
+    ///
+    /// A fixed cadence (rather than a random draw) makes this destructive step
+    /// deterministic: every Nth save triggers a prune, so behaviour is predictable
+    /// in production and reproducible in tests. Set to <c>0</c> to disable the
+    /// periodic prune entirely (used by round-trip tests whose fixture timestamps
+    /// are intentionally far in the past and must not be swept away by retention).
+    ///
+    /// Default: 200 (roughly one prune per few hours at typical cycle intervals).
+    /// </summary>
+    public int PruneEveryNSaves { get; set; } = 200;
+
+    /// <summary>
     /// Get the data directory following XDG specification with fallbacks.
     /// Priority:
     /// 0. DataDirectoryOverride (if set and writable)

@@ -46,25 +46,42 @@ namespace NetworkMonitor.Core.Storage;
 ///   * On first initialization the incompatible legacy tables (ping_results,
 ///     network_status) from earlier versions are dropped, so the file upgrades
 ///     in place. Legacy per-cycle history is discarded (it is telemetry).
+///   * Retention pruning runs on a deterministic cadence (every
+///     <see cref="StorageOptions.PruneEveryNSaves"/> successful saves) using an
+///     injectable <see cref="TimeProvider"/> for the cutoff, rather than a random
+///     draw against the wall clock. That keeps this destructive step predictable
+///     and lets tests pin (or disable) it.
 /// </summary>
 public sealed class SqliteStorageService : IStorageService, IAsyncDisposable
 {
     private readonly StorageOptions _options;
     private readonly ILogger<SqliteStorageService> _logger;
+    private readonly TimeProvider _timeProvider;
     private readonly string _connectionString;
     private readonly SemaphoreSlim _initLock = new(1, 1);
     private readonly ConcurrentDictionary<string, long> _targetIdCache = new(StringComparer.Ordinal);
+    private int _saveCount;
     private bool _initialized;
 
     /// <summary>
     /// Creates a new SQLite storage service.
     /// </summary>
+    /// <param name="options">Storage configuration.</param>
+    /// <param name="logger">Logger.</param>
+    /// <param name="timeProvider">
+    /// Clock used for retention pruning. Defaults to <see cref="TimeProvider.System"/>
+    /// when not supplied (the normal production path). Tests inject a fixed clock
+    /// - or disable pruning via <see cref="StorageOptions.PruneEveryNSaves"/> - so
+    /// fixture data timestamped in the past is not swept away by retention.
+    /// </param>
     public SqliteStorageService(
         IOptions<StorageOptions> options,
-        ILogger<SqliteStorageService> logger)
+        ILogger<SqliteStorageService> logger,
+        TimeProvider? timeProvider = null)
     {
         _options = options.Value;
         _logger = logger;
+        _timeProvider = timeProvider ?? TimeProvider.System;
 
         var dataDir = _options.GetDataDirectory();
         Directory.CreateDirectory(dataDir);
@@ -251,9 +268,13 @@ public sealed class SqliteStorageService : IStorageService, IAsyncDisposable
 
             await transaction.CommitAsync(cancellationToken);
 
-            // Periodically prune old data. Each cycle writes many rows, so keep
-            // the cadence low (~1 in 200 saves).
-            if (Random.Shared.Next(200) == 0)
+            // Periodically prune old data on a DETERMINISTIC cadence. Each cycle
+            // writes many rows, so keep the cadence low. A per-instance counter
+            // (rather than a random draw against the wall clock) makes this
+            // destructive step predictable in production and reproducible in
+            // tests; PruneEveryNSaves = 0 disables it entirely.
+            var every = _options.PruneEveryNSaves;
+            if (every > 0 && Interlocked.Increment(ref _saveCount) % every == 0)
             {
                 await PruneOldDataAsync(connection, cancellationToken);
             }
@@ -406,7 +427,7 @@ public sealed class SqliteStorageService : IStorageService, IAsyncDisposable
 
     private async Task PruneOldDataAsync(SqliteConnection connection, CancellationToken cancellationToken)
     {
-        var cutoffMs = DateTimeOffset.UtcNow.AddDays(-_options.RetentionDays).ToUnixTimeMilliseconds();
+        var cutoffMs = _timeProvider.GetUtcNow().AddDays(-_options.RetentionDays).ToUnixTimeMilliseconds();
 
         int deleted;
         await using (var command = connection.CreateCommand())
