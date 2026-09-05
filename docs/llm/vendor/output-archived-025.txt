@@ -506,3 +506,93 @@ real	313m45.445s
 user	0m31.099s
 sys	0m37.600s
 kushal@fedora:~/src/dotnet/network-monitor/src$ 
+kushal@fedora:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/src; time bash run.sh
+>> dotnet build (Release)
+Restore complete (0.7s)
+  NetworkMonitor.Core net10.0 succeeded (0.2s) → NetworkMonitor.Core/bin/Release/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Console net10.0 succeeded (0.2s) → NetworkMonitor.Console/bin/Release/net10.0/NetworkMonitor.Console.dll
+  NetworkMonitor.Tests net10.0 succeeded (0.2s) → NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll
+
+Build succeeded in 1.4s
+>> dotnet run (Release)
+╔══════════════════════════════════════════════════════════════╗
+║           Network Monitor - Cross-Platform Edition           ║
+║                  Press Ctrl+C to stop                        ║
+╚══════════════════════════════════════════════════════════════╝
+
+📁 Telemetry: /home/kushal/.local/share/NetworkMonitor/telemetry
+🆔 Run ID: 20260904_232143
+
+info: NetworkMonitor.Core.Storage.SqliteStorageService[0]
+      SQLite database path: /home/kushal/.local/share/NetworkMonitor/network-monitor.db
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /home/kushal/src/dotnet/network-monitor/src
+info: NetworkMonitor.Core.Services.MonitorBackgroundService[0]
+      Network Monitor starting. Interval: 5000ms, Router: auto, Internet: 8.8.8.8, IPv6: True, DNS: True, CustomTargets: 0, MaxConcurrentChecks: 6
+info: NetworkMonitor.Core.Services.GatewayDetector[0]
+      Detected IPv4 default gateway: 192.168.0.1 on interface wlp2s0
+info: NetworkMonitor.Core.Services.NetworkConfigurationService[0]
+      Using detected gateway: 192.168.0.1
+info: NetworkMonitor.Core.Services.NetworkConfigurationService[0]
+      Using internet target: 8.8.8.8
+info: NetworkMonitor.Core.Services.NetworkConfigurationService[0]
+      Network configuration initialized. Router: 192.168.0.1, Internet: 8.8.8.8
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Unknown -> Excellent: Excellent - Internet: 17ms
+● Excellent  Router:  124ms Internet:   17ms [19:31:14]
+  ⚠ 1 target(s) need attention:
+    ▲ Router                       latency 124ms
+● Excellent  Router:  145ms Internet:   14ms [19:46:44]
+  ⚠ 1 target(s) need attention:
+    ▲ Router                       latency 145ms
+● Excellent  Router:  128ms Internet:   16ms [20:02:14]
+  ⚠ 1 target(s) need attention:
+    ▲ Router                       latency 128ms
+● Excellent  Router:  161ms Internet:   15ms [20:07:24]
+  ⚠ 1 target(s) need attention:
+    ▲ Router                       latency 161ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good - Internet: 22ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good - Internet: 24ms
+● Excellent  Router:    2ms Internet:   18ms [20:09:09]info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent - Internet: 18ms
+○ Good       Router:    2ms Internet:   24ms [20:09:14]info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good - Internet: 24ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good - Internet: 24ms
+● Excellent  Router:    2ms Internet: info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent - Internet: 14ms
+○ Good       Router:    2ms Internet:   27ms [20:10:44]info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good - Internet: 27ms
+● Excellent  Router:    7ms Internet:   16ms info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
+○ Good       Router:    2ms Internet:   21ms [20:12:04]info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good - Internet: 21ms
+● Excellent  Router: info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
+○ Good       Router:    2ms Internet:   23ms [20:12:24]info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Excellent -> Good: Good - Internet: 23ms
+info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
+      Network status changed: Good -> Excellent: Excellent - Internet: 17ms
+● Excellent  Router:   24ms Internet:   16ms [20:12:39]^Cinfo: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...
+
+
+⏹️  Shutting down...
+info: NetworkMonitor.Core.Services.MonitorBackgroundService[0]
+      Network Monitor stopped
+👋 Network Monitor stopped. Goodbye!
+
+real	51m0.388s
+user	0m8.187s
+sys	0m7.200s
+kushal@fedora:~/src/dotnet/network-monitor/src$ 
