@@ -72,16 +72,22 @@ public sealed class MonitorOptions
     public int PingsPerCycle { get; set; } = 3;
 
     /// <summary>
-    /// Latency threshold (ms) below which is considered "excellent".
+    /// Latency threshold (ms) at or below which the internet is considered "excellent".
     /// Default: 20ms
     /// </summary>
     public int ExcellentLatencyMs { get; set; } = 20;
 
     /// <summary>
-    /// Latency threshold (ms) below which is considered "good".
-    /// Default: 100ms
+    /// Latency threshold (ms) at or below which the internet is considered "good".
+    /// Default: 200ms
     /// </summary>
-    public int GoodLatencyMs { get; set; } = 100;
+    /// <remarks>
+    /// Set to 200ms (not 100ms) so legitimate, geographically distant targets —
+    /// overseas DNS resolvers and CDN endpoints — are not repeatedly flagged as
+    /// high-latency. The shipped appsettings.json uses this same value; keeping
+    /// the code default in sync means a run without that file behaves identically.
+    /// </remarks>
+    public int GoodLatencyMs { get; set; } = 200;
 
     /// <summary>
     /// Packet loss percentage above which network is "degraded".

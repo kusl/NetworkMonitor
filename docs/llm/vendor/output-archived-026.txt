@@ -1,0 +1,83 @@
+kushal@fedora:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor; time bash apply-console-fix.sh
+==> Writing files
+  wrote src/NetworkMonitor.Core/Services/LiveConsole.cs
+  wrote src/NetworkMonitor.Core/Logging/LiveConsoleLogger.cs
+  wrote src/NetworkMonitor.Core/Logging/LiveConsoleLoggerProvider.cs
+  wrote src/NetworkMonitor.Core/Logging/LiveConsoleLoggingExtensions.cs
+  wrote src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs
+  wrote src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
+  wrote src/NetworkMonitor.Core/Models/MonitorOptions.cs
+  wrote src/NetworkMonitor.Console/Program.cs
+  wrote src/NetworkMonitor.Tests/Services/LiveConsoleTests.cs
+
+==> dotnet format (optional, non-fatal)
+
+==> dotnet build (Release)
+Restore complete (0.5s)
+  NetworkMonitor.Core net10.0 failed with 11 error(s) (2.6s)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(197,13): error CA1305: The behavior of 'StringBuilder.Append(ref StringBuilder.AppendInterpolatedStringHandler)' could vary based on the current user's locale settings. Replace this call in 'ConsoleStatusDisplay.AppendLatencyCell(StringBuilder, PingResult)' with a call to 'StringBuilder.Append(IFormatProvider, ref StringBuilder.AppendInterpolatedStringHandler)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(252,13): error CA1305: The behavior of 'StringBuilder.Append(ref StringBuilder.AppendInterpolatedStringHandler)' could vary based on the current user's locale settings. Replace this call in 'ConsoleStatusDisplay.AppendResultCell(StringBuilder, TargetCheckResult)' with a call to 'StringBuilder.Append(IFormatProvider, ref StringBuilder.AppendInterpolatedStringHandler)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(222,13): error CA1305: The behavior of 'StringBuilder.Append(ref StringBuilder.AppendInterpolatedStringHandler)' could vary based on the current user's locale settings. Replace this call in 'ConsoleStatusDisplay.AppendTargetLine(StringBuilder, TargetCheckResult)' with a call to 'StringBuilder.Append(IFormatProvider, ref StringBuilder.AppendInterpolatedStringHandler)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(231,13): error CA1305: The behavior of 'StringBuilder.Append(ref StringBuilder.AppendInterpolatedStringHandler)' could vary based on the current user's locale settings. Replace this call in 'ConsoleStatusDisplay.AppendTargetLine(StringBuilder, TargetCheckResult)' with a call to 'StringBuilder.Append(IFormatProvider, ref StringBuilder.AppendInterpolatedStringHandler)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(154,9): error CA1305: The behavior of 'StringBuilder.Append(ref StringBuilder.AppendInterpolatedStringHandler)' could vary based on the current user's locale settings. Replace this call in 'ConsoleStatusDisplay.BuildStatusLine(NetworkStatus)' with a call to 'StringBuilder.Append(IFormatProvider, ref StringBuilder.AppendInterpolatedStringHandler)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(176,17): error CA1305: The behavior of 'StringBuilder.Append(ref StringBuilder.AppendInterpolatedStringHandler)' could vary based on the current user's locale settings. Replace this call in 'ConsoleStatusDisplay.BuildStatusLine(NetworkStatus)' with a call to 'StringBuilder.Append(IFormatProvider, ref StringBuilder.AppendInterpolatedStringHandler)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(182,9): error CA1305: The behavior of 'StringBuilder.Append(ref StringBuilder.AppendInterpolatedStringHandler)' could vary based on the current user's locale settings. Replace this call in 'ConsoleStatusDisplay.BuildStatusLine(NetworkStatus)' with a call to 'StringBuilder.Append(IFormatProvider, ref StringBuilder.AppendInterpolatedStringHandler)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(266,9): error CA1305: The behavior of 'StringBuilder.Append(ref StringBuilder.AppendInterpolatedStringHandler)' could vary based on the current user's locale settings. Replace this call in 'ConsoleStatusDisplay.AppendProblematicTargets(StringBuilder, List<TargetCheckResult>)' with a call to 'StringBuilder.Append(IFormatProvider, ref StringBuilder.AppendInterpolatedStringHandler)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(278,17): error CA1305: The behavior of 'StringBuilder.Append(ref StringBuilder.AppendInterpolatedStringHandler)' could vary based on the current user's locale settings. Replace this call in 'ConsoleStatusDisplay.AppendProblematicTargets(StringBuilder, List<TargetCheckResult>)' with a call to 'StringBuilder.Append(IFormatProvider, ref StringBuilder.AppendInterpolatedStringHandler)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(278,17): error CA1305: The behavior of 'StringBuilder.Append(ref StringBuilder.AppendInterpolatedStringHandler)' could vary based on the current user's locale settings. Replace this call in 'ConsoleStatusDisplay.AppendProblematicTargets(StringBuilder, List<TargetCheckResult>)' with a call to 'StringBuilder.Append(IFormatProvider, ref StringBuilder.AppendInterpolatedStringHandler)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+    /home/kushal/src/dotnet/network-monitor/src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs(300,17): error CA1305: The behavior of 'StringBuilder.Append(ref StringBuilder.AppendInterpolatedStringHandler)' could vary based on the current user's locale settings. Replace this call in 'ConsoleStatusDisplay.AppendProblematicTargets(StringBuilder, List<TargetCheckResult>)' with a call to 'StringBuilder.Append(IFormatProvider, ref StringBuilder.AppendInterpolatedStringHandler)'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1305)
+
+Build failed with 11 error(s) in 3.3s
+
+real	0m9.410s
+user	0m10.984s
+sys	0m0.998s
+kushal@fedora:~/src/dotnet/network-monitor$ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

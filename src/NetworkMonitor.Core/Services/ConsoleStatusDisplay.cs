@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.Extensions.Options;
 using NetworkMonitor.Core.Models;
 
@@ -7,13 +8,19 @@ namespace NetworkMonitor.Core.Services;
 /// Console-based status display with ANSI colors.
 /// Provides "at a glance" network status visualization.
 ///
+/// All output is written through <see cref="LiveConsole"/>, the single
+/// synchronized owner of standard output. Each status line is built as one
+/// atomic string and either parked as a transient (overwrite-in-place) line or
+/// emitted as a permanent block. Because the logger writes through the same
+/// LiveConsole, log records can never cut into or trail a status line — every
+/// timestamped line lands on its own line.
+///
 /// TWO DISPLAY MODES:
 ///
 ///   Quiet mode (QuietConsole = true, the default):
 ///
 ///     Healthy cycle (no problematic targets):
 ///       The status line is overwritten in place so the console stays clean.
-///       Uses ANSI save/restore cursor to avoid stale text.
 ///
 ///     Problematic cycle (any target failing, high latency, packet loss,
 ///     DNS failure):
@@ -25,18 +32,12 @@ namespace NetworkMonitor.Core.Services;
 ///
 ///     Every cycle prints the summary line followed by ONE line per target
 ///     (router, internet, and every custom target), then scrolls. Nothing is
-///     overwritten — the user explicitly asked to see everything, so a full
-///     history is kept. Disabled/unmeasured targets render as "--".
+///     overwritten. Disabled/unmeasured targets render as "--".
 ///
-/// In quiet mode the terminal looks like:
-///   ● Excellent  Router: 1ms Internet: 16ms Targets: 48/48 [08:40:00]   ← overwrites itself
-///   ● Excellent  Router: 1ms Internet: 16ms Targets: 48/48 [08:40:05]   ← same line
-///   ... wifi goes down ...
-///   ○ Offline    Router: FAIL  Internet: FAIL  Targets: 0/48 [08:41:00]
-///     ⚠ 50 target(s) need attention:
-///       ✗ Router     FAIL: TimedOut
-///       ...
-///   ● Excellent  Router: 1ms Internet: 16ms Targets: 48/48 [08:42:00]   ← overwrites itself again
+/// When standard output is redirected (piped to a file or captured by CI),
+/// LiveConsole disables ANSI: colors are dropped and every line — including the
+/// otherwise-transient healthy status line — is terminated with a newline, so a
+/// captured log is clean and greppable.
 ///
 /// All timestamps are rendered in local time for readability, even though the
 /// underlying data is stored in UTC.
@@ -45,9 +46,10 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
 {
     private readonly Lock _lock = new();
     private readonly MonitorOptions _options;
-    private bool _cursorSaved;
+    private readonly LiveConsole _console;
+    private readonly bool _ansi;
 
-    // ANSI escape sequences
+    // ANSI escape sequences (emitted only when the sink is a real terminal).
     private const string Reset = "\x1b[0m";
     private const string Bold = "\x1b[1m";
     private const string Dim = "\x1b[2m";
@@ -57,14 +59,14 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
     private const string Cyan = "\x1b[36m";
     private const string Magenta = "\x1b[35m";
 
-    // Cursor control (ECMA-48 / ANSI X3.64)
-    private const string SaveCursor = "\x1b[s";
-    private const string RestoreCursor = "\x1b[u";
-    private const string EraseToEndOfScreen = "\x1b[J";
-
-    public ConsoleStatusDisplay(IOptions<MonitorOptions> options)
+    public ConsoleStatusDisplay(IOptions<MonitorOptions> options, LiveConsole console)
     {
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(console);
+
         _options = options.Value;
+        _console = console;
+        _ansi = console.AnsiEnabled;
     }
 
     /// <inheritdoc />
@@ -86,29 +88,25 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
 
     /// <summary>
     /// Verbose mode: print the full picture every cycle and let it scroll.
-    /// No in-place overwrite.
     /// </summary>
     private void WriteVerbose(NetworkStatus status)
     {
-        // If we previously left a saved cursor from quiet mode, drop it so we
-        // don't clobber earlier verbose output.
-        if (_cursorSaved)
+        var sb = new StringBuilder();
+        sb.Append(BuildStatusLine(status));
+
+        if (status.TargetResults is { Count: > 0 } results)
         {
-            Console.Write(RestoreCursor);
-            Console.Write(EraseToEndOfScreen);
-            _cursorSaved = false;
+            foreach (var result in results)
+            {
+                sb.Append('\n');
+                AppendTargetLine(sb, result);
+            }
         }
 
-        WriteStatusLine(status);
+        // Trailing blank line so consecutive cycles are visually separated.
+        sb.Append('\n');
 
-        if (status.TargetResults is { Count: > 0 })
-        {
-            WriteAllTargets(status.TargetResults);
-        }
-
-        // Blank line so consecutive cycles are visually separated.
-        Console.WriteLine();
-        Console.WriteLine();
+        _console.WriteBlock(sb.ToString());
     }
 
     /// <summary>
@@ -117,46 +115,29 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
     /// </summary>
     private void WriteQuiet(NetworkStatus status)
     {
-        // If we saved a cursor from a previous clean cycle, jump back and erase
-        // so we overwrite the old healthy status in place.
-        if (_cursorSaved)
-        {
-            Console.Write(RestoreCursor);
-            Console.Write(EraseToEndOfScreen);
-        }
-
         var problematic = status.TargetResults is { Count: > 0 }
             ? status.TargetResults.Where(IsProblematic).ToList()
             : [];
 
-        bool hasProblems = problematic.Count > 0;
-
-        if (hasProblems)
+        if (problematic.Count > 0)
         {
-            // Don't save cursor — we want this output preserved permanently.
-            // The next cycle will start on a fresh line below.
-            _cursorSaved = false;
-
-            WriteStatusLine(status);
-            WriteProblematicTargets(problematic);
-
-            // End with a newline so the next cycle starts cleanly below.
-            Console.WriteLine();
+            // Permanent: keep a scrollable history of the incident.
+            var sb = new StringBuilder();
+            sb.Append(BuildStatusLine(status));
+            AppendProblematicTargets(sb, problematic);
+            _console.WriteBlock(sb.ToString());
         }
         else
         {
-            // Save cursor position so the next cycle can overwrite this line.
-            Console.Write(SaveCursor);
-            _cursorSaved = true;
-
-            WriteStatusLine(status);
+            // Transient: overwritten in place next healthy cycle.
+            _console.WriteTransientLine(BuildStatusLine(status));
         }
     }
 
     /// <summary>
-    /// Writes the main one-line status summary.
+    /// Builds the main one-line status summary (no trailing newline).
     /// </summary>
-    private void WriteStatusLine(NetworkStatus status)
+    private string BuildStatusLine(NetworkStatus status)
     {
         var (color, symbol) = status.Health switch
         {
@@ -168,43 +149,21 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
             _ => (Reset, "?")
         };
 
-        Console.Write($"{color}{Bold}{symbol} {status.Health,-10}{Reset} ");
-        Console.Write($"{Cyan}Router:{Reset} ");
+        var sb = new StringBuilder(96);
 
-        if (status.RouterResult?.Success == true)
-        {
-            var routerColor = GetLatencyColor(status.RouterResult.RoundtripTimeMs);
-            Console.Write($"{routerColor}{status.RouterResult.RoundtripTimeMs,4}ms{Reset} ");
-        }
-        else if (status.RouterResult is null)
-        {
-            Console.Write($"{Dim}  --  {Reset}");
-        }
-        else
-        {
-            Console.Write($"{Red}FAIL{Reset}   ");
-        }
+        sb.Append(Ansi(color)).Append(Ansi(Bold)).Append(symbol).Append(' ')
+          .Append($"{status.Health,-10}").Append(Ansi(Reset)).Append(' ');
 
-        Console.Write($"{Cyan}Internet:{Reset} ");
+        sb.Append(Ansi(Cyan)).Append("Router:").Append(Ansi(Reset)).Append(' ');
+        AppendLatencyCell(sb, status.RouterResult);
 
-        if (status.InternetResult?.Success == true)
-        {
-            var internetColor = GetLatencyColor(status.InternetResult.RoundtripTimeMs);
-            Console.Write($"{internetColor}{status.InternetResult.RoundtripTimeMs,4}ms{Reset} ");
-        }
-        else if (status.InternetResult is null)
-        {
-            Console.Write($"{Dim}  --  {Reset}");
-        }
-        else
-        {
-            Console.Write($"{Red}FAIL{Reset}   ");
-        }
+        sb.Append(Ansi(Cyan)).Append("Internet:").Append(Ansi(Reset)).Append(' ');
+        AppendLatencyCell(sb, status.InternetResult);
 
-        // Show custom target summary if any
-        if (status.TargetResults is { Count: > 0 })
+        // Show custom target summary if any.
+        if (status.TargetResults is { Count: > 0 } results)
         {
-            var customResults = status.TargetResults
+            var customResults = results
                 .Where(r => r.Target.Category == TargetCategory.Custom)
                 .ToList();
 
@@ -213,93 +172,111 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
                 var ok = customResults.Count(r => r.PingResult?.Success == true);
                 var total = customResults.Count;
                 var customColor = ok == total ? Green : ok > 0 ? Yellow : Red;
-                Console.Write($"{Cyan}Targets:{Reset} {customColor}{ok}/{total}{Reset} ");
+
+                sb.Append(Ansi(Cyan)).Append("Targets:").Append(Ansi(Reset)).Append(' ')
+                  .Append(Ansi(customColor)).Append($"{ok}/{total}").Append(Ansi(Reset)).Append(' ');
             }
         }
 
         // Timestamps are stored in UTC; show them in local time for humans.
-        Console.Write($"{Magenta}[{status.Timestamp.ToLocalTime():HH:mm:ss}]{Reset}");
+        sb.Append(Ansi(Magenta)).Append($"[{status.Timestamp.ToLocalTime():HH:mm:ss}]").Append(Ansi(Reset));
+
+        return sb.ToString();
     }
 
     /// <summary>
-    /// Writes one line per target (verbose mode). Every target is shown,
-    /// including healthy ones and any that were not measured.
+    /// Appends the fixed-width latency cell for the router/internet summary:
+    /// latency when it succeeded, FAIL when it failed, or "--" when there was
+    /// nothing to measure.
     /// </summary>
-    private void WriteAllTargets(IReadOnlyList<TargetCheckResult> results)
+    private void AppendLatencyCell(StringBuilder sb, PingResult? result)
     {
-        foreach (var result in results)
+        if (result?.Success == true)
         {
-            Console.WriteLine();
-            WriteTargetLine(result);
+            var color = GetLatencyColor(result.RoundtripTimeMs);
+            sb.Append(Ansi(color)).Append($"{result.RoundtripTimeMs,4}ms").Append(Ansi(Reset)).Append(' ');
+        }
+        else if (result is null)
+        {
+            sb.Append(Ansi(Dim)).Append("  --  ").Append(Ansi(Reset));
+        }
+        else
+        {
+            sb.Append(Ansi(Red)).Append("FAIL").Append(Ansi(Reset)).Append("   ");
         }
     }
 
-    private void WriteTargetLine(TargetCheckResult result)
+    /// <summary>
+    /// Appends one line for a single target (verbose mode). Every target is
+    /// shown, including healthy ones and any that were not measured.
+    /// </summary>
+    private void AppendTargetLine(StringBuilder sb, TargetCheckResult result)
     {
-        Console.Write("    ");
-        WriteResultCell(result);
-        Console.Write($" {result.Target.Name}");
+        sb.Append("    ");
+        AppendResultCell(sb, result);
+        sb.Append(' ').Append(result.Target.Name);
 
         if (result.PacketLossPercent > 0)
         {
             var lossColor = result.PacketLossPercent >= _options.DegradedPacketLossPercent ? Yellow : Dim;
-            Console.Write($" {lossColor}loss {result.PacketLossPercent:F0}%{Reset}");
+            sb.Append(' ').Append(Ansi(lossColor)).Append($"loss {result.PacketLossPercent:F0}%").Append(Ansi(Reset));
         }
 
         if (result.DnsResult is { Success: false })
         {
-            Console.Write($" {Red}[DNS FAIL]{Reset}");
+            sb.Append(' ').Append(Ansi(Red)).Append("[DNS FAIL]").Append(Ansi(Reset));
         }
         else if (result.DnsResult is { Success: true } dns)
         {
-            Console.Write($" {Dim}dns {dns.ResolutionTimeMs}ms{Reset}");
+            sb.Append(' ').Append(Ansi(Dim)).Append($"dns {dns.ResolutionTimeMs}ms").Append(Ansi(Reset));
         }
     }
 
     /// <summary>
-    /// Writes the fixed-width result cell for a target:
-    /// latency when it succeeded, FAIL when it failed, or "--" when there was
-    /// nothing to measure.
+    /// Appends the fixed-width result cell for a target: latency when it
+    /// succeeded, FAIL when it failed, or "--" when there was nothing to measure.
     /// </summary>
-    private void WriteResultCell(TargetCheckResult result)
+    private void AppendResultCell(StringBuilder sb, TargetCheckResult result)
     {
         var ping = result.PingResult;
 
         if (ping is null)
         {
-            Console.Write($"{Dim}  --  {Reset}");
+            sb.Append(Ansi(Dim)).Append("  --  ").Append(Ansi(Reset));
             return;
         }
 
         if (ping.Success)
         {
             var color = GetLatencyColor(ping.RoundtripTimeMs);
-            Console.Write($"{color}{ping.RoundtripTimeMs,4}ms{Reset}");
+            sb.Append(Ansi(color)).Append($"{ping.RoundtripTimeMs,4}ms").Append(Ansi(Reset));
         }
         else
         {
-            Console.Write($"{Red} FAIL {Reset}");
+            sb.Append(Ansi(Red)).Append(" FAIL ").Append(Ansi(Reset));
         }
     }
 
     /// <summary>
-    /// Writes details for targets that need attention below the main status line.
+    /// Appends details for targets that need attention below the main status line.
     /// </summary>
-    private void WriteProblematicTargets(List<TargetCheckResult> problematic)
+    private void AppendProblematicTargets(StringBuilder sb, List<TargetCheckResult> problematic)
     {
-        Console.WriteLine();
-        Console.Write($"  {Yellow}{Bold}⚠ {problematic.Count} target(s) need attention:{Reset}");
+        sb.Append('\n');
+        sb.Append("  ").Append(Ansi(Yellow)).Append(Ansi(Bold))
+          .Append($"⚠ {problematic.Count} target(s) need attention:").Append(Ansi(Reset));
 
         foreach (var result in problematic)
         {
-            Console.WriteLine();
+            sb.Append('\n');
 
             var name = result.Target.Name;
 
             if (result.PingResult?.Success != true)
             {
                 var error = result.PingResult?.ErrorMessage ?? "No response";
-                Console.Write($"    {Red}✗ {name,-28}{Reset} {Dim}FAIL: {error}{Reset}");
+                sb.Append("    ").Append(Ansi(Red)).Append($"✗ {name,-28}").Append(Ansi(Reset))
+                  .Append(' ').Append(Ansi(Dim)).Append($"FAIL: {error}").Append(Ansi(Reset));
             }
             else
             {
@@ -319,12 +296,14 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
 
                 var detail = parts.Count > 0 ? string.Join(", ", parts) : "degraded";
                 var targetColor = latency > _options.GoodLatencyMs ? Red : Yellow;
-                Console.Write($"    {targetColor}▲ {name,-28}{Reset} {Dim}{detail}{Reset}");
+
+                sb.Append("    ").Append(Ansi(targetColor)).Append($"▲ {name,-28}").Append(Ansi(Reset))
+                  .Append(' ').Append(Ansi(Dim)).Append(detail).Append(Ansi(Reset));
             }
 
             if (result.DnsResult is { Success: false })
             {
-                Console.Write($" {Red}[DNS FAIL]{Reset}");
+                sb.Append(' ').Append(Ansi(Red)).Append("[DNS FAIL]").Append(Ansi(Reset));
             }
         }
     }
@@ -377,17 +356,18 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
         return Yellow;
     }
 
+    /// <summary>
+    /// Returns the ANSI sequence when the sink is a terminal, or an empty string
+    /// when output is redirected (so captured logs contain no escape codes).
+    /// </summary>
+    private string Ansi(string sequence) => _ansi ? sequence : string.Empty;
+
     /// <inheritdoc />
     public void Clear()
     {
         lock (_lock)
         {
-            if (_cursorSaved)
-            {
-                Console.Write(RestoreCursor);
-                Console.Write(EraseToEndOfScreen);
-                _cursorSaved = false;
-            }
+            _console.Reset();
         }
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using NetworkMonitor.Core.Exporters;
 using NetworkMonitor.Core.Models;
 using NetworkMonitor.Core.RemoteSync;
@@ -30,6 +31,11 @@ public static class ServiceCollectionExtensions
             configuration.GetSection(StorageOptions.SectionName));
         services.Configure<RemoteSyncOptions>(
             configuration.GetSection(RemoteSyncOptions.SectionName));
+
+        // Single synchronized owner of stdout, shared by the status display and
+        // the LiveConsole logger provider. TryAdd so it stays a singleton even
+        // if AddLiveConsole() already registered it during logging setup.
+        services.TryAddSingleton<LiveConsole>();
 
         // Register core services
         services.AddSingleton<IPingService, PingService>();

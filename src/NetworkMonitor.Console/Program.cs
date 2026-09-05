@@ -1,9 +1,12 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using NetworkMonitor.Core;
 using NetworkMonitor.Core.Exporters;
+using NetworkMonitor.Core.Logging;
 using NetworkMonitor.Core.Models;
+using NetworkMonitor.Core.Services;
 
 // =============================================================================
 // Network Monitor Console Application
@@ -26,6 +29,10 @@ using NetworkMonitor.Core.Models;
 // To see verbose output, change the log levels in appsettings.json:
 //   "NetworkMonitor": "Information"  — startup info, status changes
 //   "NetworkMonitor": "Debug"        — every ping, DNS lookup, etc.
+//
+// Whatever the level, log records and the live status line are serialized
+// through a single synchronized console sink (LiveConsole), so they never
+// interleave: every timestamped line appears on its own line.
 // =============================================================================
 
 Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
@@ -41,9 +48,14 @@ Console.WriteLine();
 
 var builder = Host.CreateApplicationBuilder(args);
 
-// Logging levels are driven by appsettings.json / environment variables.
-// No hardcoded overrides here — the config file is the single source of truth.
-// Default appsettings.json ships with Error level so the console stays quiet.
+// Replace the default (asynchronous, uncoordinated) console logger with the
+// LiveConsole provider. The default logger writes from a background thread with
+// no ordering guarantee, which is what mangled the status line. Routing logging
+// through LiveConsole makes it share one lock with the status display.
+// ClearProviders() removes provider instances only; the config-driven log
+// levels in appsettings.json still apply.
+builder.Logging.ClearProviders();
+builder.Logging.AddLiveConsole();
 
 // Register Network Monitor services
 builder.Services.AddNetworkMonitor(builder.Configuration);
@@ -62,11 +74,15 @@ builder.Services.AddNetworkMonitorTelemetry(
 
 var host = builder.Build();
 
+// The shared console sink; used so shutdown messages also clear any parked
+// status line and land on their own lines.
+var live = host.Services.GetRequiredService<LiveConsole>();
+
 // Handle Ctrl+C gracefully
 Console.CancelKeyPress += (_, e) =>
 {
     e.Cancel = true;
-    Console.WriteLine("\n\n⏹️  Shutting down...");
+    live.WriteBlock("\n⏹️  Shutting down...");
 };
 
 try
@@ -79,5 +95,5 @@ catch (OperationCanceledException)
 }
 finally
 {
-    Console.WriteLine("👋 Network Monitor stopped. Goodbye!");
+    live.WriteBlock("👋 Network Monitor stopped. Goodbye!");
 }
