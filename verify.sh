@@ -103,7 +103,7 @@ fi
 line
 echo ">> dotnet test ($CONFIG)"
 if [[ "$BUILD_RESULT" == "PASS" ]]; then
-    if dotnet test "$SOLUTION" -c "$CONFIG" --no-build; then
+    if dotnet test --solution "$SOLUTION" -c "$CONFIG" --no-build; then
         TEST_RESULT="PASS"
     else
         TEST_RESULT="FAIL"; OVERALL=1

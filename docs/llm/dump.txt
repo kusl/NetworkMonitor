@@ -1,8 +1,8 @@
 ===============================================================================
 PROJECT EXPORT
-Generated (UTC): 2026-09-05 19:28:21
+Generated (UTC): 2026-09-05 19:30:51
 Project Path:    /home/kushal/src/dotnet/network-monitor
-Git Commit:      b2c47395ce2c2a3ffb0ed5b5f1a76413d4736988
+Git Commit:      c3a2ce2e5d5f875b11007a5b5ba4c87c70b3dcc1
 Git Branch:      master
 .NET SDK:        10.0.111
 Files Exported:  82
@@ -10207,10 +10207,10 @@ esac
 
 ================================================================================
 FILE:     verify.sh
-SIZE:     4.22 KB (4321 bytes)
+SIZE:     4.23 KB (4332 bytes)
 LINES:    135
-SHA256:   b151cf333e7517d12ecee415b728a55fa037e03f00b2b5470e7b655c5f176422
-MODIFIED: 2026-09-04 13:29:26
+SHA256:   629ed23f3cff716505ff77ccf3add9494122d92729e815dc4f6e69ac543f5ad6
+MODIFIED: 2026-09-05 15:30:40
 ================================================================================
 
 #!/usr/bin/env bash
@@ -10318,7 +10318,7 @@ fi
 line
 echo ">> dotnet test ($CONFIG)"
 if [[ "$BUILD_RESULT" == "PASS" ]]; then
-    if dotnet test "$SOLUTION" -c "$CONFIG" --no-build; then
+    if dotnet test --solution "$SOLUTION" -c "$CONFIG" --no-build; then
         TEST_RESULT="PASS"
     else
         TEST_RESULT="FAIL"; OVERALL=1
@@ -10351,9 +10351,9 @@ exit $OVERALL
 
 
 ===============================================================================
-EXPORT COMPLETED (UTC): 2026-09-05 19:28:22
+EXPORT COMPLETED (UTC): 2026-09-05 19:30:52
 Total Files Exported:   82
-Total Source Size:      0.33 MB (344228 bytes)
+Total Source Size:      0.33 MB (344239 bytes)
 Output File:            /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
-DUMP SHA256 (of all lines above this one): 2d27ea56c9762e8647177ae5a58e659282038d62e3fbf02b042d773eeaeba1be
+DUMP SHA256 (of all lines above this one): a89135bcdef1b516f0700f76da94c6ab4075a2bae35e9c400f798e8328958bab
