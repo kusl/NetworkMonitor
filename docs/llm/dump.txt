@@ -1,8 +1,8 @@
 ===============================================================================
 PROJECT EXPORT
-Generated (UTC): 2026-09-05 19:30:51
+Generated (UTC): 2026-09-05 19:57:02
 Project Path:    /home/kushal/src/dotnet/network-monitor
-Git Commit:      c3a2ce2e5d5f875b11007a5b5ba4c87c70b3dcc1
+Git Commit:      d73ded15ea63f2e292e99a4330158eacf32f9069
 Git Branch:      master
 .NET SDK:        10.0.111
 Files Exported:  82
@@ -3049,10 +3049,10 @@ public sealed class RemoteSyncOptions
 
 ================================================================================
 FILE:     src/NetworkMonitor.Core/Models/StorageOptions.cs
-SIZE:     3.78 KB (3869 bytes)
-LINES:    110
-SHA256:   6f9905df3d836be93e6949a501e26da48dfb7351897b1b7837103edd5f0eb394
-MODIFIED: 2026-09-04 08:45:06
+SIZE:     4.59 KB (4702 bytes)
+LINES:    125
+SHA256:   96f29d5c067bad8f8b374af50a7e80b51946eac5212d8818b58db673c057efdc
+MODIFIED: 2026-09-05 15:54:53
 ================================================================================
 
 using System.Globalization;
@@ -3095,6 +3095,21 @@ public sealed class StorageOptions
     /// Default: 30 days
     /// </summary>
     public int RetentionDays { get; set; } = 30;
+
+    /// <summary>
+    /// How often the periodic retention prune runs, measured in successful saves.
+    /// The prune deletes cycles/measurements older than <see cref="RetentionDays"/>
+    /// relative to the current time, then reclaims free pages.
+    ///
+    /// A fixed cadence (rather than a random draw) makes this destructive step
+    /// deterministic: every Nth save triggers a prune, so behaviour is predictable
+    /// in production and reproducible in tests. Set to <c>0</c> to disable the
+    /// periodic prune entirely (used by round-trip tests whose fixture timestamps
+    /// are intentionally far in the past and must not be swept away by retention).
+    ///
+    /// Default: 200 (roughly one prune per few hours at typical cycle intervals).
+    /// </summary>
+    public int PruneEveryNSaves { get; set; } = 200;
 
     /// <summary>
     /// Get the data directory following XDG specification with fallbacks.
@@ -6633,10 +6648,10 @@ public interface IStorageService
 
 ================================================================================
 FILE:     src/NetworkMonitor.Core/Storage/SqliteStorageService.cs
-SIZE:     27.00 KB (27643 bytes)
-LINES:    658
-SHA256:   310cb79481d19965e962c2b97cd9536634b22f1db3101d62b6bf1f7a9a232373
-MODIFIED: 2026-09-04 13:25:01
+SIZE:     28.33 KB (29012 bytes)
+LINES:    679
+SHA256:   6acdeb95d2009a0716480c3e74e30deef6a94b3ccadfcf6c2e9af0ac6f788bfc
+MODIFIED: 2026-09-05 15:54:43
 ================================================================================
 
 using System.Collections.Concurrent;
@@ -6687,25 +6702,42 @@ namespace NetworkMonitor.Core.Storage;
 ///   * On first initialization the incompatible legacy tables (ping_results,
 ///     network_status) from earlier versions are dropped, so the file upgrades
 ///     in place. Legacy per-cycle history is discarded (it is telemetry).
+///   * Retention pruning runs on a deterministic cadence (every
+///     <see cref="StorageOptions.PruneEveryNSaves"/> successful saves) using an
+///     injectable <see cref="TimeProvider"/> for the cutoff, rather than a random
+///     draw against the wall clock. That keeps this destructive step predictable
+///     and lets tests pin (or disable) it.
 /// </summary>
 public sealed class SqliteStorageService : IStorageService, IAsyncDisposable
 {
     private readonly StorageOptions _options;
     private readonly ILogger<SqliteStorageService> _logger;
+    private readonly TimeProvider _timeProvider;
     private readonly string _connectionString;
     private readonly SemaphoreSlim _initLock = new(1, 1);
     private readonly ConcurrentDictionary<string, long> _targetIdCache = new(StringComparer.Ordinal);
+    private int _saveCount;
     private bool _initialized;
 
     /// <summary>
     /// Creates a new SQLite storage service.
     /// </summary>
+    /// <param name="options">Storage configuration.</param>
+    /// <param name="logger">Logger.</param>
+    /// <param name="timeProvider">
+    /// Clock used for retention pruning. Defaults to <see cref="TimeProvider.System"/>
+    /// when not supplied (the normal production path). Tests inject a fixed clock
+    /// - or disable pruning via <see cref="StorageOptions.PruneEveryNSaves"/> - so
+    /// fixture data timestamped in the past is not swept away by retention.
+    /// </param>
     public SqliteStorageService(
         IOptions<StorageOptions> options,
-        ILogger<SqliteStorageService> logger)
+        ILogger<SqliteStorageService> logger,
+        TimeProvider? timeProvider = null)
     {
         _options = options.Value;
         _logger = logger;
+        _timeProvider = timeProvider ?? TimeProvider.System;
 
         var dataDir = _options.GetDataDirectory();
         Directory.CreateDirectory(dataDir);
@@ -6892,9 +6924,13 @@ public sealed class SqliteStorageService : IStorageService, IAsyncDisposable
 
             await transaction.CommitAsync(cancellationToken);
 
-            // Periodically prune old data. Each cycle writes many rows, so keep
-            // the cadence low (~1 in 200 saves).
-            if (Random.Shared.Next(200) == 0)
+            // Periodically prune old data on a DETERMINISTIC cadence. Each cycle
+            // writes many rows, so keep the cadence low. A per-instance counter
+            // (rather than a random draw against the wall clock) makes this
+            // destructive step predictable in production and reproducible in
+            // tests; PruneEveryNSaves = 0 disables it entirely.
+            var every = _options.PruneEveryNSaves;
+            if (every > 0 && Interlocked.Increment(ref _saveCount) % every == 0)
             {
                 await PruneOldDataAsync(connection, cancellationToken);
             }
@@ -7047,7 +7083,7 @@ public sealed class SqliteStorageService : IStorageService, IAsyncDisposable
 
     private async Task PruneOldDataAsync(SqliteConnection connection, CancellationToken cancellationToken)
     {
-        var cutoffMs = DateTimeOffset.UtcNow.AddDays(-_options.RetentionDays).ToUnixTimeMilliseconds();
+        var cutoffMs = _timeProvider.GetUtcNow().AddDays(-_options.RetentionDays).ToUnixTimeMilliseconds();
 
         int deleted;
         await using (var command = connection.CreateCommand())
@@ -9894,10 +9930,10 @@ public sealed class PingAddressSelectorTests
 
 ================================================================================
 FILE:     src/NetworkMonitor.Tests/Storage/SqliteStorageServiceTests.cs
-SIZE:     7.91 KB (8098 bytes)
-LINES:    206
-SHA256:   43abc6b45658919ad21f045a0f152b61103526bc1a7dc4a10f73178c004ef7b9
-MODIFIED: 2026-09-04 08:54:23
+SIZE:     8.60 KB (8802 bytes)
+LINES:    217
+SHA256:   b8f0b5c2aeda3ada08a97821699cd8209942410f037a093dc428822a8600efb8
+MODIFIED: 2026-09-05 15:55:02
 ================================================================================
 
 using Microsoft.Data.Sqlite;
@@ -9915,6 +9951,14 @@ namespace NetworkMonitor.Tests.Storage;
 /// per-target historical aggregation, and the sync-state store.
 ///
 /// Timestamps are fixed and bucket-aligned so bucketing is fully deterministic.
+///
+/// Periodic retention pruning is DISABLED here (PruneEveryNSaves = 0). The
+/// fixtures deliberately timestamp their cycles at <see cref="Base"/>
+/// (2026-01-01), which is far outside the default 30-day retention window
+/// relative to the wall clock. With pruning enabled, a prune firing between
+/// saves would delete the freshly written rows and make these tests flaky
+/// (e.g. yielding 3 or 0 rollup rows instead of 6). Disabling it keeps every
+/// test in this class independent of the current date.
 /// </summary>
 public sealed class SqliteStorageServiceTests : IDisposable
 {
@@ -9949,7 +9993,10 @@ public sealed class SqliteStorageServiceTests : IDisposable
         {
             DataDirectoryOverride = _dir,
             DatabaseFileName = "test.db",
-            RetentionDays = 30
+            RetentionDays = 30,
+            // Deterministic tests: never sweep fixture data that is intentionally
+            // dated in the past. 0 disables the periodic retention prune.
+            PruneEveryNSaves = 0
         };
         return new SqliteStorageService(Options.Create(options), NullLogger<SqliteStorageService>.Instance);
     }
@@ -10351,9 +10398,9 @@ exit $OVERALL
 
 
 ===============================================================================
-EXPORT COMPLETED (UTC): 2026-09-05 19:30:52
+EXPORT COMPLETED (UTC): 2026-09-05 19:57:03
 Total Files Exported:   82
-Total Source Size:      0.33 MB (344239 bytes)
+Total Source Size:      0.33 MB (347145 bytes)
 Output File:            /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
-DUMP SHA256 (of all lines above this one): a89135bcdef1b516f0700f76da94c6ab4075a2bae35e9c400f798e8328958bab
+DUMP SHA256 (of all lines above this one): baba11ba2a31aca4847591fae566efc13ad3516c1aa501b6fe24e9f2a5c15607
