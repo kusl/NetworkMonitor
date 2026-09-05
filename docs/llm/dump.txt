@@ -1,8 +1,8 @@
 ===============================================================================
 PROJECT EXPORT
-Generated (UTC): 2026-09-05 07:03:28
+Generated (UTC): 2026-09-05 07:44:29
 Project Path:    /home/kushal/src/dotnet/network-monitor
-Git Commit:      a790e235d93597d6236eba2b1df5d178a657d3f7
+Git Commit:      b956520310d05960d29f289d598a398d8b7bdb12
 Git Branch:      master
 .NET SDK:        10.0.111
 Files Exported:  82
@@ -4148,13 +4148,13 @@ public static class ServiceCollectionExtensions
 
 ================================================================================
 FILE:     src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs
-SIZE:     12.75 KB (13051 bytes)
-LINES:    375
-SHA256:   b6167ce9b760718fbb10546362aaf9d8f5cf4d3cad70b809b97790d351024e0f
-MODIFIED: 2026-09-05 03:01:55
+SIZE:     13.79 KB (14120 bytes)
+LINES:    385
+SHA256:   b521103389c0d620c6370661cdaf285f689e417a82f39d636bfe6b6d00e98986
+MODIFIED: 2026-09-05 03:43:58
 ================================================================================
 
-using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.Options;
 using NetworkMonitor.Core.Models;
@@ -4198,8 +4198,18 @@ namespace NetworkMonitor.Core.Services;
 ///
 /// All timestamps are rendered in local time for readability, even though the
 /// underlying data is stored in UTC.
+///
+/// FORMATTING / CULTURE:
+///
+/// Every numeric, enum, and timestamp value that ends up in a displayed string
+/// is formatted with <see cref="CultureInfo.InvariantCulture"/>. This keeps the
+/// output stable and greppable regardless of the operating system locale (e.g.
+/// a machine set to de-DE will not render "50,0%" or locale-specific digit
+/// grouping in latency values). Culture is specified explicitly on every
+/// interpolated <see cref="StringBuilder.Append(IFormatProvider, ref StringBuilder.AppendInterpolatedStringHandler)"/>
+/// call and on the two <see cref="string.Create(IFormatProvider, ref DefaultInterpolatedStringHandler)"/>
+/// helpers below, so no formatting silently depends on the ambient culture.
 /// </summary>
-[SuppressMessage("Globalization", "CA1305:Specify IFormatProvider")]
 public sealed class ConsoleStatusDisplay : IStatusDisplay
 {
     private readonly Lock _lock = new();
@@ -4310,7 +4320,7 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
         var sb = new StringBuilder(96);
 
         sb.Append(Ansi(color)).Append(Ansi(Bold)).Append(symbol).Append(' ')
-          .Append($"{status.Health,-10}").Append(Ansi(Reset)).Append(' ');
+          .Append(CultureInfo.InvariantCulture, $"{status.Health,-10}").Append(Ansi(Reset)).Append(' ');
 
         sb.Append(Ansi(Cyan)).Append("Router:").Append(Ansi(Reset)).Append(' ');
         AppendLatencyCell(sb, status.RouterResult);
@@ -4332,12 +4342,12 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
                 var customColor = ok == total ? Green : ok > 0 ? Yellow : Red;
 
                 sb.Append(Ansi(Cyan)).Append("Targets:").Append(Ansi(Reset)).Append(' ')
-                  .Append(Ansi(customColor)).Append($"{ok}/{total}").Append(Ansi(Reset)).Append(' ');
+                  .Append(Ansi(customColor)).Append(CultureInfo.InvariantCulture, $"{ok}/{total}").Append(Ansi(Reset)).Append(' ');
             }
         }
 
         // Timestamps are stored in UTC; show them in local time for humans.
-        sb.Append(Ansi(Magenta)).Append($"[{status.Timestamp.ToLocalTime():HH:mm:ss}]").Append(Ansi(Reset));
+        sb.Append(Ansi(Magenta)).Append(CultureInfo.InvariantCulture, $"[{status.Timestamp.ToLocalTime():HH:mm:ss}]").Append(Ansi(Reset));
 
         return sb.ToString();
     }
@@ -4352,7 +4362,7 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
         if (result?.Success == true)
         {
             var color = GetLatencyColor(result.RoundtripTimeMs);
-            sb.Append(Ansi(color)).Append($"{result.RoundtripTimeMs,4}ms").Append(Ansi(Reset)).Append(' ');
+            sb.Append(Ansi(color)).Append(CultureInfo.InvariantCulture, $"{result.RoundtripTimeMs,4}ms").Append(Ansi(Reset)).Append(' ');
         }
         else if (result is null)
         {
@@ -4377,7 +4387,7 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
         if (result.PacketLossPercent > 0)
         {
             var lossColor = result.PacketLossPercent >= _options.DegradedPacketLossPercent ? Yellow : Dim;
-            sb.Append(' ').Append(Ansi(lossColor)).Append($"loss {result.PacketLossPercent:F0}%").Append(Ansi(Reset));
+            sb.Append(' ').Append(Ansi(lossColor)).Append(CultureInfo.InvariantCulture, $"loss {result.PacketLossPercent:F0}%").Append(Ansi(Reset));
         }
 
         if (result.DnsResult is { Success: false })
@@ -4386,7 +4396,7 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
         }
         else if (result.DnsResult is { Success: true } dns)
         {
-            sb.Append(' ').Append(Ansi(Dim)).Append($"dns {dns.ResolutionTimeMs}ms").Append(Ansi(Reset));
+            sb.Append(' ').Append(Ansi(Dim)).Append(CultureInfo.InvariantCulture, $"dns {dns.ResolutionTimeMs}ms").Append(Ansi(Reset));
         }
     }
 
@@ -4407,7 +4417,7 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
         if (ping.Success)
         {
             var color = GetLatencyColor(ping.RoundtripTimeMs);
-            sb.Append(Ansi(color)).Append($"{ping.RoundtripTimeMs,4}ms").Append(Ansi(Reset));
+            sb.Append(Ansi(color)).Append(CultureInfo.InvariantCulture, $"{ping.RoundtripTimeMs,4}ms").Append(Ansi(Reset));
         }
         else
         {
@@ -4422,7 +4432,7 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
     {
         sb.Append('\n');
         sb.Append("  ").Append(Ansi(Yellow)).Append(Ansi(Bold))
-          .Append($"⚠ {problematic.Count} target(s) need attention:").Append(Ansi(Reset));
+          .Append(CultureInfo.InvariantCulture, $"⚠ {problematic.Count} target(s) need attention:").Append(Ansi(Reset));
 
         foreach (var result in problematic)
         {
@@ -4433,8 +4443,8 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
             if (result.PingResult?.Success != true)
             {
                 var error = result.PingResult?.ErrorMessage ?? "No response";
-                sb.Append("    ").Append(Ansi(Red)).Append($"✗ {name,-28}").Append(Ansi(Reset))
-                  .Append(' ').Append(Ansi(Dim)).Append($"FAIL: {error}").Append(Ansi(Reset));
+                sb.Append("    ").Append(Ansi(Red)).Append(CultureInfo.InvariantCulture, $"✗ {name,-28}").Append(Ansi(Reset))
+                  .Append(' ').Append(Ansi(Dim)).Append(CultureInfo.InvariantCulture, $"FAIL: {error}").Append(Ansi(Reset));
             }
             else
             {
@@ -4444,18 +4454,18 @@ public sealed class ConsoleStatusDisplay : IStatusDisplay
 
                 if (latency > _options.GoodLatencyMs)
                 {
-                    parts.Add($"latency {latency}ms");
+                    parts.Add(string.Create(CultureInfo.InvariantCulture, $"latency {latency}ms"));
                 }
 
                 if (loss >= _options.DegradedPacketLossPercent)
                 {
-                    parts.Add($"loss {loss:F0}%");
+                    parts.Add(string.Create(CultureInfo.InvariantCulture, $"loss {loss:F0}%"));
                 }
 
                 var detail = parts.Count > 0 ? string.Join(", ", parts) : "degraded";
                 var targetColor = latency > _options.GoodLatencyMs ? Red : Yellow;
 
-                sb.Append("    ").Append(Ansi(targetColor)).Append($"▲ {name,-28}").Append(Ansi(Reset))
+                sb.Append("    ").Append(Ansi(targetColor)).Append(CultureInfo.InvariantCulture, $"▲ {name,-28}").Append(Ansi(Reset))
                   .Append(' ').Append(Ansi(Dim)).Append(detail).Append(Ansi(Reset));
             }
 
@@ -10341,9 +10351,9 @@ exit $OVERALL
 
 
 ===============================================================================
-EXPORT COMPLETED (UTC): 2026-09-05 07:03:29
+EXPORT COMPLETED (UTC): 2026-09-05 07:44:30
 Total Files Exported:   82
-Total Source Size:      0.33 MB (343159 bytes)
+Total Source Size:      0.33 MB (344228 bytes)
 Output File:            /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
-DUMP SHA256 (of all lines above this one): 6e74823c7df7bb44aa51c6284e3a8bac9e49d7c4785f61af514e102bf0b2afb3
+DUMP SHA256 (of all lines above this one): 0936634792eba32bd3f284b9ddf528ac082b27764d4ff13b8089809bd1a4b973
