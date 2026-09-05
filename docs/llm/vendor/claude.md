@@ -13129,3 +13129,172 @@ Test run summary: Failed!
   skipped: 0
   duration: 753ms
 Test run completed with non-success exit code: 2 (see: https://aka.ms/testingplatform/exitcodes)
+
+
+/
+Claude finished the response
+
+
+
+Message collapsed
+Ran 16 commands, viewed 15 files
+Diagnosis confirmed. Here's what's happening.
+
+Root cause
+SqliteStorageService.SaveStatusAsync fires a destructive prune on a random 1‑in‑200 draw (Random.Shared.Next(200) == 0), and PruneOldDataAsync computes its cutoff from wall‑clock DateTimeOffset.UtcNow minus RetentionDays (30). The storage tests use a fixed Base timestamp of 2026‑01‑01, which is ~8 months older than "now" — i.e. always outside the retention window. So whenever the random prune fires during the test, it silently deletes the freshly‑written test rows (the save path swallows everything, so nothing surfaces).
+
+The Actual: 3 is not random noise — it's exactly what you get when the prune happens to fire after the 2nd save: cycles 1 and 2 are wiped, only cycle 3 (one bucket × three targets) survives → 3 rollup rows. My simulation above reproduces the full flake table: never→6 (pass), after‑save‑1→6 (pass), after‑save‑2→3, after‑save‑3→0. Debug passed 7/7 in your archive simply because the 1‑in‑200 draw never came up; the single Release run got unlucky. It's a flaky test, not a Debug/Release compiler difference — and the whole SqliteStorageServiceTests class is exposed to it, not just this one method.
+
+The SQL itself is correct — I verified the rollup query returns 6 for the intended data.
+
+The fix (comprehensive)
+Three real changes plus a confirmation:
+
+StorageOptions — add PruneEveryNSaves (deterministic cadence; 0 disables).
+SqliteStorageService — replace the random destructive draw with a deterministic per‑instance counter, and make the retention clock injectable via TimeProvider (BCL, no new dependency). A random data‑deleting side‑effect in the hot save path is a foot‑gun regardless of tests; this removes it.
+SqliteStorageServiceTests — set PruneEveryNSaves = 0 in CreateStorage(), making every test in the class independent of wall‑clock time.
+verify.sh — your --solution change is already correct (details at the end); no change needed.
+Let me write the full files.
+
+Created 3 files, ran 2 commands
+All three files are complete and balanced, all edits present, and the existing test constructor call remains valid (the new TimeProvider parameter is optional, and DI resolution via AddSingleton<IStorageService, SqliteStorageService>() is unaffected since Microsoft DI supplies the default for an unresolvable optional parameter).
+
+Presented 3 files
+Summary
+The bug: a flaky test, not a Debug/Release compiler difference. SqliteStorageService.SaveStatusAsync fired PruneOldDataAsync on a random Random.Shared.Next(200) == 0 draw, and the prune cutoff was DateTimeOffset.UtcNow - RetentionDays(30). The storage tests write cycles dated Base = 2026-01-01, which is always outside the 30‑day window relative to the real clock. When the random prune happened to fire after the 2nd of 3 saves, it deleted cycles 1 and 2, leaving only cycle 3 → one bucket × three targets → exactly 3 rollup rows. My simulation reproduced the full outcome table (never→6, after‑save‑1→6, after‑save‑2→3, after‑save‑3→0), and confirmed the query itself is correct. Your Debug runs passed 7/7 only because the 1‑in‑200 draw never came up; the one Release run got unlucky. Every test in that class was exposed to the same flake.
+
+Files to replace (exact repo paths):
+
+src/NetworkMonitor.Core/Storage/SqliteStorageService.cs — replaced the random destructive draw with a deterministic per‑instance counter (Interlocked.Increment(ref _saveCount) % PruneEveryNSaves == 0, guarded by > 0), and made the retention clock injectable via TimeProvider (BCL, no new dependency; defaults to TimeProvider.System). A random data‑deleting side‑effect in the hot save path was worth removing on its own.
+src/NetworkMonitor.Core/Models/StorageOptions.cs — added PruneEveryNSaves (default 200, deterministic cadence; 0 disables the periodic prune).
+src/NetworkMonitor.Tests/Storage/SqliteStorageServiceTests.cs — CreateStorage() now sets PruneEveryNSaves = 0, so the whole class is independent of wall‑clock time. This fixes the reported failure and removes the latent flakiness from the other five tests in the file too.
+No interface change, so FakeStorageService, IStorageService, DI registration, and appsettings.json need no edits.
+
+On verify.sh and --solution: your change is correct — no edit needed. In .NET 10's Microsoft.Testing.Platform, dotnet test refuses a positionally‑passed solution ("Specifying a solution for 'dotnet test' should be via '--solution'"), which is exactly the error your archived first run hit. Your current line — dotnet test --solution "$SOLUTION" -c "$CONFIG" --no-build — is the right form, and the archived second run confirms it actually executes the Release tests (that's how this real failure surfaced). Leave it as is.
+
+After dropping in these three files, verify.sh should report 102 passed in Release, deterministically.
+
+
+Sqlitestorageservice
+CS 
+
+Storageoptions
+CS 
+
+Sqlitestorageservicetests
+CS 
+
+Want to be notified when Claude responds?
+
+
+
+
+Claude is AI and can make mistakes. Please double-check responses.
+
+
+
+
+30
+17
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
