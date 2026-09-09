@@ -31,7 +31,7 @@
       every related package together and stays consistent.
     -->
     <OpenTelemetryVersion>1.18.0</OpenTelemetryVersion>
-    <ExtensionsVersions>10.0.11</ExtensionsVersions>
+    <ExtensionsVersions>10.0.12</ExtensionsVersions>
   </PropertyGroup>
 
   <ItemGroup>
