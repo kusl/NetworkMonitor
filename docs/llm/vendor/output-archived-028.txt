@@ -1,8 +1,8 @@
-kushal@fedora:~/src/rust/myinkbird$ cd ~/src/dotnet/network-monitor/src; time dotnet format; cd ~/src/dotnet/network-monitor/; time bash verify.sh; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet build; time dotnet test; time dotnet list package; time dotnet list package --outdated;
+kushal@fedora:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/src; time dotnet format; cd ~/src/dotnet/network-monitor/; time bash verify.sh; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet build; time dotnet test; time dotnet list package; time dotnet list package --outdated;
 
-real	0m6.292s
-user	0m10.062s
-sys	0m0.906s
+real	0m6.201s
+user	0m11.396s
+sys	0m0.752s
 >> .NET SDK version: 10.0.111
 >> Checking source tree layout
    layout OK
@@ -13,164 +13,195 @@ Restore complete (0.4s)
 Build succeeded in 0.5s
 ------------------------------------------------------------
 >> dotnet build (Release)
-  NetworkMonitor.Core net10.0 succeeded (2.8s) → src/NetworkMonitor.Core/bin/Release/net10.0/NetworkMonitor.Core.dll
-  NetworkMonitor.Console net10.0 succeeded (0.4s) → src/NetworkMonitor.Console/bin/Release/net10.0/NetworkMonitor.Console.dll
-  NetworkMonitor.Tests net10.0 succeeded (0.6s) → src/NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll
+  NetworkMonitor.Core net10.0 succeeded (0.4s) → src/NetworkMonitor.Core/bin/Release/net10.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Console net10.0 succeeded (0.3s) → src/NetworkMonitor.Console/bin/Release/net10.0/NetworkMonitor.Console.dll
+  NetworkMonitor.Tests net10.0 succeeded (0.4s) → src/NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll
 
-Build succeeded in 3.6s
+Build succeeded in 1.1s
 ------------------------------------------------------------
 >> dotnet test (Release)
 Running tests from src/NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll (net10.0|x64)
-src/NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll (net10.0|x64) passed (588ms)
+failed NetworkMonitor.Tests.RemoteSync.DatabricksSyncServiceTests.SanitizeIdentifier_StripsUnsafeCharsAndFallsBack (3ms)
+  from src/NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll (net10.0|x64)
+  Assert.Equal() Failure: Strings differ
+               ↓ (pos 2)
+  Expected: "my_table"
+  Actual:   "mytable"
+               ↑ (pos 2)
+    at NetworkMonitor.Tests.RemoteSync.DatabricksSyncServiceTests.SanitizeIdentifier_StripsUnsafeCharsAndFallsBack() in src/NetworkMonitor.Tests/RemoteSync/DatabricksSyncServiceTests.cs:284
+    at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+    at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+src/NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll (net10.0|x64) failed with 1 error(s) (633ms)
+Exit code: 2
 
-Test run summary: Passed!
-  total: 102
-  failed: 0
-  succeeded: 102
+Test run summary: Failed!
+  total: 115
+  failed: 1
+  succeeded: 114
   skipped: 0
-  duration: 760ms
+  duration: 813ms
+Test run completed with non-success exit code: 2 (see: https://aka.ms/testingplatform/exitcodes)
 ------------------------------------------------------------
 NetworkMonitor verification summary
 ------------------------------------------------------------
   source layout:         PASS
   restore:               PASS
   build (Release):       PASS
-  tests (Release):       PASS
+  tests (Release):       FAIL
 ------------------------------------------------------------
-  C# source files:       88
+  C# source files:       95
   projects:              3 (Core, Console, Tests)
 ------------------------------------------------------------
-RESULT: OK - build and tests passed.
+RESULT: FAILURE - see the steps above.
 ------------------------------------------------------------
 
-real	0m5.817s
-user	0m3.527s
-sys	0m0.707s
+real	0m3.222s
+user	0m3.177s
+sys	0m0.608s
 Starting project export...
 Project Path: /home/kushal/src/dotnet/network-monitor
 Output File:  /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 Listing files via git...
-Found 82 files to export
-Processing (1/82): .github/dependabot.yml
-Processing (2/82): .github/workflows/build-and-test.yml
-Processing (3/82): .github/workflows/dependency-check.yml
-Processing (4/82): .github/workflows/release.yml
-Processing (5/82): README.md
-Processing (6/82): export.sh
-Processing (7/82): global.json
-Processing (8/82): src/Directory.Build.props
-Processing (9/82): src/Directory.Packages.props
-Processing (10/82): src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
-Processing (11/82): src/NetworkMonitor.Console/Program.cs
-Processing (12/82): src/NetworkMonitor.Console/appsettings.json
-Processing (13/82): src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs
-Processing (14/82): src/NetworkMonitor.Core/Exporters/FileExporterOptions.cs
-Processing (15/82): src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs
-Processing (16/82): src/NetworkMonitor.Core/Logging/LiveConsoleLogger.cs
-Processing (17/82): src/NetworkMonitor.Core/Logging/LiveConsoleLoggerProvider.cs
-Processing (18/82): src/NetworkMonitor.Core/Logging/LiveConsoleLoggingExtensions.cs
-Processing (19/82): src/NetworkMonitor.Core/Models/CheckRollup.cs
-Processing (20/82): src/NetworkMonitor.Core/Models/DnsResult.cs
-Processing (21/82): src/NetworkMonitor.Core/Models/HistoricalData.cs
-Processing (22/82): src/NetworkMonitor.Core/Models/MonitorOptions.cs
-Processing (23/82): src/NetworkMonitor.Core/Models/MonitorTarget.cs
-Processing (24/82): src/NetworkMonitor.Core/Models/NetworkStatus.cs
-Processing (25/82): src/NetworkMonitor.Core/Models/NetworkStatusEventArgs.cs
-Processing (26/82): src/NetworkMonitor.Core/Models/PingResult.cs
-Processing (27/82): src/NetworkMonitor.Core/Models/RemoteSyncOptions.cs
-Processing (28/82): src/NetworkMonitor.Core/Models/StorageOptions.cs
-Processing (29/82): src/NetworkMonitor.Core/Models/TargetCheckResult.cs
-Processing (30/82): src/NetworkMonitor.Core/NetworkMonitor.Core.csproj
-Processing (31/82): src/NetworkMonitor.Core/RemoteSync/HranaStatement.cs
-Processing (32/82): src/NetworkMonitor.Core/RemoteSync/IRemoteDatabaseClient.cs
-Processing (33/82): src/NetworkMonitor.Core/RemoteSync/RemoteSyncService.cs
-Processing (34/82): src/NetworkMonitor.Core/RemoteSync/TursoHranaClient.cs
-Processing (35/82): src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
-Processing (36/82): src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs
-Processing (37/82): src/NetworkMonitor.Core/Services/DnsResolverService.cs
-Processing (38/82): src/NetworkMonitor.Core/Services/GatewayDetector.cs
-Processing (39/82): src/NetworkMonitor.Core/Services/IDnsResolverService.cs
-Processing (40/82): src/NetworkMonitor.Core/Services/IGatewayDetector.cs
-Processing (41/82): src/NetworkMonitor.Core/Services/IInternetTargetProvider.cs
-Processing (42/82): src/NetworkMonitor.Core/Services/INetworkConfigurationService.cs
-Processing (43/82): src/NetworkMonitor.Core/Services/INetworkMonitorService.cs
-Processing (44/82): src/NetworkMonitor.Core/Services/IPingService.cs
-Processing (45/82): src/NetworkMonitor.Core/Services/IStatusDisplay.cs
-Processing (46/82): src/NetworkMonitor.Core/Services/InternetTargetProvider.cs
-Processing (47/82): src/NetworkMonitor.Core/Services/LiveConsole.cs
-Processing (48/82): src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs
-Processing (49/82): src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs
-Processing (50/82): src/NetworkMonitor.Core/Services/NetworkMonitorService.cs
-Processing (51/82): src/NetworkMonitor.Core/Services/PingService.cs
-Processing (52/82): src/NetworkMonitor.Core/Storage/IStorageService.cs
-Processing (53/82): src/NetworkMonitor.Core/Storage/SqliteStorageService.cs
-Processing (54/82): src/NetworkMonitor.Tests/Fakes/FakeDnsResolverService.cs
-Processing (55/82): src/NetworkMonitor.Tests/Fakes/FakeGatewayDetector.cs
-Processing (56/82): src/NetworkMonitor.Tests/Fakes/FakeInternetTargetProvider.cs
-Processing (57/82): src/NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs
-Processing (58/82): src/NetworkMonitor.Tests/Fakes/FakePingService.cs
-Processing (59/82): src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs
-Processing (60/82): src/NetworkMonitor.Tests/Fakes/FakeRemoteDatabaseClient.cs
-Processing (61/82): src/NetworkMonitor.Tests/Fakes/FakeStorageService.cs
-Processing (62/82): src/NetworkMonitor.Tests/Models/DnsResultTests.cs
-Processing (63/82): src/NetworkMonitor.Tests/Models/MonitorOptionsTests.cs
-Processing (64/82): src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs
-Processing (65/82): src/NetworkMonitor.Tests/Models/NetworkStatusEventArgsTests.cs
-Processing (66/82): src/NetworkMonitor.Tests/Models/PingResultTests.cs
-Processing (67/82): src/NetworkMonitor.Tests/Models/TargetCheckResultTests.cs
-Processing (68/82): src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj
-Processing (69/82): src/NetworkMonitor.Tests/NetworkStatusTests.cs
-Processing (70/82): src/NetworkMonitor.Tests/PingResultTests.cs
-Processing (71/82): src/NetworkMonitor.Tests/RemoteSync/RemoteSyncServiceTests.cs
-Processing (72/82): src/NetworkMonitor.Tests/Services/DnsResolverServiceTests.cs
-Processing (73/82): src/NetworkMonitor.Tests/Services/GatewayDetectorTests.cs
-Processing (74/82): src/NetworkMonitor.Tests/Services/InternetTargetProviderTests.cs
-Processing (75/82): src/NetworkMonitor.Tests/Services/LiveConsoleTests.cs
-Processing (76/82): src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs
-Processing (77/82): src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs
-Processing (78/82): src/NetworkMonitor.Tests/Services/PingAddressSelectorTests.cs
-Processing (79/82): src/NetworkMonitor.Tests/Storage/SqliteStorageServiceTests.cs
-Processing (80/82): src/NetworkMonitor.slnx
-Processing (81/82): src/run.sh
-Processing (82/82): verify.sh
+Found 90 files to export
+Processing (1/90): .github/dependabot.yml
+Processing (2/90): .github/workflows/build-and-test.yml
+Processing (3/90): .github/workflows/dependency-check.yml
+Processing (4/90): .github/workflows/release.yml
+Processing (5/90): README.md
+Processing (7/90): export.sh
+Processing (8/90): global.json
+Processing (9/90): src/Directory.Build.props
+Processing (10/90): src/Directory.Packages.props
+Processing (11/90): src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
+Processing (12/90): src/NetworkMonitor.Console/Program.cs
+Processing (13/90): src/NetworkMonitor.Console/appsettings.json
+Processing (14/90): src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs
+Processing (15/90): src/NetworkMonitor.Core/Exporters/FileExporterOptions.cs
+Processing (16/90): src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs
+Processing (17/90): src/NetworkMonitor.Core/Logging/LiveConsoleLogger.cs
+Processing (18/90): src/NetworkMonitor.Core/Logging/LiveConsoleLoggerProvider.cs
+Processing (19/90): src/NetworkMonitor.Core/Logging/LiveConsoleLoggingExtensions.cs
+Processing (20/90): src/NetworkMonitor.Core/Models/CheckRollup.cs
+Processing (21/90): src/NetworkMonitor.Core/Models/DatabricksSyncOptions.cs
+Processing (22/90): src/NetworkMonitor.Core/Models/DnsResult.cs
+Processing (23/90): src/NetworkMonitor.Core/Models/HistoricalData.cs
+Processing (24/90): src/NetworkMonitor.Core/Models/MonitorOptions.cs
+Processing (25/90): src/NetworkMonitor.Core/Models/MonitorTarget.cs
+Processing (26/90): src/NetworkMonitor.Core/Models/NetworkStatus.cs
+Processing (27/90): src/NetworkMonitor.Core/Models/NetworkStatusEventArgs.cs
+Processing (28/90): src/NetworkMonitor.Core/Models/PingResult.cs
+Processing (29/90): src/NetworkMonitor.Core/Models/RemoteSyncOptions.cs
+Processing (30/90): src/NetworkMonitor.Core/Models/StorageOptions.cs
+Processing (31/90): src/NetworkMonitor.Core/Models/TargetCheckResult.cs
+Processing (32/90): src/NetworkMonitor.Core/NetworkMonitor.Core.csproj
+Processing (33/90): src/NetworkMonitor.Core/RemoteSync/DatabricksSqlClient.cs
+Processing (34/90): src/NetworkMonitor.Core/RemoteSync/DatabricksStatement.cs
+Processing (35/90): src/NetworkMonitor.Core/RemoteSync/DatabricksSyncService.cs
+Processing (36/90): src/NetworkMonitor.Core/RemoteSync/HranaStatement.cs
+Processing (37/90): src/NetworkMonitor.Core/RemoteSync/IDatabricksClient.cs
+Processing (38/90): src/NetworkMonitor.Core/RemoteSync/IRemoteDatabaseClient.cs
+Processing (39/90): src/NetworkMonitor.Core/RemoteSync/RemoteSyncService.cs
+Processing (40/90): src/NetworkMonitor.Core/RemoteSync/TursoHranaClient.cs
+Processing (41/90): src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
+Processing (42/90): src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs
+Processing (43/90): src/NetworkMonitor.Core/Services/DnsResolverService.cs
+Processing (44/90): src/NetworkMonitor.Core/Services/GatewayDetector.cs
+Processing (45/90): src/NetworkMonitor.Core/Services/IDnsResolverService.cs
+Processing (46/90): src/NetworkMonitor.Core/Services/IGatewayDetector.cs
+Processing (47/90): src/NetworkMonitor.Core/Services/IInternetTargetProvider.cs
+Processing (48/90): src/NetworkMonitor.Core/Services/INetworkConfigurationService.cs
+Processing (49/90): src/NetworkMonitor.Core/Services/INetworkMonitorService.cs
+Processing (50/90): src/NetworkMonitor.Core/Services/IPingService.cs
+Processing (51/90): src/NetworkMonitor.Core/Services/IStatusDisplay.cs
+Processing (52/90): src/NetworkMonitor.Core/Services/InternetTargetProvider.cs
+Processing (53/90): src/NetworkMonitor.Core/Services/LiveConsole.cs
+Processing (54/90): src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs
+Processing (55/90): src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs
+Processing (56/90): src/NetworkMonitor.Core/Services/NetworkMonitorService.cs
+Processing (57/90): src/NetworkMonitor.Core/Services/PingService.cs
+Processing (58/90): src/NetworkMonitor.Core/Storage/IStorageService.cs
+Processing (59/90): src/NetworkMonitor.Core/Storage/SqliteStorageService.cs
+Processing (60/90): src/NetworkMonitor.Tests/Fakes/FakeDatabricksClient.cs
+Processing (61/90): src/NetworkMonitor.Tests/Fakes/FakeDnsResolverService.cs
+Processing (62/90): src/NetworkMonitor.Tests/Fakes/FakeGatewayDetector.cs
+Processing (63/90): src/NetworkMonitor.Tests/Fakes/FakeInternetTargetProvider.cs
+Processing (64/90): src/NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs
+Processing (65/90): src/NetworkMonitor.Tests/Fakes/FakePingService.cs
+Processing (66/90): src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs
+Processing (67/90): src/NetworkMonitor.Tests/Fakes/FakeRemoteDatabaseClient.cs
+Processing (68/90): src/NetworkMonitor.Tests/Fakes/FakeStorageService.cs
+Processing (69/90): src/NetworkMonitor.Tests/Models/DnsResultTests.cs
+Processing (70/90): src/NetworkMonitor.Tests/Models/MonitorOptionsTests.cs
+Processing (71/90): src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs
+Processing (72/90): src/NetworkMonitor.Tests/Models/NetworkStatusEventArgsTests.cs
+Processing (73/90): src/NetworkMonitor.Tests/Models/PingResultTests.cs
+Processing (74/90): src/NetworkMonitor.Tests/Models/TargetCheckResultTests.cs
+Processing (75/90): src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj
+Processing (76/90): src/NetworkMonitor.Tests/NetworkStatusTests.cs
+Processing (77/90): src/NetworkMonitor.Tests/PingResultTests.cs
+Processing (78/90): src/NetworkMonitor.Tests/RemoteSync/DatabricksSyncServiceTests.cs
+Processing (79/90): src/NetworkMonitor.Tests/RemoteSync/RemoteSyncServiceTests.cs
+Processing (80/90): src/NetworkMonitor.Tests/Services/DnsResolverServiceTests.cs
+Processing (81/90): src/NetworkMonitor.Tests/Services/GatewayDetectorTests.cs
+Processing (82/90): src/NetworkMonitor.Tests/Services/InternetTargetProviderTests.cs
+Processing (83/90): src/NetworkMonitor.Tests/Services/LiveConsoleTests.cs
+Processing (84/90): src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs
+Processing (85/90): src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs
+Processing (86/90): src/NetworkMonitor.Tests/Services/PingAddressSelectorTests.cs
+Processing (87/90): src/NetworkMonitor.Tests/Storage/SqliteStorageServiceTests.cs
+Processing (88/90): src/NetworkMonitor.slnx
+Processing (89/90): src/run.sh
+Processing (90/90): verify.sh
 
 Export completed successfully!
 Output file: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
-Total source size: 0.33 MB across 82 files
+Total source size: 0.39 MB across 90 files
 
-real	0m0.965s
-user	0m0.518s
-sys	0m0.742s
-Restore complete (0.4s)
-  NetworkMonitor.Core net10.0 succeeded (0.2s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
-  NetworkMonitor.Tests net10.0 succeeded (0.3s) → NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll
+real	0m1.028s
+user	0m0.610s
+sys	0m0.741s
+Restore complete (0.5s)
+  NetworkMonitor.Core net10.0 succeeded (0.3s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
   NetworkMonitor.Console net10.0 succeeded (0.3s) → NetworkMonitor.Console/bin/Debug/net10.0/NetworkMonitor.Console.dll
+  NetworkMonitor.Tests net10.0 succeeded (0.3s) → NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll
 
 Build succeeded in 1.1s
 
-real	0m1.221s
-user	0m1.205s
-sys	0m0.230s
+real	0m1.268s
+user	0m1.216s
+sys	0m0.228s
 Running tests from NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll (net10.0|x64)
-NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll (net10.0|x64) passed (604ms)
+failed NetworkMonitor.Tests.RemoteSync.DatabricksSyncServiceTests.SanitizeIdentifier_StripsUnsafeCharsAndFallsBack (2ms)
+  from NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll (net10.0|x64)
+  Assert.Equal() Failure: Strings differ
+               ↓ (pos 2)
+  Expected: "my_table"
+  Actual:   "mytable"
+               ↑ (pos 2)
+    at NetworkMonitor.Tests.RemoteSync.DatabricksSyncServiceTests.SanitizeIdentifier_StripsUnsafeCharsAndFallsBack() in NetworkMonitor.Tests/RemoteSync/DatabricksSyncServiceTests.cs:284
+    at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+    at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll (net10.0|x64) failed with 1 error(s) (632ms)
+Exit code: 2
 
-Test run summary: Passed!
-  total: 102
-  failed: 0
-  succeeded: 102
+Test run summary: Failed!
+  total: 115
+  failed: 1
+  succeeded: 114
   skipped: 0
-  duration: 803ms
+  duration: 812ms
+Test run completed with non-success exit code: 2 (see: https://aka.ms/testingplatform/exitcodes)
 
-real	0m1.780s
-user	0m2.115s
-sys	0m0.363s
+real	0m1.823s
+user	0m2.233s
+sys	0m0.400s
 Restore complete (0.4s)
 
 Build succeeded in 0.5s
 Project 'NetworkMonitor.Console' has the following package references
    [net10.0]: 
    Top-level Package                            Requested   Resolved
-   > Microsoft.Extensions.Hosting               10.0.11     10.0.11 
+   > Microsoft.Extensions.Hosting               10.0.12     10.0.12 
    > OpenTelemetry.Exporter.Console             1.18.0      1.18.0  
    > OpenTelemetry.Extensions.Hosting           1.18.0      1.18.0  
    > OpenTelemetry.Instrumentation.Runtime      1.18.0      1.18.0  
@@ -178,10 +209,10 @@ Project 'NetworkMonitor.Console' has the following package references
 Project 'NetworkMonitor.Core' has the following package references
    [net10.0]: 
    Top-level Package                                Requested   Resolved
-   > Microsoft.Data.Sqlite                          10.0.11     10.0.11 
-   > Microsoft.Extensions.Hosting                   10.0.11     10.0.11 
-   > Microsoft.Extensions.Logging.Abstractions      10.0.11     10.0.11 
-   > Microsoft.Extensions.Options                   10.0.11     10.0.11 
+   > Microsoft.Data.Sqlite                          10.0.12     10.0.12 
+   > Microsoft.Extensions.Hosting                   10.0.12     10.0.12 
+   > Microsoft.Extensions.Logging.Abstractions      10.0.12     10.0.12 
+   > Microsoft.Extensions.Options                   10.0.12     10.0.12 
    > OpenTelemetry                                  1.18.0      1.18.0  
    > OpenTelemetry.Exporter.Console                 1.18.0      1.18.0  
    > OpenTelemetry.Extensions.Hosting               1.18.0      1.18.0  
@@ -190,15 +221,15 @@ Project 'NetworkMonitor.Core' has the following package references
 Project 'NetworkMonitor.Tests' has the following package references
    [net10.0]: 
    Top-level Package                                Requested   Resolved
-   > Microsoft.Extensions.Logging.Abstractions      10.0.11     10.0.11 
-   > Microsoft.NET.Test.Sdk                         18.9.0      18.9.0  
+   > Microsoft.Extensions.Logging.Abstractions      10.0.12     10.0.12 
+   > Microsoft.NET.Test.Sdk                         18.10.1     18.10.1 
    > xunit.runner.visualstudio                      4.0.0       4.0.0   
-   > xunit.v3                                       4.0.0       4.0.0   
+   > xunit.v3                                       4.0.1       4.0.1   
 
 
-real	0m1.406s
-user	0m1.320s
-sys	0m0.284s
+real	0m1.428s
+user	0m1.431s
+sys	0m0.269s
 Restore complete (0.4s)
 
 Build succeeded in 0.5s
@@ -206,258 +237,24 @@ Build succeeded in 0.5s
 The following sources were used:
    https://api.nuget.org/v3/index.json
 
-The given project `NetworkMonitor.Console` has no updates given the current sources.
-The given project `NetworkMonitor.Core` has no updates given the current sources.
+Project `NetworkMonitor.Console` has the following updates to its packages
+   [net10.0]: 
+   Top-level Package                            Requested   Resolved   Latest
+   > OpenTelemetry.Exporter.Console             1.18.0      1.18.0     1.19.1
+   > OpenTelemetry.Extensions.Hosting           1.18.0      1.18.0     1.19.1
+   > OpenTelemetry.Instrumentation.Runtime      1.18.0      1.18.0     1.19.0
+
+Project `NetworkMonitor.Core` has the following updates to its packages
+   [net10.0]: 
+   Top-level Package                            Requested   Resolved   Latest
+   > OpenTelemetry                              1.18.0      1.18.0     1.19.1
+   > OpenTelemetry.Exporter.Console             1.18.0      1.18.0     1.19.1
+   > OpenTelemetry.Extensions.Hosting           1.18.0      1.18.0     1.19.1
+   > OpenTelemetry.Instrumentation.Runtime      1.18.0      1.18.0     1.19.0
+
 The given project `NetworkMonitor.Tests` has no updates given the current sources.
 
-real	0m2.338s
-user	0m1.914s
-sys	0m0.345s
-kushal@fedora:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/src; time bash run.sh
->> dotnet build (Release)
-Restore complete (0.4s)
-  NetworkMonitor.Core net10.0 succeeded (0.2s) → NetworkMonitor.Core/bin/Release/net10.0/NetworkMonitor.Core.dll
-  NetworkMonitor.Tests net10.0 succeeded (0.2s) → NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll
-  NetworkMonitor.Console net10.0 succeeded (0.3s) → NetworkMonitor.Console/bin/Release/net10.0/NetworkMonitor.Console.dll
-
-Build succeeded in 1.0s
->> dotnet run (Release)
-╔══════════════════════════════════════════════════════════════╗
-║           Network Monitor - Cross-Platform Edition           ║
-║                  Press Ctrl+C to stop                        ║
-╚══════════════════════════════════════════════════════════════╝
-
-📁 Telemetry: /home/kushal/.local/share/NetworkMonitor/telemetry
-🆔 Run ID: 20260908_021413
-
-info: NetworkMonitor.Core.Storage.SqliteStorageService[0]
-      SQLite database path: /home/kushal/.local/share/NetworkMonitor/network-monitor.db
-info: Microsoft.Hosting.Lifetime[0]
-      Application started. Press Ctrl+C to shut down.
-info: Microsoft.Hosting.Lifetime[0]
-      Hosting environment: Production
-info: Microsoft.Hosting.Lifetime[0]
-      Content root path: /home/kushal/src/dotnet/network-monitor/src
-info: NetworkMonitor.Core.Services.MonitorBackgroundService[0]
-      Network Monitor starting. Interval: 5000ms, Router: auto, Internet: 8.8.8.8, IPv6: True, DNS: True, CustomTargets: 0, MaxConcurrentChecks: 6
-info: NetworkMonitor.Core.Services.GatewayDetector[0]
-      Detected IPv4 default gateway: 192.168.0.1 on interface wlp2s0
-info: NetworkMonitor.Core.Services.NetworkConfigurationService[0]
-      Using detected gateway: 192.168.0.1
-info: NetworkMonitor.Core.Services.NetworkConfigurationService[0]
-      Using internet target: 8.8.8.8
-info: NetworkMonitor.Core.Services.NetworkConfigurationService[0]
-      Network configuration initialized. Router: 192.168.0.1, Internet: 8.8.8.8
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Unknown -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 20ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 22ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 22ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 26ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 22ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 22ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 22ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 20ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 22ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 17ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 17ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 20ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 18ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 22ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 19ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 18ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 22ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 25ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 27ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 14ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 17ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 22ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 22ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 22ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 17ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 22ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 17ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 27ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 22ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Degraded: High internet packet loss: 33%
-◐ Degraded   Router:    2ms Internet:   31ms [05:12:07]
-  ⚠ 1 target(s) need attention:
-    ▲ Internet                     loss 33%
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Degraded -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 22ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 22ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 18ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 17ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 15ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Excellent -> Good: Good - Internet: 21ms
-info: NetworkMonitor.Core.Services.NetworkMonitorService[0]
-      Network status changed: Good -> Excellent: Excellent - Internet: 16ms
-info: Microsoft.Hosting.Lifetime[0]
-      Application is shutting down...
-
-⏹️  Shutting down...
-info: NetworkMonitor.Core.Services.MonitorBackgroundService[0]
-      Network Monitor stopped
-👋 Network Monitor stopped. Goodbye!
-
-real	533m27.690s
-user	0m57.686s
-sys	1m14.061s
+real	0m1.644s
+user	0m1.607s
+sys	0m0.282s
 kushal@fedora:~/src/dotnet/network-monitor/src$ 
