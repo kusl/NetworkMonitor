@@ -1,8 +1,8 @@
 ===============================================================================
 PROJECT EXPORT
-Generated (UTC): 2026-09-21 21:56:41
+Generated (UTC): 2026-09-21 21:59:42
 Project Path:    /home/kushal/src/dotnet/network-monitor
-Git Commit:      5a3e5efacc581c8cfb8a5bf7ce201b012e8b493a
+Git Commit:      1579d544b25a478f0cb72225bb1178de107201b1
 Git Branch:      master
 .NET SDK:        10.0.111
 Files Exported:  90
@@ -3372,10 +3372,10 @@ MODIFIED: 2026-09-04 08:39:41
 
 ================================================================================
 FILE:     src/Directory.Packages.props
-SIZE:     4.79 KB (4905 bytes)
+SIZE:     4.79 KB (4906 bytes)
 LINES:    95
-SHA256:   55c308c4906184fcd2b3abc4a33ddd0f4e3f1a37906ff479fe7a8bd22186b419
-MODIFIED: 2026-09-04 08:39:41
+SHA256:   881faeefae82eea371f3545221312ae2e12db43bcc062e4907356b678e700801
+MODIFIED: 2026-09-21 17:59:02
 ================================================================================
 
 <Project>
@@ -3411,7 +3411,7 @@ MODIFIED: 2026-09-04 08:39:41
       every related package together and stays consistent.
     -->
     <OpenTelemetryVersion>1.18.0</OpenTelemetryVersion>
-    <ExtensionsVersions>10.0.11</ExtensionsVersions>
+    <ExtensionsVersions>10.0.12</ExtensionsVersions>
   </PropertyGroup>
 
   <ItemGroup>
@@ -3432,9 +3432,9 @@ MODIFIED: 2026-09-04 08:39:41
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OpenTelemetryVersion)" />
 
     <!-- Testing - xUnit 3 (Apache 2.0 License) -->
-    <PackageVersion Include="xunit.v3" Version="4.0.0" />
+    <PackageVersion Include="xunit.v3" Version="4.0.1" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
 
     <!--
       =========================================================================
@@ -13895,9 +13895,9 @@ exit $OVERALL
 
 
 ===============================================================================
-EXPORT COMPLETED (UTC): 2026-09-21 21:56:42
+EXPORT COMPLETED (UTC): 2026-09-21 21:59:43
 Total Files Exported:   90
-Total Source Size:      0.46 MB (477262 bytes)
+Total Source Size:      0.46 MB (477263 bytes)
 Output File:            /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
-DUMP SHA256 (of all lines above this one): 1569e23fdb8c217f5950d1e71df388e8663e0c316cd41aa3bab14aa55ebac600
+DUMP SHA256 (of all lines above this one): be698b779ed4461cb26f00f8afce2f72f135fcdf03da8059cee6bf597c6f345a
