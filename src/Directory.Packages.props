@@ -30,7 +30,7 @@
       One property per "family" so a single edit (or Dependabot bump) moves
       every related package together and stays consistent.
     -->
-    <OpenTelemetryVersion>1.18.0</OpenTelemetryVersion>
+    <OpenTelemetryVersion>1.19.1</OpenTelemetryVersion>
     <ExtensionsVersions>10.0.12</ExtensionsVersions>
   </PropertyGroup>
 
@@ -49,7 +49,7 @@
     <PackageVersion Include="OpenTelemetry" Version="$(OpenTelemetryVersion)" />
     <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="$(OpenTelemetryVersion)" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="$(OpenTelemetryVersion)" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OpenTelemetryVersion)" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.19.0" />
 
     <!-- Testing - xUnit 3 (Apache 2.0 License) -->
     <PackageVersion Include="xunit.v3" Version="4.0.1" />
