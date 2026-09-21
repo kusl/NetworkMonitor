@@ -459,7 +459,7 @@ public sealed class DatabricksSqlClient : IDatabricksClient, IDisposable
     /// (letters, digits, underscore). Falls back to <paramref name="fallback"/>
     /// when the input is empty or would start with a digit.
     /// </summary>
-    internal static string SanitizeIdentifier(string? name, string fallback)
+    public static string SanitizeIdentifier(string? name, string fallback)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
