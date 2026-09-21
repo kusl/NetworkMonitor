@@ -473,6 +473,10 @@ public sealed class DatabricksSqlClient : IDatabricksClient, IDisposable
             {
                 builder.Append(ch);
             }
+            if (ch == '-')
+            {
+                builder.Append('_');
+            }
         }
 
         var cleaned = builder.ToString();
