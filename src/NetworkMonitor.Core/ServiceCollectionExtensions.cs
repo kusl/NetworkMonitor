@@ -31,6 +31,8 @@ public static class ServiceCollectionExtensions
             configuration.GetSection(StorageOptions.SectionName));
         services.Configure<RemoteSyncOptions>(
             configuration.GetSection(RemoteSyncOptions.SectionName));
+        services.Configure<DatabricksSyncOptions>(
+            configuration.GetSection(DatabricksSyncOptions.SectionName));
 
         // Single synchronized owner of stdout, shared by the status display and
         // the LiveConsole logger provider. TryAdd so it stays a singleton even
@@ -47,12 +49,17 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IStatusDisplay, ConsoleStatusDisplay>();
         services.AddSingleton<IStorageService, SqliteStorageService>();
 
-        // Optional remote sync (no-op unless RemoteSync:Url and :AuthToken are set)
+        // Optional remote sync sinks. Both are no-ops unless their own section is
+        // configured, and both run independently of each other and of monitoring.
+        //   - Turso / libSQL:  RemoteSync:Url + RemoteSync:AuthToken
+        //   - Databricks:      Databricks:WorkspaceUrl + Databricks:WarehouseId + credential
         services.AddSingleton<IRemoteDatabaseClient, TursoHranaClient>();
+        services.AddSingleton<IDatabricksClient, DatabricksSqlClient>();
 
         // Register background services
         services.AddHostedService<MonitorBackgroundService>();
         services.AddHostedService<RemoteSyncService>();
+        services.AddHostedService<DatabricksSyncService>();
 
         return services;
     }
