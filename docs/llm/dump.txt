@@ -1,11 +1,11 @@
 ===============================================================================
 PROJECT EXPORT
-Generated (UTC): 2026-09-21 22:05:35
+Generated (UTC): 2026-09-21 22:09:41
 Project Path:    /home/kushal/src/dotnet/network-monitor
-Git Commit:      54c85e955772789d0b7d1443bbc44456a53523ee
+Git Commit:      3015d3191b2a9be1afb60ac1ab5730df41d0e6a3
 Git Branch:      master
 .NET SDK:        10.0.111
-Files Exported:  90
+Files Exported:  89
 ===============================================================================
 
 DIRECTORY STRUCTURE:
@@ -1497,10 +1497,10 @@ MODIFIED: 2026-09-04 08:39:41
 
 ================================================================================
 FILE:     src/Directory.Packages.props
-SIZE:     4.79 KB (4906 bytes)
+SIZE:     4.77 KB (4889 bytes)
 LINES:    95
-SHA256:   881faeefae82eea371f3545221312ae2e12db43bcc062e4907356b678e700801
-MODIFIED: 2026-09-21 17:59:02
+SHA256:   bb9d90f73809c4abbc4c64afd277218de2b5b03e4088ff859557ca16b033d2d3
+MODIFIED: 2026-09-21 18:06:21
 ================================================================================
 
 <Project>
@@ -1535,7 +1535,7 @@ MODIFIED: 2026-09-21 17:59:02
       One property per "family" so a single edit (or Dependabot bump) moves
       every related package together and stays consistent.
     -->
-    <OpenTelemetryVersion>1.18.0</OpenTelemetryVersion>
+    <OpenTelemetryVersion>1.19.1</OpenTelemetryVersion>
     <ExtensionsVersions>10.0.12</ExtensionsVersions>
   </PropertyGroup>
 
@@ -1554,7 +1554,7 @@ MODIFIED: 2026-09-21 17:59:02
     <PackageVersion Include="OpenTelemetry" Version="$(OpenTelemetryVersion)" />
     <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="$(OpenTelemetryVersion)" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="$(OpenTelemetryVersion)" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OpenTelemetryVersion)" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.19.0" />
 
     <!-- Testing - xUnit 3 (Apache 2.0 License) -->
     <PackageVersion Include="xunit.v3" Version="4.0.1" />
@@ -3467,10 +3467,10 @@ MODIFIED: 2026-09-04 08:39:41
 
 ================================================================================
 FILE:     src/NetworkMonitor.Core/RemoteSync/DatabricksSqlClient.cs
-SIZE:     16.67 KB (17072 bytes)
-LINES:    493
-SHA256:   b53e1015695d1d66b06754d17841d41a4f0ea8b10f8b02046ae6d176a7a312fc
-MODIFIED: 2026-09-21 17:55:36
+SIZE:     16.76 KB (17164 bytes)
+LINES:    497
+SHA256:   bfccec6d97a3d718e6b9c91b6bb923161fea1bba7f85392fa1d5ef027fc048d9
+MODIFIED: 2026-09-21 18:09:01
 ================================================================================
 
 using System.Diagnostics;
@@ -3947,6 +3947,10 @@ public sealed class DatabricksSqlClient : IDatabricksClient, IDisposable
             if (char.IsLetterOrDigit(ch) || ch == '_')
             {
                 builder.Append(ch);
+            }
+            if (ch == '-')
+            {
+                builder.Append('_');
             }
         }
 
@@ -12020,9 +12024,9 @@ exit $OVERALL
 
 
 ===============================================================================
-EXPORT COMPLETED (UTC): 2026-09-21 22:05:36
-Total Files Exported:   90
-Total Source Size:      0.39 MB (404953 bytes)
+EXPORT COMPLETED (UTC): 2026-09-21 22:09:42
+Total Files Exported:   89
+Total Source Size:      0.39 MB (405028 bytes)
 Output File:            /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
-DUMP SHA256 (of all lines above this one): 3a53445c2e37844dcc8c45aaf0ff49b6682867570179d581422c68890a1cdc21
+DUMP SHA256 (of all lines above this one): e028a02b162583f4024cf96162be40f8eb205e8d3b8b3e6d2567cb8df5ec3d44

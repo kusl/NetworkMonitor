@@ -1,8 +1,8 @@
 kushal@fedora:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/src; time dotnet format; cd ~/src/dotnet/network-monitor/; time bash verify.sh; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet build; time dotnet test; time dotnet list package; time dotnet list package --outdated;
 
-real	0m6.201s
-user	0m11.396s
-sys	0m0.752s
+real	0m7.437s
+user	0m12.355s
+sys	0m0.993s
 >> .NET SDK version: 10.0.111
 >> Checking source tree layout
    layout OK
@@ -14,187 +14,163 @@ Build succeeded in 0.5s
 ------------------------------------------------------------
 >> dotnet build (Release)
   NetworkMonitor.Core net10.0 succeeded (0.4s) → src/NetworkMonitor.Core/bin/Release/net10.0/NetworkMonitor.Core.dll
-  NetworkMonitor.Console net10.0 succeeded (0.3s) → src/NetworkMonitor.Console/bin/Release/net10.0/NetworkMonitor.Console.dll
-  NetworkMonitor.Tests net10.0 succeeded (0.4s) → src/NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll
+  NetworkMonitor.Console net10.0 succeeded (0.5s) → src/NetworkMonitor.Console/bin/Release/net10.0/NetworkMonitor.Console.dll
+  NetworkMonitor.Tests net10.0 succeeded (0.5s) → src/NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll
 
-Build succeeded in 1.1s
+Build succeeded in 1.2s
 ------------------------------------------------------------
 >> dotnet test (Release)
 Running tests from src/NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll (net10.0|x64)
-failed NetworkMonitor.Tests.RemoteSync.DatabricksSyncServiceTests.SanitizeIdentifier_StripsUnsafeCharsAndFallsBack (3ms)
-  from src/NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll (net10.0|x64)
-  Assert.Equal() Failure: Strings differ
-               ↓ (pos 2)
-  Expected: "my_table"
-  Actual:   "mytable"
-               ↑ (pos 2)
-    at NetworkMonitor.Tests.RemoteSync.DatabricksSyncServiceTests.SanitizeIdentifier_StripsUnsafeCharsAndFallsBack() in src/NetworkMonitor.Tests/RemoteSync/DatabricksSyncServiceTests.cs:284
-    at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
-    at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
-src/NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll (net10.0|x64) failed with 1 error(s) (633ms)
-Exit code: 2
+src/NetworkMonitor.Tests/bin/Release/net10.0/NetworkMonitor.Tests.dll (net10.0|x64) passed (626ms)
 
-Test run summary: Failed!
+Test run summary: Passed!
   total: 115
-  failed: 1
-  succeeded: 114
+  failed: 0
+  succeeded: 115
   skipped: 0
-  duration: 813ms
-Test run completed with non-success exit code: 2 (see: https://aka.ms/testingplatform/exitcodes)
+  duration: 805ms
 ------------------------------------------------------------
 NetworkMonitor verification summary
 ------------------------------------------------------------
   source layout:         PASS
   restore:               PASS
   build (Release):       PASS
-  tests (Release):       FAIL
+  tests (Release):       PASS
 ------------------------------------------------------------
   C# source files:       95
   projects:              3 (Core, Console, Tests)
 ------------------------------------------------------------
-RESULT: FAILURE - see the steps above.
+RESULT: OK - build and tests passed.
 ------------------------------------------------------------
 
-real	0m3.222s
-user	0m3.177s
-sys	0m0.608s
+real	0m3.320s
+user	0m3.299s
+sys	0m0.633s
 Starting project export...
 Project Path: /home/kushal/src/dotnet/network-monitor
 Output File:  /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 Listing files via git...
-Found 90 files to export
-Processing (1/90): .github/dependabot.yml
-Processing (2/90): .github/workflows/build-and-test.yml
-Processing (3/90): .github/workflows/dependency-check.yml
-Processing (4/90): .github/workflows/release.yml
-Processing (5/90): README.md
-Processing (7/90): export.sh
-Processing (8/90): global.json
-Processing (9/90): src/Directory.Build.props
-Processing (10/90): src/Directory.Packages.props
-Processing (11/90): src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
-Processing (12/90): src/NetworkMonitor.Console/Program.cs
-Processing (13/90): src/NetworkMonitor.Console/appsettings.json
-Processing (14/90): src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs
-Processing (15/90): src/NetworkMonitor.Core/Exporters/FileExporterOptions.cs
-Processing (16/90): src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs
-Processing (17/90): src/NetworkMonitor.Core/Logging/LiveConsoleLogger.cs
-Processing (18/90): src/NetworkMonitor.Core/Logging/LiveConsoleLoggerProvider.cs
-Processing (19/90): src/NetworkMonitor.Core/Logging/LiveConsoleLoggingExtensions.cs
-Processing (20/90): src/NetworkMonitor.Core/Models/CheckRollup.cs
-Processing (21/90): src/NetworkMonitor.Core/Models/DatabricksSyncOptions.cs
-Processing (22/90): src/NetworkMonitor.Core/Models/DnsResult.cs
-Processing (23/90): src/NetworkMonitor.Core/Models/HistoricalData.cs
-Processing (24/90): src/NetworkMonitor.Core/Models/MonitorOptions.cs
-Processing (25/90): src/NetworkMonitor.Core/Models/MonitorTarget.cs
-Processing (26/90): src/NetworkMonitor.Core/Models/NetworkStatus.cs
-Processing (27/90): src/NetworkMonitor.Core/Models/NetworkStatusEventArgs.cs
-Processing (28/90): src/NetworkMonitor.Core/Models/PingResult.cs
-Processing (29/90): src/NetworkMonitor.Core/Models/RemoteSyncOptions.cs
-Processing (30/90): src/NetworkMonitor.Core/Models/StorageOptions.cs
-Processing (31/90): src/NetworkMonitor.Core/Models/TargetCheckResult.cs
-Processing (32/90): src/NetworkMonitor.Core/NetworkMonitor.Core.csproj
-Processing (33/90): src/NetworkMonitor.Core/RemoteSync/DatabricksSqlClient.cs
-Processing (34/90): src/NetworkMonitor.Core/RemoteSync/DatabricksStatement.cs
-Processing (35/90): src/NetworkMonitor.Core/RemoteSync/DatabricksSyncService.cs
-Processing (36/90): src/NetworkMonitor.Core/RemoteSync/HranaStatement.cs
-Processing (37/90): src/NetworkMonitor.Core/RemoteSync/IDatabricksClient.cs
-Processing (38/90): src/NetworkMonitor.Core/RemoteSync/IRemoteDatabaseClient.cs
-Processing (39/90): src/NetworkMonitor.Core/RemoteSync/RemoteSyncService.cs
-Processing (40/90): src/NetworkMonitor.Core/RemoteSync/TursoHranaClient.cs
-Processing (41/90): src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
-Processing (42/90): src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs
-Processing (43/90): src/NetworkMonitor.Core/Services/DnsResolverService.cs
-Processing (44/90): src/NetworkMonitor.Core/Services/GatewayDetector.cs
-Processing (45/90): src/NetworkMonitor.Core/Services/IDnsResolverService.cs
-Processing (46/90): src/NetworkMonitor.Core/Services/IGatewayDetector.cs
-Processing (47/90): src/NetworkMonitor.Core/Services/IInternetTargetProvider.cs
-Processing (48/90): src/NetworkMonitor.Core/Services/INetworkConfigurationService.cs
-Processing (49/90): src/NetworkMonitor.Core/Services/INetworkMonitorService.cs
-Processing (50/90): src/NetworkMonitor.Core/Services/IPingService.cs
-Processing (51/90): src/NetworkMonitor.Core/Services/IStatusDisplay.cs
-Processing (52/90): src/NetworkMonitor.Core/Services/InternetTargetProvider.cs
-Processing (53/90): src/NetworkMonitor.Core/Services/LiveConsole.cs
-Processing (54/90): src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs
-Processing (55/90): src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs
-Processing (56/90): src/NetworkMonitor.Core/Services/NetworkMonitorService.cs
-Processing (57/90): src/NetworkMonitor.Core/Services/PingService.cs
-Processing (58/90): src/NetworkMonitor.Core/Storage/IStorageService.cs
-Processing (59/90): src/NetworkMonitor.Core/Storage/SqliteStorageService.cs
-Processing (60/90): src/NetworkMonitor.Tests/Fakes/FakeDatabricksClient.cs
-Processing (61/90): src/NetworkMonitor.Tests/Fakes/FakeDnsResolverService.cs
-Processing (62/90): src/NetworkMonitor.Tests/Fakes/FakeGatewayDetector.cs
-Processing (63/90): src/NetworkMonitor.Tests/Fakes/FakeInternetTargetProvider.cs
-Processing (64/90): src/NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs
-Processing (65/90): src/NetworkMonitor.Tests/Fakes/FakePingService.cs
-Processing (66/90): src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs
-Processing (67/90): src/NetworkMonitor.Tests/Fakes/FakeRemoteDatabaseClient.cs
-Processing (68/90): src/NetworkMonitor.Tests/Fakes/FakeStorageService.cs
-Processing (69/90): src/NetworkMonitor.Tests/Models/DnsResultTests.cs
-Processing (70/90): src/NetworkMonitor.Tests/Models/MonitorOptionsTests.cs
-Processing (71/90): src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs
-Processing (72/90): src/NetworkMonitor.Tests/Models/NetworkStatusEventArgsTests.cs
-Processing (73/90): src/NetworkMonitor.Tests/Models/PingResultTests.cs
-Processing (74/90): src/NetworkMonitor.Tests/Models/TargetCheckResultTests.cs
-Processing (75/90): src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj
-Processing (76/90): src/NetworkMonitor.Tests/NetworkStatusTests.cs
-Processing (77/90): src/NetworkMonitor.Tests/PingResultTests.cs
-Processing (78/90): src/NetworkMonitor.Tests/RemoteSync/DatabricksSyncServiceTests.cs
-Processing (79/90): src/NetworkMonitor.Tests/RemoteSync/RemoteSyncServiceTests.cs
-Processing (80/90): src/NetworkMonitor.Tests/Services/DnsResolverServiceTests.cs
-Processing (81/90): src/NetworkMonitor.Tests/Services/GatewayDetectorTests.cs
-Processing (82/90): src/NetworkMonitor.Tests/Services/InternetTargetProviderTests.cs
-Processing (83/90): src/NetworkMonitor.Tests/Services/LiveConsoleTests.cs
-Processing (84/90): src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs
-Processing (85/90): src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs
-Processing (86/90): src/NetworkMonitor.Tests/Services/PingAddressSelectorTests.cs
-Processing (87/90): src/NetworkMonitor.Tests/Storage/SqliteStorageServiceTests.cs
-Processing (88/90): src/NetworkMonitor.slnx
-Processing (89/90): src/run.sh
-Processing (90/90): verify.sh
+Found 89 files to export
+Processing (1/89): .github/dependabot.yml
+Processing (2/89): .github/workflows/build-and-test.yml
+Processing (3/89): .github/workflows/dependency-check.yml
+Processing (4/89): .github/workflows/release.yml
+Processing (5/89): README.md
+Processing (6/89): export.sh
+Processing (7/89): global.json
+Processing (8/89): src/Directory.Build.props
+Processing (9/89): src/Directory.Packages.props
+Processing (10/89): src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
+Processing (11/89): src/NetworkMonitor.Console/Program.cs
+Processing (12/89): src/NetworkMonitor.Console/appsettings.json
+Processing (13/89): src/NetworkMonitor.Core/Exporters/FileExporterExtensions.cs
+Processing (14/89): src/NetworkMonitor.Core/Exporters/FileExporterOptions.cs
+Processing (15/89): src/NetworkMonitor.Core/Exporters/FileMetricExporter.cs
+Processing (16/89): src/NetworkMonitor.Core/Logging/LiveConsoleLogger.cs
+Processing (17/89): src/NetworkMonitor.Core/Logging/LiveConsoleLoggerProvider.cs
+Processing (18/89): src/NetworkMonitor.Core/Logging/LiveConsoleLoggingExtensions.cs
+Processing (19/89): src/NetworkMonitor.Core/Models/CheckRollup.cs
+Processing (20/89): src/NetworkMonitor.Core/Models/DatabricksSyncOptions.cs
+Processing (21/89): src/NetworkMonitor.Core/Models/DnsResult.cs
+Processing (22/89): src/NetworkMonitor.Core/Models/HistoricalData.cs
+Processing (23/89): src/NetworkMonitor.Core/Models/MonitorOptions.cs
+Processing (24/89): src/NetworkMonitor.Core/Models/MonitorTarget.cs
+Processing (25/89): src/NetworkMonitor.Core/Models/NetworkStatus.cs
+Processing (26/89): src/NetworkMonitor.Core/Models/NetworkStatusEventArgs.cs
+Processing (27/89): src/NetworkMonitor.Core/Models/PingResult.cs
+Processing (28/89): src/NetworkMonitor.Core/Models/RemoteSyncOptions.cs
+Processing (29/89): src/NetworkMonitor.Core/Models/StorageOptions.cs
+Processing (30/89): src/NetworkMonitor.Core/Models/TargetCheckResult.cs
+Processing (31/89): src/NetworkMonitor.Core/NetworkMonitor.Core.csproj
+Processing (32/89): src/NetworkMonitor.Core/RemoteSync/DatabricksSqlClient.cs
+Processing (33/89): src/NetworkMonitor.Core/RemoteSync/DatabricksStatement.cs
+Processing (34/89): src/NetworkMonitor.Core/RemoteSync/DatabricksSyncService.cs
+Processing (35/89): src/NetworkMonitor.Core/RemoteSync/HranaStatement.cs
+Processing (36/89): src/NetworkMonitor.Core/RemoteSync/IDatabricksClient.cs
+Processing (37/89): src/NetworkMonitor.Core/RemoteSync/IRemoteDatabaseClient.cs
+Processing (38/89): src/NetworkMonitor.Core/RemoteSync/RemoteSyncService.cs
+Processing (39/89): src/NetworkMonitor.Core/RemoteSync/TursoHranaClient.cs
+Processing (40/89): src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
+Processing (41/89): src/NetworkMonitor.Core/Services/ConsoleStatusDisplay.cs
+Processing (42/89): src/NetworkMonitor.Core/Services/DnsResolverService.cs
+Processing (43/89): src/NetworkMonitor.Core/Services/GatewayDetector.cs
+Processing (44/89): src/NetworkMonitor.Core/Services/IDnsResolverService.cs
+Processing (45/89): src/NetworkMonitor.Core/Services/IGatewayDetector.cs
+Processing (46/89): src/NetworkMonitor.Core/Services/IInternetTargetProvider.cs
+Processing (47/89): src/NetworkMonitor.Core/Services/INetworkConfigurationService.cs
+Processing (48/89): src/NetworkMonitor.Core/Services/INetworkMonitorService.cs
+Processing (49/89): src/NetworkMonitor.Core/Services/IPingService.cs
+Processing (50/89): src/NetworkMonitor.Core/Services/IStatusDisplay.cs
+Processing (51/89): src/NetworkMonitor.Core/Services/InternetTargetProvider.cs
+Processing (52/89): src/NetworkMonitor.Core/Services/LiveConsole.cs
+Processing (53/89): src/NetworkMonitor.Core/Services/MonitorBackgroundService.cs
+Processing (54/89): src/NetworkMonitor.Core/Services/NetworkConfigurationService.cs
+Processing (55/89): src/NetworkMonitor.Core/Services/NetworkMonitorService.cs
+Processing (56/89): src/NetworkMonitor.Core/Services/PingService.cs
+Processing (57/89): src/NetworkMonitor.Core/Storage/IStorageService.cs
+Processing (58/89): src/NetworkMonitor.Core/Storage/SqliteStorageService.cs
+Processing (59/89): src/NetworkMonitor.Tests/Fakes/FakeDatabricksClient.cs
+Processing (60/89): src/NetworkMonitor.Tests/Fakes/FakeDnsResolverService.cs
+Processing (61/89): src/NetworkMonitor.Tests/Fakes/FakeGatewayDetector.cs
+Processing (62/89): src/NetworkMonitor.Tests/Fakes/FakeInternetTargetProvider.cs
+Processing (63/89): src/NetworkMonitor.Tests/Fakes/FakeNetworkConfigurationService.cs
+Processing (64/89): src/NetworkMonitor.Tests/Fakes/FakePingService.cs
+Processing (65/89): src/NetworkMonitor.Tests/Fakes/FakePingServiceTests.cs
+Processing (66/89): src/NetworkMonitor.Tests/Fakes/FakeRemoteDatabaseClient.cs
+Processing (67/89): src/NetworkMonitor.Tests/Fakes/FakeStorageService.cs
+Processing (68/89): src/NetworkMonitor.Tests/Models/DnsResultTests.cs
+Processing (69/89): src/NetworkMonitor.Tests/Models/MonitorOptionsTests.cs
+Processing (70/89): src/NetworkMonitor.Tests/Models/NetworkHealthTests.cs
+Processing (71/89): src/NetworkMonitor.Tests/Models/NetworkStatusEventArgsTests.cs
+Processing (72/89): src/NetworkMonitor.Tests/Models/PingResultTests.cs
+Processing (73/89): src/NetworkMonitor.Tests/Models/TargetCheckResultTests.cs
+Processing (74/89): src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj
+Processing (75/89): src/NetworkMonitor.Tests/NetworkStatusTests.cs
+Processing (76/89): src/NetworkMonitor.Tests/PingResultTests.cs
+Processing (77/89): src/NetworkMonitor.Tests/RemoteSync/DatabricksSyncServiceTests.cs
+Processing (78/89): src/NetworkMonitor.Tests/RemoteSync/RemoteSyncServiceTests.cs
+Processing (79/89): src/NetworkMonitor.Tests/Services/DnsResolverServiceTests.cs
+Processing (80/89): src/NetworkMonitor.Tests/Services/GatewayDetectorTests.cs
+Processing (81/89): src/NetworkMonitor.Tests/Services/InternetTargetProviderTests.cs
+Processing (82/89): src/NetworkMonitor.Tests/Services/LiveConsoleTests.cs
+Processing (83/89): src/NetworkMonitor.Tests/Services/NetworkConfigurationServiceTests.cs
+Processing (84/89): src/NetworkMonitor.Tests/Services/NetworkMonitorServiceTests.cs
+Processing (85/89): src/NetworkMonitor.Tests/Services/PingAddressSelectorTests.cs
+Processing (86/89): src/NetworkMonitor.Tests/Storage/SqliteStorageServiceTests.cs
+Processing (87/89): src/NetworkMonitor.slnx
+Processing (88/89): src/run.sh
+Processing (89/89): verify.sh
 
 Export completed successfully!
 Output file: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
-Total source size: 0.39 MB across 90 files
+Total source size: 0.39 MB across 89 files
 
-real	0m1.028s
-user	0m0.610s
-sys	0m0.741s
+real	0m1.011s
+user	0m0.586s
+sys	0m0.757s
 Restore complete (0.5s)
   NetworkMonitor.Core net10.0 succeeded (0.3s) → NetworkMonitor.Core/bin/Debug/net10.0/NetworkMonitor.Core.dll
-  NetworkMonitor.Console net10.0 succeeded (0.3s) → NetworkMonitor.Console/bin/Debug/net10.0/NetworkMonitor.Console.dll
   NetworkMonitor.Tests net10.0 succeeded (0.3s) → NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll
+  NetworkMonitor.Console net10.0 succeeded (0.4s) → NetworkMonitor.Console/bin/Debug/net10.0/NetworkMonitor.Console.dll
 
-Build succeeded in 1.1s
+Build succeeded in 1.2s
 
-real	0m1.268s
-user	0m1.216s
-sys	0m0.228s
+real	0m1.336s
+user	0m1.271s
+sys	0m0.242s
 Running tests from NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll (net10.0|x64)
-failed NetworkMonitor.Tests.RemoteSync.DatabricksSyncServiceTests.SanitizeIdentifier_StripsUnsafeCharsAndFallsBack (2ms)
-  from NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll (net10.0|x64)
-  Assert.Equal() Failure: Strings differ
-               ↓ (pos 2)
-  Expected: "my_table"
-  Actual:   "mytable"
-               ↑ (pos 2)
-    at NetworkMonitor.Tests.RemoteSync.DatabricksSyncServiceTests.SanitizeIdentifier_StripsUnsafeCharsAndFallsBack() in NetworkMonitor.Tests/RemoteSync/DatabricksSyncServiceTests.cs:284
-    at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
-    at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
-NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll (net10.0|x64) failed with 1 error(s) (632ms)
-Exit code: 2
+NetworkMonitor.Tests/bin/Debug/net10.0/NetworkMonitor.Tests.dll (net10.0|x64) passed (830ms)
 
-Test run summary: Failed!
+Test run summary: Passed!
   total: 115
-  failed: 1
-  succeeded: 114
+  failed: 0
+  succeeded: 115
   skipped: 0
-  duration: 812ms
-Test run completed with non-success exit code: 2 (see: https://aka.ms/testingplatform/exitcodes)
+  duration: 1s 016ms
 
-real	0m1.823s
-user	0m2.233s
-sys	0m0.400s
+real	0m1.998s
+user	0m2.147s
+sys	0m0.410s
 Restore complete (0.4s)
 
 Build succeeded in 0.5s
@@ -202,9 +178,9 @@ Project 'NetworkMonitor.Console' has the following package references
    [net10.0]: 
    Top-level Package                            Requested   Resolved
    > Microsoft.Extensions.Hosting               10.0.12     10.0.12 
-   > OpenTelemetry.Exporter.Console             1.18.0      1.18.0  
-   > OpenTelemetry.Extensions.Hosting           1.18.0      1.18.0  
-   > OpenTelemetry.Instrumentation.Runtime      1.18.0      1.18.0  
+   > OpenTelemetry.Exporter.Console             1.19.1      1.19.1  
+   > OpenTelemetry.Extensions.Hosting           1.19.1      1.19.1  
+   > OpenTelemetry.Instrumentation.Runtime      1.19.0      1.19.0  
 
 Project 'NetworkMonitor.Core' has the following package references
    [net10.0]: 
@@ -213,10 +189,10 @@ Project 'NetworkMonitor.Core' has the following package references
    > Microsoft.Extensions.Hosting                   10.0.12     10.0.12 
    > Microsoft.Extensions.Logging.Abstractions      10.0.12     10.0.12 
    > Microsoft.Extensions.Options                   10.0.12     10.0.12 
-   > OpenTelemetry                                  1.18.0      1.18.0  
-   > OpenTelemetry.Exporter.Console                 1.18.0      1.18.0  
-   > OpenTelemetry.Extensions.Hosting               1.18.0      1.18.0  
-   > OpenTelemetry.Instrumentation.Runtime          1.18.0      1.18.0  
+   > OpenTelemetry                                  1.19.1      1.19.1  
+   > OpenTelemetry.Exporter.Console                 1.19.1      1.19.1  
+   > OpenTelemetry.Extensions.Hosting               1.19.1      1.19.1  
+   > OpenTelemetry.Instrumentation.Runtime          1.19.0      1.19.0  
 
 Project 'NetworkMonitor.Tests' has the following package references
    [net10.0]: 
@@ -227,34 +203,21 @@ Project 'NetworkMonitor.Tests' has the following package references
    > xunit.v3                                       4.0.1       4.0.1   
 
 
-real	0m1.428s
-user	0m1.431s
-sys	0m0.269s
-Restore complete (0.4s)
+real	0m1.420s
+user	0m1.409s
+sys	0m0.279s
+Restore complete (0.5s)
 
-Build succeeded in 0.5s
+Build succeeded in 0.6s
 
 The following sources were used:
    https://api.nuget.org/v3/index.json
 
-Project `NetworkMonitor.Console` has the following updates to its packages
-   [net10.0]: 
-   Top-level Package                            Requested   Resolved   Latest
-   > OpenTelemetry.Exporter.Console             1.18.0      1.18.0     1.19.1
-   > OpenTelemetry.Extensions.Hosting           1.18.0      1.18.0     1.19.1
-   > OpenTelemetry.Instrumentation.Runtime      1.18.0      1.18.0     1.19.0
-
-Project `NetworkMonitor.Core` has the following updates to its packages
-   [net10.0]: 
-   Top-level Package                            Requested   Resolved   Latest
-   > OpenTelemetry                              1.18.0      1.18.0     1.19.1
-   > OpenTelemetry.Exporter.Console             1.18.0      1.18.0     1.19.1
-   > OpenTelemetry.Extensions.Hosting           1.18.0      1.18.0     1.19.1
-   > OpenTelemetry.Instrumentation.Runtime      1.18.0      1.18.0     1.19.0
-
+The given project `NetworkMonitor.Console` has no updates given the current sources.
+The given project `NetworkMonitor.Core` has no updates given the current sources.
 The given project `NetworkMonitor.Tests` has no updates given the current sources.
 
-real	0m1.644s
-user	0m1.607s
-sys	0m0.282s
+real	0m1.693s
+user	0m1.682s
+sys	0m0.304s
 kushal@fedora:~/src/dotnet/network-monitor/src$ 
