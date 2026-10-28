@@ -1,8 +1,8 @@
 ===============================================================================
 PROJECT EXPORT
-Generated (UTC): 2026-10-28 13:03:08
+Generated (UTC): 2026-10-28 13:04:28
 Project Path:    /home/kushal/src/dotnet/network-monitor
-Git Commit:      2ec4a5c309c0658150a4a906ba1384f48a843ab5
+Git Commit:      0628f66677a2f2a13793418e59d42b4e9733b50f
 Git Branch:      master
 .NET SDK:        10.0.113
 Files Exported:  89
@@ -1499,8 +1499,8 @@ MODIFIED: 2026-09-04 08:39:41
 FILE:     src/Directory.Packages.props
 SIZE:     2.77 KB (2839 bytes)
 LINES:    59
-SHA256:   749ac602433b294e6ce1346ff0c38532cf2698b8aa16453f26263535ed4daaeb
-MODIFIED: 2026-10-15 19:54:32
+SHA256:   0b6035969bafee631a7829aa76c206fed5da9b6a64731cbe3ddb840af8e36ae2
+MODIFIED: 2026-10-28 09:03:47
 ================================================================================
 
 <Project>
@@ -1535,8 +1535,8 @@ MODIFIED: 2026-10-15 19:54:32
       One property per "family" so a single edit (or Dependabot bump) moves
       every related package together and stays consistent.
     -->
-    <OpenTelemetryVersion>1.20.0</OpenTelemetryVersion>
-    <ExtensionsVersions>10.0.13</ExtensionsVersions>
+    <OpenTelemetryVersion>1.20.1</OpenTelemetryVersion>
+    <ExtensionsVersions>10.0.14</ExtensionsVersions>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11988,9 +11988,9 @@ exit $OVERALL
 
 
 ===============================================================================
-EXPORT COMPLETED (UTC): 2026-10-28 13:03:09
+EXPORT COMPLETED (UTC): 2026-10-28 13:04:29
 Total Files Exported:   89
 Total Source Size:      0.38 MB (402978 bytes)
 Output File:            /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
-DUMP SHA256 (of all lines above this one): 6246b8238f2cf4a3f339dc6bef078278308baba7231ba15026468502c5042b9b
+DUMP SHA256 (of all lines above this one): 0cce47d58a2e4bf312632a16586f9ca8ec0043c3ac9992e3dea12ebdc7c1c73a
