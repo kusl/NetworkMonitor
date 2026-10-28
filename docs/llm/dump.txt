@@ -1,8 +1,8 @@
 ===============================================================================
 PROJECT EXPORT
-Generated (UTC): 2026-10-28 13:04:28
+Generated (UTC): 2026-10-28 13:11:16
 Project Path:    /home/kushal/src/dotnet/network-monitor
-Git Commit:      0628f66677a2f2a13793418e59d42b4e9733b50f
+Git Commit:      0a49b8a5dfd3daa431e3f144cfa252d7b40695ae
 Git Branch:      master
 .NET SDK:        10.0.113
 Files Exported:  89
@@ -170,8 +170,8 @@ updates:
 FILE:     .github/workflows/build-and-test.yml
 SIZE:     2.07 KB (2121 bytes)
 LINES:    68
-SHA256:   a304619acb4771f9fb1bc559438c8f2af204584a918cbfcfbc00d7470163c691
-MODIFIED: 2026-09-04 08:39:41
+SHA256:   dfb6f7d88bf1eecb6d6df16c88f08aa762af9621a876060d051db0be689335bb
+MODIFIED: 2026-10-28 09:08:48
 ================================================================================
 
 # GitHub Actions Workflow: Build and Test
@@ -210,7 +210,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Setup .NET 10
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           # .NET 10 is GA, so pin to the stable channel (no preview quality).
           dotnet-version: '10.0.x'
@@ -248,8 +248,8 @@ jobs:
 FILE:     .github/workflows/dependency-check.yml
 SIZE:     2.57 KB (2632 bytes)
 LINES:    85
-SHA256:   845fef466ae136c9659910328f09a954f9975fbf6bd312a091b08cea05fa7f76
-MODIFIED: 2026-09-04 08:39:41
+SHA256:   a97f340619825c9ed2d4c7be021f76abb74c8a72add0f7c2946e133095cc6e7c
+MODIFIED: 2026-10-28 09:09:06
 ================================================================================
 
 # GitHub Actions Workflow: Dependency Check
@@ -280,7 +280,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Setup .NET 10
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
 
@@ -11988,9 +11988,9 @@ exit $OVERALL
 
 
 ===============================================================================
-EXPORT COMPLETED (UTC): 2026-10-28 13:04:29
+EXPORT COMPLETED (UTC): 2026-10-28 13:11:17
 Total Files Exported:   89
 Total Source Size:      0.38 MB (402978 bytes)
 Output File:            /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
-DUMP SHA256 (of all lines above this one): 0cce47d58a2e4bf312632a16586f9ca8ec0043c3ac9992e3dea12ebdc7c1c73a
+DUMP SHA256 (of all lines above this one): 6d29b449fb6a7c135e6708fb4e0c503cebc92c8859c828f86c4bfe2aec0d39f5
