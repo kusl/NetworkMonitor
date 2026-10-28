@@ -1,10 +1,10 @@
 ===============================================================================
 PROJECT EXPORT
-Generated (UTC): 2026-10-16 00:04:49
+Generated (UTC): 2026-10-28 13:03:08
 Project Path:    /home/kushal/src/dotnet/network-monitor
-Git Commit:      e3e667a0ac1762dee488fab8f694a50796f23e52
+Git Commit:      2ec4a5c309c0658150a4a906ba1384f48a843ab5
 Git Branch:      master
-.NET SDK:        10.0.112
+.NET SDK:        10.0.113
 Files Exported:  89
 ===============================================================================
 
@@ -11988,9 +11988,9 @@ exit $OVERALL
 
 
 ===============================================================================
-EXPORT COMPLETED (UTC): 2026-10-16 00:04:50
+EXPORT COMPLETED (UTC): 2026-10-28 13:03:09
 Total Files Exported:   89
 Total Source Size:      0.38 MB (402978 bytes)
 Output File:            /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
-DUMP SHA256 (of all lines above this one): 625cd1a66148cdcf304e53f5c4a239bd8ec55a87f136ebf7877ddc18196a2b9e
+DUMP SHA256 (of all lines above this one): 6246b8238f2cf4a3f339dc6bef078278308baba7231ba15026468502c5042b9b
