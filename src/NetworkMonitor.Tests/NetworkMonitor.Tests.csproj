@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <NoWarn>$(NoWarn);CA1707</NoWarn>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NetworkMonitor.Core\NetworkMonitor.Core.csproj" />
-    <OutputType>Exe</OutputType>
   </ItemGroup>
 </Project>
