@@ -7,5 +7,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NetworkMonitor.Core\NetworkMonitor.Core.csproj" />
+    <OutputType>Exe</OutputType>
   </ItemGroup>
 </Project>
