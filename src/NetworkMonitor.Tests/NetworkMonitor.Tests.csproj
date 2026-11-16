@@ -1,28 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!--
-    Unit tests using xUnit 3.
-    
-    Testing approach:
-    - Use manual fakes/stubs instead of mocking frameworks (Moq is banned)
-    - Focus on behavior, not implementation details
-    - Each test class tests one component in isolation
-    - Integration tests can test multiple components together
-  -->
   <PropertyGroup>
-    <!-- 
-      CA1707: Identifiers should not contain underscores
-      Disabled because test methods commonly use Method_Scenario_Expected naming.
-    -->
     <NoWarn>$(NoWarn);CA1707</NoWarn>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
-    <PackageReference Include="xunit.runner.visualstudio" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\NetworkMonitor.Core\NetworkMonitor.Core.csproj" />
   </ItemGroup>

@@ -91,3 +91,210 @@ Download .NET:
 kushal@fedora:~/src/dotnet/MyImapDownloader$ 
 
 ```
+
+
+
+
+
+
+
+# .NET 11 rewrite (2026-11-16)
+
+Not compiled before delivery: the sandbox had no NuGet or .NET SDK access. CI is the first build.
+
+## Compatibility kept
+- SQLite schema, file location, category strings, sync checkpoint keys, remote table DDL and SQL, telemetry file names and JSON format, appsettings keys (`RemoteSync:Mode` dropped, it was never read)
+
+## Structure
+- Core namespaces: Configuration, Models, Monitoring, Display, Storage, Sync (+Turso, Databricks), Telemetry
+- `TargetProber`: resolves DNS once per target with a `TimeoutMs` deadline, then pings the resolved IP
+- `HealthEvaluator`: pure static class; messages are unchanged
+- `RollupSyncer` + `IRollupSink`: one engine replaces the duplicated Turso and Databricks services
+- `SqliteStore` implements `IStatusStore` and `IRollupStore`
+- `RollingJsonArrayWriter`: fixes telemetry rotation, which used to reopen and truncate the same file
+- Options are clamped in `field`-backed setters
+
+## Language and runtime features used
+- C# 15: `union SqlValue(long, double, string)`, `[with(capacity: n)]`
+- C# 14: extension blocks, `field`
+- `TimeProvider`, `IMeterFactory`, `PeriodicTimer`, `Parallel.ForEachAsync`
+
+## Build
+- global.json requires 11.0.100-rc.3 or later with latestFeature and allowPrerelease
+- Removed Microsoft.NET.Test.Sdk, xunit.runner.visualstudio (tests run on MTP only), OpenTelemetry.Exporter.Console, and the redundant Options/Logging.Abstractions references
+- Release: test job, version job, InformationalVersion stamped, zip includes the RID folder
+- Content root is `AppContext.BaseDirectory`
+
+## Rejected
+- Native AOT and trimming: would need cross-compile toolchains for 6 RIDs
+- The built-in System.Runtime meter: it would rename the runtime metrics in telemetry files
+- Runtime-async: still preview
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Build configuration first.Now models.I rewrote the project for .NET 11 and C# 15. The tarball has the 74 new or changed files, with paths relative to the repo root. **It hasn't been compiled or tested yet.** This workspace couldn't reach NuGet or download a .NET SDK, so CI will be the first build. I only checked the syntax with a parser, and that parser doesn't know C# 15. The C# goes from about 9,200 lines to about 4,700.
+
+**Apply it**
+```bash
+rm -rf src/NetworkMonitor.Core src/NetworkMonitor.Tests
+tar -xzf networkmonitor-dotnet11.tar.gz
+./verify.sh
+```
+Deleting those two folders removes all 66 old files. Every file that belongs in them now is in the tarball. Old folders that are now gone: `Core/Services`, `Core/RemoteSync`, `Core/Exporters`, `Core/Logging`, `Tests/Services`, `Tests/RemoteSync`, `Tests/Models`. `verify.sh` reports any of them that are still there.
+
+**Works with RC3 locally and the stable release in CI:** `global.json` asks for `11.0.100-rc.3.26522.148` or anything newer in 11.0, and allows preview builds. Your laptop uses RC3; CI installs the stable `11.0.x` SDK, which counts as newer.
+
+**Your data is untouched:** the SQLite schema and file location, the sync checkpoint keys, the remote table names and SQL, the telemetry file names and JSON format, and the `appsettings.json` keys all stay the same. I dropped `RemoteSync:Mode`, which nothing ever read.
+
+**What changed, and why**
+- **Two bugs fixed:**
+  - Telemetry file rotation used to reopen and wipe the same file at UTC midnight and at 25 MB, so earlier metrics were lost. A small new writer class now numbers the files `_001`, `_002`, and so on.
+  - Databricks status polling built the wrong URL, so slow statements always counted as failed.
+- **DNS timeout:** this is the fix from your notes. Each hostname is now looked up once per cycle with a hard `TimeoutMs` limit, then the resolved IP is pinged. Before, the name was looked up twice with no time limit. The `resolved_ip` column now holds the address that was actually pinged.
+- **One sync engine:** the Turso and Databricks sync services repeated about 400 lines of the same logic. Now one engine drives both, and each destination only builds its own SQL.
+- **Settings file location:** `appsettings.json` is now read from the folder the program is in. The release notes' `./linux-x64/NetworkMonitor.Console` launch silently ignored the file before.
+- **Smaller pieces:** the health rules are now their own self-contained class with the same messages as before. Storage has separate interfaces for saving cycles and for sync. Time and metrics are injected, so the tests no longer depend on the real clock.
+- **Deleted dead code:** history queries, the recent-pings query, the IPv6 gateway and target lists, the status-changed event, and the internet target provider class.
+- **New language features:**
+  - C# 15: a union type for SQL values, so encoding them must cover every case, and collection expression arguments (`[with(capacity: …)]`).
+  - C# 14: extension members and validation in `field`-backed setters, which replaced the range checks scattered across the code.
+- **Dependencies:**
+  - Microsoft.Extensions and Microsoft.Data.Sqlite go to 11.0.0. OpenTelemetry (1.21.0), xunit.v3 (4.0.3) and the GitHub Actions versions were already the latest stable.
+  - Removed `Microsoft.NET.Test.Sdk` and `xunit.runner.visualstudio`, since tests run only on Microsoft.Testing.Platform.
+  - Removed `OpenTelemetry.Exporter.Console`, because the detailed console mode already shows the same data.
+- **CI:**
+  - The release workflow now runs the tests before building binaries.
+  - Each binary is stamped with its release version, which the startup banner shows.
+  - The Windows zip now contains the `win-x64` folder, so it matches the install steps in the release notes.
+  - The dependency report uses the newer `dotnet package list` command.
+  - `run.sh --test` was missing `--solution` and failed; fixed.
+- **Considered and left out:**
+  - Native AOT: it needs a cross-compile toolchain for each of the six platforms.
+  - The built-in `System.Runtime` metrics: they would rename the runtime metrics in your telemetry files.
+  - Runtime async: still a preview feature.
+
+**Most likely to break on the first CI run**
+- **Union type syntax:** RC3 and the release compiler could differ slightly.
+- **Code analysis warnings treated as errors:** I avoided the risky ones I know of. If one fires, it should be a one-line fix.
+- **Test discovery:** removing `Microsoft.NET.Test.Sdk` could stop `dotnet test` finding the test project. If that happens, add the package back.
+
+The README is rewritten to match. I also saved a short summary of these decisions to the project as `claude/dotnet11-rewrite.md`.
+
+Sources: [C# 15 what's new](https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-15), [Union types](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/union), [.NET 11 overview](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-11/overview), [Upgrading to .NET 11](https://startdebugging.net/2026/11/dotnet-11-is-generally-available-what-to-change-in-your-project/), [OpenTelemetry](https://www.nuget.org/packages/OpenTelemetry), [OpenTelemetry.Instrumentation.Runtime](https://www.nuget.org/packages/OpenTelemetry.Instrumentation.Runtime), [xunit.v3](https://www.nuget.org/packages/xunit.v3), [Microsoft.Data.Sqlite](https://www.nuget.org/packages/Microsoft.Data.Sqlite), [Microsoft.Extensions.Hosting](https://www.nuget.org/packages/Microsoft.Extensions.Hosting), [SQLitePCLRaw](https://www.nuget.org/packages/SQLitePCLRaw.bundle_e_sqlite3), [actions/checkout](https://github.com/actions/checkout/releases), [actions/setup-dotnet](https://github.com/actions/setup-dotnet/releases), [actions/upload-artifact](https://github.com/actions/upload-artifact/releases), [actions/download-artifact](https://github.com/actions/download-artifact/releases)
+
+30
+62
+100
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

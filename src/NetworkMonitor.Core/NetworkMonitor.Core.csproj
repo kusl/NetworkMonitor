@@ -1,22 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!--
-    Core library containing:
-    - Domain models (PingResult, NetworkStatus, etc.)
-    - Service interfaces and implementations
-    - Storage abstractions and implementations (File, SQLite)
-    - OpenTelemetry exporters
-    
-    This project has no UI dependencies and can be tested in isolation.
-  -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" />
-    <PackageReference Include="Microsoft.Extensions.Options" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
-    <!-- OpenTelemetry packages -->
-    <PackageReference Include="OpenTelemetry" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
-    <PackageReference Include="OpenTelemetry.Exporter.Console" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="NetworkMonitor.Tests" />
   </ItemGroup>
 </Project>

@@ -1,59 +1,15 @@
 <Project>
-  <!--
-    Central Package Management (CPM)
-    All NuGet package versions are defined here for consistency.
-
-    PACKAGE SELECTION CRITERIA:
-    1. Must be free/open source (Apache 2.0, MIT, BSD, etc.)
-    2. Must be actively maintained
-    3. Prefer Microsoft/official packages where available
-    4. Minimal footprint - only include what's truly needed
-
-    BANNED PACKAGES (DO NOT ADD):
-    - FluentAssertions (restrictive license)
-    - MassTransit (restrictive license)
-    - Moq (controversial maintainer)
-    - Any package with "non-commercial only" license
-
-    LAST UPDATED: 2026-07-10 (versions verified against upstream release feeds)
-  -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <!--
-      Transitive pinning lets the versions below override transitive
-      dependencies. This is how we force the SQLitePCLRaw native SQLite
-      package up to a patched build (see the SQLite section at the bottom).
-    -->
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-
-    <!--
-      One property per "family" so a single edit (or Dependabot bump) moves
-      every related package together and stays consistent.
-    -->
+    <MicrosoftExtensionsVersion>11.0.0</MicrosoftExtensionsVersion>
     <OpenTelemetryVersion>1.21.0</OpenTelemetryVersion>
-    <ExtensionsVersions>10.0.14</ExtensionsVersions>
   </PropertyGroup>
-
   <ItemGroup>
-    <!-- Microsoft.Extensions.* - Core DI and hosting (MIT License) -->
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(ExtensionsVersions)" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="$(ExtensionsVersions)" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="$(ExtensionsVersions)" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="$(ExtensionsVersions)" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="$(ExtensionsVersions)" />
-
-    <!-- SQLite - Official Microsoft package (MIT License) -->
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="$(ExtensionsVersions)" />
-
-    <!-- OpenTelemetry - Official packages (Apache 2.0 License) -->
-    <PackageVersion Include="OpenTelemetry" Version="$(OpenTelemetryVersion)" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="$(OpenTelemetryVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="$(MicrosoftExtensionsVersion)" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="$(OpenTelemetryVersion)" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OpenTelemetryVersion)" />
-
-    <!-- Testing - xUnit 3 (Apache 2.0 License) -->
     <PackageVersion Include="xunit.v3" Version="4.0.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
   </ItemGroup>
 </Project>

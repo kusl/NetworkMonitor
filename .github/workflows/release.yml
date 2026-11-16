@@ -1,35 +1,13 @@
-# GitHub Actions Workflow: Build and Create Release
-# Triggers on every push to any branch
-# Creates self-contained executables for all major desktop platforms
-# Publishes a full GitHub release (never pre-release) with all binaries
-#
-# Supported platforms:
-#   - Windows: x64, ARM64
-#   - macOS: x64 (Intel), ARM64 (Apple Silicon)
-#   - Linux: x64, ARM64
-#
-# Design Philosophy:
-#   - Avoid high-level GitHub Actions abstractions where possible
-#   - Use shell commands directly instead of specialized actions
-#   - Only use actions/checkout, actions/upload-artifact, actions/download-artifact
-#     (these are fundamental and have no simpler alternative)
-#   - Pin those actions to MAJOR version tags only (e.g. v7), so they track the
-#     latest compatible release without a churny version bump on every patch
-#   - Use GitHub CLI (gh) for release creation instead of specialized release actions
-#   - Install .NET manually using official install scripts
-
 name: Build and Release
 
 on:
   push:
     branches:
-      - '**'  # All branches
+      - '**'
 
 permissions:
-  contents: write  # Required to create releases and upload assets
+  contents: write
 
-# Serialize releases per ref. cancel-in-progress is false on purpose: a release
-# that is mid-upload should finish rather than be killed by the next push.
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
@@ -38,45 +16,69 @@ env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CHANNEL: '11.0'
   PROJECT_PATH: src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
   SOLUTION_PATH: src/NetworkMonitor.slnx
 
 jobs:
-  # ==========================================================================
-  # Build binaries for each platform
-  # Each platform builds on its native runner for best compatibility
-  # ==========================================================================
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Generate version string
+        id: version
+        shell: bash
+        run: |
+          VERSION="v1.0.$(date -u +%Y%m%d.%H%M%S)"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Generated version: ${VERSION}"
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install .NET
+        shell: bash
+        run: |
+          curl -sSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
+          chmod +x dotnet-install.sh
+          ./dotnet-install.sh --channel "$DOTNET_CHANNEL" --install-dir "$HOME/.dotnet"
+          echo "$HOME/.dotnet" >> "$GITHUB_PATH"
+          echo "DOTNET_ROOT=$HOME/.dotnet" >> "$GITHUB_ENV"
+
+      - name: Test
+        shell: bash
+        run: dotnet test --solution "$SOLUTION_PATH" --configuration Release
+
   build:
+    needs: [version, test]
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Windows x64
           - os: windows-latest
             rid: win-x64
             artifact-name: network-monitor-win-x64
             archive-type: zip
-          # Windows ARM64 (cross-compile from x64)
           - os: windows-latest
             rid: win-arm64
             artifact-name: network-monitor-win-arm64
             archive-type: zip
-          # macOS x64 (Intel) - uses macos-latest
           - os: macos-latest
             rid: osx-x64
             artifact-name: network-monitor-osx-x64
             archive-type: tar
-          # macOS ARM64 (Apple Silicon) - uses macos-latest
           - os: macos-latest
             rid: osx-arm64
             artifact-name: network-monitor-osx-arm64
             archive-type: tar
-          # Linux x64
           - os: ubuntu-latest
             rid: linux-x64
             artifact-name: network-monitor-linux-x64
             archive-type: tar
-          # Linux ARM64 (cross-compile from x64)
           - os: ubuntu-latest
             rid: linux-arm64
             artifact-name: network-monitor-linux-arm64
@@ -85,82 +87,63 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      # Checkout - fundamental action, no simpler alternative exists
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      # Install .NET manually using official Microsoft install scripts
-      # This avoids the actions/setup-dotnet abstraction.
-      # .NET 10 is GA, so we install from the stable 10.0 channel (no preview).
-      - name: Install .NET 10 (Unix)
+      - name: Install .NET (Unix)
         if: runner.os != 'Windows'
         shell: bash
         run: |
           curl -sSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
           chmod +x dotnet-install.sh
-          ./dotnet-install.sh --channel 10.0 --install-dir "$HOME/.dotnet"
-          echo "$HOME/.dotnet" >> $GITHUB_PATH
-          echo "DOTNET_ROOT=$HOME/.dotnet" >> $GITHUB_ENV
+          ./dotnet-install.sh --channel "$DOTNET_CHANNEL" --install-dir "$HOME/.dotnet"
+          echo "$HOME/.dotnet" >> "$GITHUB_PATH"
+          echo "DOTNET_ROOT=$HOME/.dotnet" >> "$GITHUB_ENV"
 
-      - name: Install .NET 10 (Windows)
+      - name: Install .NET (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           Invoke-WebRequest -Uri https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-          ./dotnet-install.ps1 -Channel 10.0 -InstallDir "$env:USERPROFILE\.dotnet"
+          ./dotnet-install.ps1 -Channel $env:DOTNET_CHANNEL -InstallDir "$env:USERPROFILE\.dotnet"
           echo "$env:USERPROFILE\.dotnet" | Out-File -FilePath $env:GITHUB_PATH -Append
           echo "DOTNET_ROOT=$env:USERPROFILE\.dotnet" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Verify .NET installation
         shell: bash
-        run: |
-          dotnet --info
-
-      - name: Restore dependencies
-        shell: bash
-        run: |
-          dotnet restore ${{ env.SOLUTION_PATH }}
+        run: dotnet --info
 
       - name: Publish self-contained binary
         shell: bash
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
         run: |
-          dotnet publish ${{ env.PROJECT_PATH }} \
+          dotnet publish "$PROJECT_PATH" \
             --configuration Release \
             --runtime ${{ matrix.rid }} \
             --self-contained true \
             -p:PublishSingleFile=true \
-            -p:PublishTrimmed=false \
             -p:IncludeNativeLibrariesForSelfExtract=true \
             -p:DebugType=None \
             -p:DebugSymbols=false \
+            -p:InformationalVersion="${VERSION#v}" \
             --output ./publish/${{ matrix.rid }}
-
-      - name: List published files
-        shell: bash
-        run: |
-          echo "Published files for ${{ matrix.rid }}:"
           ls -la ./publish/${{ matrix.rid }}/
 
       - name: Create tar.gz archive (Unix)
         if: matrix.archive-type == 'tar'
         shell: bash
         run: |
-          cd publish
-          tar -czvf ../${{ matrix.artifact-name }}.tar.gz ${{ matrix.rid }}
-          cd ..
-          echo "Created archive:"
+          tar -C publish -czvf ${{ matrix.artifact-name }}.tar.gz ${{ matrix.rid }}
           ls -la ${{ matrix.artifact-name }}.tar.gz
 
       - name: Create zip archive (Windows)
         if: matrix.archive-type == 'zip'
         shell: pwsh
         run: |
-          Compress-Archive -Path "publish\${{ matrix.rid }}\*" -DestinationPath "${{ matrix.artifact-name }}.zip"
-          Write-Host "Created archive:"
+          Compress-Archive -Path "publish\${{ matrix.rid }}" -DestinationPath "${{ matrix.artifact-name }}.zip"
           Get-ChildItem "${{ matrix.artifact-name }}.zip"
 
-      # Upload artifact - fundamental action for passing files between jobs
-      # No simpler alternative exists in GitHub Actions
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
@@ -171,21 +154,18 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
-  # ==========================================================================
-  # Create GitHub Release with all binaries
-  # Uses GitHub CLI (gh) instead of specialized release actions
-  # ==========================================================================
   release:
-    needs: build
+    needs: [version, build]
     runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
-          fetch-depth: 50  # Get some history for release notes
+          fetch-depth: 50
 
-      # Download artifacts - fundamental action for receiving files from other jobs
       - name: Download all build artifacts
         uses: actions/download-artifact@v8
         with:
@@ -195,42 +175,14 @@ jobs:
         shell: bash
         run: |
           mkdir -p ./release-assets
-
-          # Move all archives to a flat directory
           find ./artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" \) -exec mv {} ./release-assets/ \;
-
-          echo "=== Release Assets ==="
-          ls -la ./release-assets/
-
-      - name: Generate version string
-        id: version
-        shell: bash
-        run: |
-          # Version format: v1.0.YYYYMMDD.HHMMSS
-          # This ensures unique, sortable versions for every push
-          VERSION="v1.0.$(date -u +%Y%m%d.%H%M%S)"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "Generated version: ${VERSION}"
-
-      - name: Generate checksums
-        shell: bash
-        run: |
           cd ./release-assets
           sha256sum * > SHA256SUMS.txt
-          echo "=== Checksums ==="
           cat SHA256SUMS.txt
 
       - name: Generate release notes
         shell: bash
         run: |
-          # Build the notes by streaming known-safe pieces into the file. No
-          # placeholder substitution (sed/awk) is used, so commit messages or
-          # checksums containing regex/awk metacharacters can't corrupt output.
-          #
-          #   * github.ref_name / github.sha are GitHub-controlled expansions.
-          #   * The commit body is written by `git log` directly inside a fenced
-          #     code block, which neutralizes any Markdown or shell-special chars.
-          #   * The checksums are appended with `cat`, not substituted.
           {
             echo "## Network Monitor Release"
             echo ""
@@ -275,26 +227,21 @@ jobs:
             cat ./release-assets/SHA256SUMS.txt
             echo '```'
           } > release-notes.md
-
-          echo "=== Release Notes ==="
           cat release-notes.md
 
       - name: Create GitHub Release
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # gh creates the tag at --target if it doesn't already exist, so no
-          # separate "git tag && git push" step is needed. --latest marks this
-          # as the latest release (never a pre-release).
-          gh release create "${{ steps.version.outputs.version }}" \
-            --title "Release ${{ steps.version.outputs.version }}" \
+          gh release create "$VERSION" \
+            --title "Release $VERSION" \
             --notes-file release-notes.md \
             --target "${{ github.sha }}" \
             --latest \
             ./release-assets/*.zip \
             ./release-assets/*.tar.gz \
             ./release-assets/SHA256SUMS.txt
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Output release summary
         shell: bash
@@ -302,14 +249,12 @@ jobs:
           {
             echo "## ✅ Release Created Successfully"
             echo ""
-            echo "**Version:** \`${{ steps.version.outputs.version }}\`"
+            echo "**Version:** \`$VERSION\`"
             echo ""
-            echo "**Release URL:** https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.version }}"
+            echo "**Release URL:** https://github.com/${{ github.repository }}/releases/tag/$VERSION"
             echo ""
             echo "### Assets"
           } >> "$GITHUB_STEP_SUMMARY"
           for file in ./release-assets/*; do
-            filename=$(basename "$file")
-            size=$(ls -lh "$file" | awk '{print $5}')
-            echo "- \`${filename}\` (${size})" >> "$GITHUB_STEP_SUMMARY"
+            echo "- \`$(basename "$file")\` ($(ls -lh "$file" | awk '{print $5}'))" >> "$GITHUB_STEP_SUMMARY"
           done

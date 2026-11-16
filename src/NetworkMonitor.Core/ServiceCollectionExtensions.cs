@@ -1,108 +1,74 @@
+using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using NetworkMonitor.Core.Exporters;
-using NetworkMonitor.Core.Models;
-using NetworkMonitor.Core.RemoteSync;
-using NetworkMonitor.Core.Services;
+using NetworkMonitor.Core.Configuration;
+using NetworkMonitor.Core.Display;
+using NetworkMonitor.Core.Monitoring;
 using NetworkMonitor.Core.Storage;
+using NetworkMonitor.Core.Sync;
+using NetworkMonitor.Core.Sync.Databricks;
+using NetworkMonitor.Core.Sync.Turso;
+using NetworkMonitor.Core.Telemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 
 namespace NetworkMonitor.Core;
 
-/// <summary>
-/// Extension methods for registering Network Monitor services.
-/// Encapsulates all the DI wiring in one place.
-/// </summary>
 public static class ServiceCollectionExtensions
 {
-    /// <summary>
-    /// Registers all Network Monitor services with the DI container.
-    /// </summary>
-    public static IServiceCollection AddNetworkMonitor(
-        this IServiceCollection services,
-        IConfiguration configuration)
+    public static string Version { get; } =
+        typeof(ServiceCollectionExtensions).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
+
+    extension(IServiceCollection services)
     {
-        // Bind options from configuration
-        services.Configure<MonitorOptions>(
-            configuration.GetSection(MonitorOptions.SectionName));
-        services.Configure<StorageOptions>(
-            configuration.GetSection(StorageOptions.SectionName));
-        services.Configure<RemoteSyncOptions>(
-            configuration.GetSection(RemoteSyncOptions.SectionName));
-        services.Configure<DatabricksSyncOptions>(
-            configuration.GetSection(DatabricksSyncOptions.SectionName));
+        public IServiceCollection AddNetworkMonitor(IConfiguration configuration)
+        {
+            services.Configure<MonitorOptions>(configuration.GetSection(MonitorOptions.SectionName));
+            services.Configure<StorageOptions>(configuration.GetSection(StorageOptions.SectionName));
+            services.Configure<RemoteSyncOptions>(configuration.GetSection(RemoteSyncOptions.SectionName));
+            services.Configure<DatabricksSyncOptions>(configuration.GetSection(DatabricksSyncOptions.SectionName));
 
-        // Single synchronized owner of stdout, shared by the status display and
-        // the LiveConsole logger provider. TryAdd so it stays a singleton even
-        // if AddLiveConsole() already registered it during logging setup.
-        services.TryAddSingleton<LiveConsole>();
+            services.TryAddSingleton(TimeProvider.System);
+            services.TryAddSingleton<LiveConsole>();
+            services.AddMetrics();
+            services.AddSingleton<NetworkMetrics>();
 
-        // Register core services
-        services.AddSingleton<IPingService, PingService>();
-        services.AddSingleton<IGatewayDetector, GatewayDetector>();
-        services.AddSingleton<IInternetTargetProvider, InternetTargetProvider>();
-        services.AddSingleton<INetworkConfigurationService, NetworkConfigurationService>();
-        services.AddSingleton<IDnsResolverService, DnsResolverService>();
-        services.AddSingleton<INetworkMonitorService, NetworkMonitorService>();
-        services.AddSingleton<IStatusDisplay, ConsoleStatusDisplay>();
-        services.AddSingleton<IStorageService, SqliteStorageService>();
+            services.AddSingleton<IPingService, IcmpPingService>();
+            services.AddSingleton<IDnsResolver, SystemDnsResolver>();
+            services.AddSingleton<IGatewayDetector, GatewayDetector>();
+            services.AddSingleton<ITargetProber, TargetProber>();
+            services.AddSingleton<INetworkConfigurationService, NetworkConfigurationService>();
+            services.AddSingleton<INetworkMonitor, NetworkMonitorService>();
+            services.AddSingleton<IStatusDisplay, ConsoleStatusDisplay>();
 
-        // Optional remote sync sinks. Both are no-ops unless their own section is
-        // configured, and both run independently of each other and of monitoring.
-        //   - Turso / libSQL:  RemoteSync:Url + RemoteSync:AuthToken
-        //   - Databricks:      Databricks:WorkspaceUrl + Databricks:WarehouseId + credential
-        services.AddSingleton<IRemoteDatabaseClient, TursoHranaClient>();
-        services.AddSingleton<IDatabricksClient, DatabricksSqlClient>();
+            services.AddSingleton<SqliteStore>();
+            services.AddSingleton<IStatusStore>(sp => sp.GetRequiredService<SqliteStore>());
+            services.AddSingleton<IRollupStore>(sp => sp.GetRequiredService<SqliteStore>());
 
-        // Register background services
-        services.AddHostedService<MonitorBackgroundService>();
-        services.AddHostedService<RemoteSyncService>();
-        services.AddHostedService<DatabricksSyncService>();
+            services.AddSingleton<IHranaClient, HranaClient>();
+            services.AddSingleton<IDatabricksClient, DatabricksClient>();
+            services.AddSingleton<IRollupSink, TursoRollupSink>();
+            services.AddSingleton<IRollupSink, DatabricksRollupSink>();
 
-        return services;
-    }
+            services.AddHostedService<MonitorBackgroundService>();
+            services.AddHostedService<RollupSyncService>();
+            return services;
+        }
 
-    /// <summary>
-    /// Adds OpenTelemetry metrics with file export (always) and console export (opt-in).
-    /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="fileOptions">File exporter options.</param>
-    /// <param name="enableConsoleExporter">
-    /// When false (default), OpenTelemetry metrics are only written to files.
-    /// When true, metrics are also dumped to the console (noisy with many targets).
-    /// This does NOT affect the status display or database - only the raw
-    /// OpenTelemetry histogram/counter output on stdout.
-    /// </param>
-    public static IServiceCollection AddNetworkMonitorTelemetry(
-        this IServiceCollection services,
-        FileExporterOptions? fileOptions = null,
-        bool enableConsoleExporter = false)
-    {
-        fileOptions ??= FileExporterOptions.Default;
-
-        services.AddOpenTelemetry()
-            .ConfigureResource(resource => resource
-                .AddService(
-                    serviceName: "NetworkMonitor",
-                    serviceVersion: "1.0.0"))
-            .WithMetrics(metrics =>
-            {
-                metrics
-                    .AddMeter("NetworkMonitor.Core")
+        public IServiceCollection AddNetworkMonitorTelemetry(FileExporterOptions fileOptions)
+        {
+            ArgumentNullException.ThrowIfNull(fileOptions);
+            services.AddOpenTelemetry()
+                .ConfigureResource(resource => resource.AddService(serviceName: "NetworkMonitor", serviceVersion: ServiceCollectionExtensions.Version))
+                .WithMetrics(metrics => metrics
+                    .AddMeter(NetworkMetrics.MeterName)
                     .AddRuntimeInstrumentation()
-                    .AddFileExporter(fileOptions);
-
-                // Only add the console exporter when explicitly requested.
-                // With dozens of targets, the histogram output every 10 seconds
-                // drowns out the actual status display.
-                if (enableConsoleExporter)
-                {
-                    metrics.AddConsoleExporter();
-                }
-            });
-
-        return services;
+                    .AddReader(new PeriodicExportingMetricReader(
+                        new FileMetricExporter(fileOptions, TimeProvider.System),
+                        exportIntervalMilliseconds: 10_000)));
+            return services;
+        }
     }
 }
