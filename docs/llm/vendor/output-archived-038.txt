@@ -195,4 +195,16 @@ The given project `NetworkMonitor.Tests` has no updates given the current source
 real	0m1.604s
 user	0m1.035s
 sys	0m0.235s
+kushal@fedora:~/src/dotnet/network-monitor/src$ (cd ~/src/dotnet/network-monitor && VERSION="v1.0.$(date -u +%Y%m%d.%H%M%S)" && dotnet publish src/NetworkMonitor.Console/NetworkMonitor.Console.csproj --configuration Release --runtime linux-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -p:InformationalVersion="${VERSION#v}" --output ./publish/linux-x64 && ls -la ./publish/linux-x64/)
+Restore complete (3.3s)
+    info NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy
+  NetworkMonitor.Core net11.0 succeeded (2.1s) → src/NetworkMonitor.Core/bin/Release/net11.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Console net11.0 linux-x64 succeeded (0.8s) → publish/linux-x64/
+
+Build succeeded in 6.6s
+total 78848
+drwxr-xr-x. 1 kushal kushal       76 Nov 17 01:44 .
+drwxr-xr-x. 1 kushal kushal       18 Nov 17 01:44 ..
+-rw-r--r--. 1 kushal kushal     6714 Nov 16 18:20 appsettings.json
+-rwxr-xr-x. 1 kushal kushal 80729950 Nov 17 01:44 NetworkMonitor.Console
 kushal@fedora:~/src/dotnet/network-monitor/src$ 
