@@ -219,4 +219,201 @@ dotnet-install: Note that the script does not resolve dependencies during instal
 dotnet-install: To check the list of dependencies, go to https://learn.microsoft.com/dotnet/core/install, select your operating system and check the "Dependencies" section.
 dotnet-install: Installation finished successfully.
 PASSED on 11.0.100 GA!
+kushal@fedora:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/src; time dotnet format; cd ~/src/dotnet/network-monitor/; time bash verify.sh; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet build; time dotnet test; time dotnet list package; time dotnet list package --outdated;
+
+real	0m5.376s
+user	0m7.762s
+sys	0m0.714s
+>> .NET SDK version: 11.0.100-rc.3.26522.148
+>> Checking source tree layout
+   layout OK
+------------------------------------------------------------
+>> dotnet restore
+Restore complete (0.1s)
+
+Build succeeded in 0.2s
+------------------------------------------------------------
+>> dotnet build (Release)
+    info NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy
+  NetworkMonitor.Core net11.0 succeeded (0.8s) → src/NetworkMonitor.Core/bin/Release/net11.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Console net11.0 succeeded (0.2s) → src/NetworkMonitor.Console/bin/Release/net11.0/NetworkMonitor.Console.dll
+  NetworkMonitor.Tests net11.0 succeeded (0.6s) → src/NetworkMonitor.Tests/bin/Release/net11.0/NetworkMonitor.Tests.dll
+
+Build succeeded in 1.4s
+------------------------------------------------------------
+>> dotnet test (Release)
+Running tests from src/NetworkMonitor.Tests/bin/Release/net11.0/NetworkMonitor.Tests.dll (net11.0|x64)
+src/NetworkMonitor.Tests/bin/Release/net11.0/NetworkMonitor.Tests.dll (net11.0|x64) passed [✓100/x0/↓0] (863ms)
+
+Test run summary: Passed!
+  total: 100
+  failed: 0
+  succeeded: 100
+  skipped: 0
+  duration: 1s 065ms
+------------------------------------------------------------
+NetworkMonitor verification summary
+------------------------------------------------------------
+  source layout:         PASS
+  restore:               PASS
+  build (Release):       PASS
+  tests (Release):       PASS
+  C# source files:       61
+------------------------------------------------------------
+RESULT: OK - build and tests passed.
+------------------------------------------------------------
+
+real	0m3.518s
+user	0m2.370s
+sys	0m0.443s
+Starting project export...
+Project Path: /home/kushal/src/dotnet/network-monitor
+Output File:  /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
+Listing files via git...
+Found 77 files to export
+Processing (1/77): .github/dependabot.yml
+Processing (2/77): .github/workflows/build-and-test.yml
+Processing (3/77): .github/workflows/dependency-check.yml
+Processing (4/77): .github/workflows/release.yml
+Processing (5/77): README.md
+Processing (6/77): export.sh
+Processing (7/77): global.json
+Processing (8/77): src/Directory.Build.props
+Processing (9/77): src/Directory.Packages.props
+Processing (10/77): src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
+Processing (11/77): src/NetworkMonitor.Console/Program.cs
+Processing (12/77): src/NetworkMonitor.Console/appsettings.json
+Processing (13/77): src/NetworkMonitor.Core/Configuration/DatabricksSyncOptions.cs
+Processing (14/77): src/NetworkMonitor.Core/Configuration/MonitorOptions.cs
+Processing (15/77): src/NetworkMonitor.Core/Configuration/RemoteSyncOptions.cs
+Processing (16/77): src/NetworkMonitor.Core/Configuration/RollupSyncOptions.cs
+Processing (17/77): src/NetworkMonitor.Core/Configuration/StorageOptions.cs
+Processing (18/77): src/NetworkMonitor.Core/Display/ConsoleStatusDisplay.cs
+Processing (19/77): src/NetworkMonitor.Core/Display/LiveConsole.cs
+Processing (20/77): src/NetworkMonitor.Core/Display/LiveConsoleLogger.cs
+Processing (21/77): src/NetworkMonitor.Core/Models/CheckRollup.cs
+Processing (22/77): src/NetworkMonitor.Core/Models/DnsResult.cs
+Processing (23/77): src/NetworkMonitor.Core/Models/MonitorTarget.cs
+Processing (24/77): src/NetworkMonitor.Core/Models/NetworkStatus.cs
+Processing (25/77): src/NetworkMonitor.Core/Models/PingSample.cs
+Processing (26/77): src/NetworkMonitor.Core/Models/TargetCheckResult.cs
+Processing (27/77): src/NetworkMonitor.Core/Monitoring/AddressSelector.cs
+Processing (28/77): src/NetworkMonitor.Core/Monitoring/DnsResolver.cs
+Processing (29/77): src/NetworkMonitor.Core/Monitoring/GatewayDetector.cs
+Processing (30/77): src/NetworkMonitor.Core/Monitoring/HealthEvaluator.cs
+Processing (31/77): src/NetworkMonitor.Core/Monitoring/InternetTargets.cs
+Processing (32/77): src/NetworkMonitor.Core/Monitoring/MonitorBackgroundService.cs
+Processing (33/77): src/NetworkMonitor.Core/Monitoring/NetworkConfigurationService.cs
+Processing (34/77): src/NetworkMonitor.Core/Monitoring/NetworkMonitorService.cs
+Processing (35/77): src/NetworkMonitor.Core/Monitoring/PingService.cs
+Processing (36/77): src/NetworkMonitor.Core/Monitoring/PingStatistics.cs
+Processing (37/77): src/NetworkMonitor.Core/Monitoring/TargetProber.cs
+Processing (38/77): src/NetworkMonitor.Core/NetworkMonitor.Core.csproj
+Processing (39/77): src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
+Processing (40/77): src/NetworkMonitor.Core/Storage/DataDirectory.cs
+Processing (41/77): src/NetworkMonitor.Core/Storage/SqliteStore.cs
+Processing (42/77): src/NetworkMonitor.Core/Sync/Databricks/DatabricksClient.cs
+Processing (43/77): src/NetworkMonitor.Core/Sync/Databricks/DatabricksRollupSink.cs
+Processing (44/77): src/NetworkMonitor.Core/Sync/IRollupSink.cs
+Processing (45/77): src/NetworkMonitor.Core/Sync/RollupRow.cs
+Processing (46/77): src/NetworkMonitor.Core/Sync/RollupSyncService.cs
+Processing (47/77): src/NetworkMonitor.Core/Sync/RollupSyncer.cs
+Processing (48/77): src/NetworkMonitor.Core/Sync/SqlIdentifier.cs
+Processing (49/77): src/NetworkMonitor.Core/Sync/SqlValue.cs
+Processing (50/77): src/NetworkMonitor.Core/Sync/SyncHttp.cs
+Processing (51/77): src/NetworkMonitor.Core/Sync/Turso/HranaClient.cs
+Processing (52/77): src/NetworkMonitor.Core/Sync/Turso/TursoRollupSink.cs
+Processing (53/77): src/NetworkMonitor.Core/Telemetry/FileExporterOptions.cs
+Processing (54/77): src/NetworkMonitor.Core/Telemetry/FileMetricExporter.cs
+Processing (55/77): src/NetworkMonitor.Core/Telemetry/NetworkMetrics.cs
+Processing (56/77): src/NetworkMonitor.Core/Telemetry/RollingJsonArrayWriter.cs
+Processing (57/77): src/NetworkMonitor.Tests/Configuration/OptionsTests.cs
+Processing (58/77): src/NetworkMonitor.Tests/Display/ConsoleStatusDisplayTests.cs
+Processing (59/77): src/NetworkMonitor.Tests/Display/LiveConsoleTests.cs
+Processing (60/77): src/NetworkMonitor.Tests/Fakes/Fakes.cs
+Processing (61/77): src/NetworkMonitor.Tests/Fakes/SyncFakes.cs
+Processing (62/77): src/NetworkMonitor.Tests/Monitoring/AddressSelectorTests.cs
+Processing (63/77): src/NetworkMonitor.Tests/Monitoring/EnvironmentTests.cs
+Processing (64/77): src/NetworkMonitor.Tests/Monitoring/HealthEvaluatorTests.cs
+Processing (65/77): src/NetworkMonitor.Tests/Monitoring/MonitorBackgroundServiceTests.cs
+Processing (66/77): src/NetworkMonitor.Tests/Monitoring/NetworkConfigurationServiceTests.cs
+Processing (67/77): src/NetworkMonitor.Tests/Monitoring/NetworkMonitorServiceTests.cs
+Processing (68/77): src/NetworkMonitor.Tests/Monitoring/PingStatisticsTests.cs
+Processing (69/77): src/NetworkMonitor.Tests/Monitoring/TargetProberTests.cs
+Processing (70/77): src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj
+Processing (71/77): src/NetworkMonitor.Tests/Storage/SqliteStoreTests.cs
+Processing (72/77): src/NetworkMonitor.Tests/Sync/RollupSyncerTests.cs
+Processing (73/77): src/NetworkMonitor.Tests/Sync/SinkTests.cs
+Processing (74/77): src/NetworkMonitor.Tests/Telemetry/RollingJsonArrayWriterTests.cs
+Processing (75/77): src/NetworkMonitor.slnx
+Processing (76/77): src/run.sh
+Processing (77/77): verify.sh
+
+Export completed successfully!
+Output file: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
+Total source size: 0.20 MB across 77 files
+
+real	0m0.958s
+user	0m0.458s
+sys	0m0.814s
+Restore complete (0.1s)
+    info NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy
+  NetworkMonitor.Core net11.0 succeeded (0.6s) → NetworkMonitor.Core/bin/Debug/net11.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Console net11.0 succeeded (0.1s) → NetworkMonitor.Console/bin/Debug/net11.0/NetworkMonitor.Console.dll
+  NetworkMonitor.Tests net11.0 succeeded (0.5s) → NetworkMonitor.Tests/bin/Debug/net11.0/NetworkMonitor.Tests.dll
+
+Build succeeded in 1.3s
+
+real	0m1.395s
+user	0m0.226s
+sys	0m0.049s
+Running tests from NetworkMonitor.Tests/bin/Debug/net11.0/NetworkMonitor.Tests.dll (net11.0|x64)
+NetworkMonitor.Tests/bin/Debug/net11.0/NetworkMonitor.Tests.dll (net11.0|x64) passed [✓100/x0/↓0] (823ms)
+
+Test run summary: Passed!
+  total: 100
+  failed: 0
+  succeeded: 100
+  skipped: 0
+  duration: 1s 033ms
+
+real	0m1.921s
+user	0m2.206s
+sys	0m0.311s
+Restore complete (0.1s)
+
+Build succeeded in 0.1s
+Project 'NetworkMonitor.Console' has the following package references
+   [net11.0]: No packages were found for this framework.
+Project 'NetworkMonitor.Core' has the following package references
+   [net11.0]: 
+   Top-level Package                            Requested   Resolved
+   > Microsoft.Data.Sqlite                      11.0.0      11.0.0  
+   > Microsoft.Extensions.Hosting               11.0.0      11.0.0  
+   > OpenTelemetry.Extensions.Hosting           1.21.0      1.21.0  
+   > OpenTelemetry.Instrumentation.Runtime      1.21.0      1.21.0  
+
+Project 'NetworkMonitor.Tests' has the following package references
+   [net11.0]: 
+   Top-level Package      Requested   Resolved
+   > xunit.v3             4.0.3       4.0.3   
+
+
+real	0m1.049s
+user	0m0.748s
+sys	0m0.214s
+Restore complete (0.1s)
+
+Build succeeded in 0.1s
+
+The following sources were used:
+   https://api.nuget.org/v3/index.json
+
+The given project `NetworkMonitor.Console` has no updates given the current sources.
+The given project `NetworkMonitor.Core` has no updates given the current sources.
+The given project `NetworkMonitor.Tests` has no updates given the current sources.
+
+real	0m1.169s
+user	0m0.882s
+sys	0m0.209s
 kushal@fedora:~/src/dotnet/network-monitor/src$ 

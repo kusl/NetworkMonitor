@@ -1,8 +1,8 @@
 ===============================================================================
 PROJECT EXPORT
-Generated (UTC): 2026-11-17 06:28:22
+Generated (UTC): 2026-11-17 06:50:10
 Project Path:    /home/kushal/src/dotnet/network-monitor
-Git Commit:      760fc71feb73d063c68520bf58b1506079a9cd8d
+Git Commit:      47797697adfd60994f23a52f33173318c5f02718
 Git Branch:      master
 .NET SDK:        11.0.100-rc.3.26522.148
 Files Exported:  77
@@ -21,6 +21,10 @@ DIRECTORY STRUCTURE:
 │       └── release.yml
 ├── .gitignore
 ├── global.json
+├── publish
+│   └── linux-x64
+│       ├── appsettings.json
+│       └── NetworkMonitor.Console
 ├── README.md
 ├── src
 │   ├── Directory.Build.props
@@ -289,10 +293,10 @@ jobs:
 
 ================================================================================
 FILE:     .github/workflows/release.yml
-SIZE:     8.33 KB (8531 bytes)
-LINES:    260
-SHA256:   10e4b9f4073d00f5dd457ff2606e4ac2c854bc23ffe0395822ff6e78b4a54e98
-MODIFIED: 2026-11-16 18:26:50
+SIZE:     8.67 KB (8883 bytes)
+LINES:    271
+SHA256:   6adca67844ed002605a70d70f75876f4c8cf819db6811773682b021883302d95
+MODIFIED: 2026-11-17 01:48:09
 ================================================================================
 
 name: Build and Release
@@ -424,8 +428,19 @@ jobs:
             -p:DebugType=None \
             -p:DebugSymbols=false \
             -p:InformationalVersion="${VERSION#v}" \
+            -v:diag \
+            -bl:publish-${{ matrix.rid }}.binlog \
             --output ./publish/${{ matrix.rid }}
           ls -la ./publish/${{ matrix.rid }}/
+
+      - name: Upload publish binlog on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: binlog-${{ matrix.rid }}
+          path: publish-${{ matrix.rid }}.binlog
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Create tar.gz archive (Unix)
         if: matrix.archive-type == 'tar'
@@ -6672,9 +6687,9 @@ exit $OVERALL
 
 
 ===============================================================================
-EXPORT COMPLETED (UTC): 2026-11-17 06:28:23
+EXPORT COMPLETED (UTC): 2026-11-17 06:50:11
 Total Files Exported:   77
-Total Source Size:      0.20 MB (208423 bytes)
+Total Source Size:      0.20 MB (208775 bytes)
 Output File:            /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
-DUMP SHA256 (of all lines above this one): 32a6fb8a9864a1a518016ae657a0a54d36d3195f8c52a4398dc8085dfe3ce35b
+DUMP SHA256 (of all lines above this one): c334ca3623560d270a27601e055baf8f64382729d644d84fee664ab1aaf4c444
