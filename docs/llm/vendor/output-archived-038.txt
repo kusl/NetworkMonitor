@@ -207,4 +207,16 @@ drwxr-xr-x. 1 kushal kushal       76 Nov 17 01:44 .
 drwxr-xr-x. 1 kushal kushal       18 Nov 17 01:44 ..
 -rw-r--r--. 1 kushal kushal     6714 Nov 16 18:20 appsettings.json
 -rwxr-xr-x. 1 kushal kushal 80729950 Nov 17 01:44 NetworkMonitor.Console
+kushal@fedora:~/src/dotnet/network-monitor/src$ (cd ~/src/dotnet/network-monitor && curl -sSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh && bash /tmp/dotnet-install.sh --channel 11.0 --install-dir /tmp/dotnet11 && DOTNET_ROOT=/tmp/dotnet11 PATH="/tmp/dotnet11:$PATH" NUGET_PACKAGES=/tmp/nuget11 DOTNET_NOLOGO=true DOTNET_CLI_TELEMETRY_OPTOUT=true DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true dotnet publish src/NetworkMonitor.Console/NetworkMonitor.Console.csproj --configuration Release --runtime linux-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -p:InformationalVersion="1.0.$(date -u +%Y%m%d.%H%M%S)" --output /tmp/publish/linux-x64 -v:diag > /tmp/ci-repro.log 2>&1 || { tail -n 100 /tmp/ci-repro.log; exit 1; }) && echo "PASSED on 11.0.100 GA!"
+dotnet-install: Attempting to download using aka.ms link https://builds.dotnet.microsoft.com/dotnet/Sdk/11.0.100/dotnet-sdk-11.0.100-linux-x64.tar.gz
+dotnet-install: Remote file https://builds.dotnet.microsoft.com/dotnet/Sdk/11.0.100/dotnet-sdk-11.0.100-linux-x64.tar.gz size is 211463422 bytes.
+dotnet-install: Extracting archive from https://builds.dotnet.microsoft.com/dotnet/Sdk/11.0.100/dotnet-sdk-11.0.100-linux-x64.tar.gz
+dotnet-install: Downloaded file size is 211463422 bytes.
+dotnet-install: The remote and local file sizes are equal.
+dotnet-install: Installed version is 11.0.100
+dotnet-install: Adding to current process PATH: `/tmp/dotnet11`. Note: This change will be visible only when sourcing script.
+dotnet-install: Note that the script does not resolve dependencies during installation.
+dotnet-install: To check the list of dependencies, go to https://learn.microsoft.com/dotnet/core/install, select your operating system and check the "Dependencies" section.
+dotnet-install: Installation finished successfully.
+PASSED on 11.0.100 GA!
 kushal@fedora:~/src/dotnet/network-monitor/src$ 
