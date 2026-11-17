@@ -1,8 +1,8 @@
 kushal@fedora:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/src; time dotnet format; cd ~/src/dotnet/network-monitor/; time bash verify.sh; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet build; time dotnet test; time dotnet list package; time dotnet list package --outdated;
 
-real	0m6.102s
-user	0m7.890s
-sys	0m0.807s
+real	0m6.226s
+user	0m8.193s
+sys	0m0.824s
 >> .NET SDK version: 11.0.100-rc.3.26522.148
 >> Checking source tree layout
    layout OK
@@ -15,21 +15,21 @@ Build succeeded in 0.2s
 >> dotnet build (Release)
     info NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy
   NetworkMonitor.Core net11.0 succeeded (2.0s) → src/NetworkMonitor.Core/bin/Release/net11.0/NetworkMonitor.Core.dll
-  NetworkMonitor.Console net11.0 succeeded (0.3s) → src/NetworkMonitor.Console/bin/Release/net11.0/NetworkMonitor.Console.dll
+  NetworkMonitor.Console net11.0 succeeded (0.4s) → src/NetworkMonitor.Console/bin/Release/net11.0/NetworkMonitor.Console.dll
   NetworkMonitor.Tests net11.0 succeeded (0.7s) → src/NetworkMonitor.Tests/bin/Release/net11.0/NetworkMonitor.Tests.dll
 
-Build succeeded in 2.8s
+Build succeeded in 2.7s
 ------------------------------------------------------------
 >> dotnet test (Release)
 Running tests from src/NetworkMonitor.Tests/bin/Release/net11.0/NetworkMonitor.Tests.dll (net11.0|x64)
-src/NetworkMonitor.Tests/bin/Release/net11.0/NetworkMonitor.Tests.dll (net11.0|x64) passed [✓100/x0/↓0] (870ms)
+src/NetworkMonitor.Tests/bin/Release/net11.0/NetworkMonitor.Tests.dll (net11.0|x64) passed [✓100/x0/↓0] (866ms)
 
 Test run summary: Passed!
   total: 100
   failed: 0
   succeeded: 100
   skipped: 0
-  duration: 1s 094ms
+  duration: 1s 087ms
 ------------------------------------------------------------
 NetworkMonitor verification summary
 ------------------------------------------------------------
@@ -42,9 +42,9 @@ NetworkMonitor verification summary
 RESULT: OK - build and tests passed.
 ------------------------------------------------------------
 
-real	0m4.964s
-user	0m2.455s
-sys	0m0.437s
+real	0m4.924s
+user	0m2.520s
+sys	0m0.438s
 Starting project export...
 Project Path: /home/kushal/src/dotnet/network-monitor
 Output File:  /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
@@ -132,33 +132,33 @@ Export completed successfully!
 Output file: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 Total source size: 0.20 MB across 77 files
 
-real	0m0.953s
-user	0m0.491s
-sys	0m0.763s
+real	0m0.971s
+user	0m0.470s
+sys	0m0.808s
 Restore complete (0.1s)
     info NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy
-  NetworkMonitor.Core net11.0 succeeded (0.6s) → NetworkMonitor.Core/bin/Debug/net11.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Core net11.0 succeeded (0.7s) → NetworkMonitor.Core/bin/Debug/net11.0/NetworkMonitor.Core.dll
   NetworkMonitor.Console net11.0 succeeded (0.2s) → NetworkMonitor.Console/bin/Debug/net11.0/NetworkMonitor.Console.dll
   NetworkMonitor.Tests net11.0 succeeded (0.5s) → NetworkMonitor.Tests/bin/Debug/net11.0/NetworkMonitor.Tests.dll
 
-Build succeeded in 1.3s
+Build succeeded in 1.4s
 
-real	0m1.474s
-user	0m0.231s
-sys	0m0.055s
+real	0m1.577s
+user	0m0.234s
+sys	0m0.059s
 Running tests from NetworkMonitor.Tests/bin/Debug/net11.0/NetworkMonitor.Tests.dll (net11.0|x64)
-NetworkMonitor.Tests/bin/Debug/net11.0/NetworkMonitor.Tests.dll (net11.0|x64) passed [✓100/x0/↓0] (750ms)
+NetworkMonitor.Tests/bin/Debug/net11.0/NetworkMonitor.Tests.dll (net11.0|x64) passed [✓100/x0/↓0] (819ms)
 
 Test run summary: Passed!
   total: 100
   failed: 0
   succeeded: 100
   skipped: 0
-  duration: 952ms
+  duration: 1s 051ms
 
-real	0m1.757s
-user	0m1.990s
-sys	0m0.306s
+real	0m1.919s
+user	0m2.108s
+sys	0m0.345s
 Restore complete (0.1s)
 
 Build succeeded in 0.1s
@@ -178,9 +178,9 @@ Project 'NetworkMonitor.Tests' has the following package references
    > xunit.v3             4.0.3       4.0.3   
 
 
-real	0m1.038s
-user	0m0.724s
-sys	0m0.216s
+real	0m1.079s
+user	0m0.776s
+sys	0m0.185s
 Restore complete (0.1s)
 
 Build succeeded in 0.1s
@@ -192,7 +192,7 @@ The given project `NetworkMonitor.Console` has no updates given the current sour
 The given project `NetworkMonitor.Core` has no updates given the current sources.
 The given project `NetworkMonitor.Tests` has no updates given the current sources.
 
-real	0m1.723s
-user	0m1.041s
-sys	0m0.250s
+real	0m1.208s
+user	0m0.917s
+sys	0m0.206s
 kushal@fedora:~/src/dotnet/network-monitor/src$ 
