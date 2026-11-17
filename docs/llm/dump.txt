@@ -1,8 +1,8 @@
 ===============================================================================
 PROJECT EXPORT
-Generated (UTC): 2026-11-17 14:08:02
+Generated (UTC): 2026-11-17 14:36:32
 Project Path:    /home/kushal/src/dotnet/network-monitor
-Git Commit:      1b93798d0b333454555aec6503598dc17bba62ca
+Git Commit:      172f109dd7d1233f497b53eb6c9cb1a6851dfe3b
 Git Branch:      master
 .NET SDK:        11.0.100-rc.3.26522.148
 Files Exported:  77
@@ -293,10 +293,10 @@ jobs:
 
 ================================================================================
 FILE:     .github/workflows/release.yml
-SIZE:     8.67 KB (8883 bytes)
-LINES:    271
-SHA256:   6adca67844ed002605a70d70f75876f4c8cf819db6811773682b021883302d95
-MODIFIED: 2026-11-17 01:48:09
+SIZE:     8.41 KB (8611 bytes)
+LINES:    260
+SHA256:   3a705350785e7f0231ef9d8aedd77a6d11534c13b52c39a5a02dc3e7784f46f6
+MODIFIED: 2026-11-17 09:35:53
 ================================================================================
 
 name: Build and Release
@@ -331,9 +331,9 @@ jobs:
         id: version
         shell: bash
         run: |
-          VERSION="v1.0.$(date -u +%Y%m%d.%H%M%S)"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "Generated version: ${VERSION}"
+          RELEASE_VERSION="v1.0.$(date -u +%Y%m%d.%H%M%S)"
+          echo "version=${RELEASE_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Generated version: ${RELEASE_VERSION}"
 
   test:
     runs-on: ubuntu-latest
@@ -417,7 +417,7 @@ jobs:
       - name: Publish self-contained binary
         shell: bash
         env:
-          VERSION: ${{ needs.version.outputs.version }}
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
         run: |
           dotnet publish "$PROJECT_PATH" \
             --configuration Release \
@@ -427,20 +427,9 @@ jobs:
             -p:IncludeNativeLibrariesForSelfExtract=true \
             -p:DebugType=None \
             -p:DebugSymbols=false \
-            -p:InformationalVersion="${VERSION#v}" \
-            -v:diag \
-            -bl:publish-${{ matrix.rid }}.binlog \
+            -p:InformationalVersion="${RELEASE_VERSION#v}" \
             --output ./publish/${{ matrix.rid }}
           ls -la ./publish/${{ matrix.rid }}/
-
-      - name: Upload publish binlog on failure
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: binlog-${{ matrix.rid }}
-          path: publish-${{ matrix.rid }}.binlog
-          if-no-files-found: ignore
-          retention-days: 1
 
       - name: Create tar.gz archive (Unix)
         if: matrix.archive-type == 'tar'
@@ -470,7 +459,7 @@ jobs:
     needs: [version, build]
     runs-on: ubuntu-latest
     env:
-      VERSION: ${{ needs.version.outputs.version }}
+      RELEASE_VERSION: ${{ needs.version.outputs.version }}
 
     steps:
       - name: Checkout repository
@@ -546,8 +535,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "$VERSION" \
-            --title "Release $VERSION" \
+          gh release create "$RELEASE_VERSION" \
+            --title "Release $RELEASE_VERSION" \
             --notes-file release-notes.md \
             --target "${{ github.sha }}" \
             --latest \
@@ -561,9 +550,9 @@ jobs:
           {
             echo "## ✅ Release Created Successfully"
             echo ""
-            echo "**Version:** \`$VERSION\`"
+            echo "**Version:** \`$RELEASE_VERSION\`"
             echo ""
-            echo "**Release URL:** https://github.com/${{ github.repository }}/releases/tag/$VERSION"
+            echo "**Release URL:** https://github.com/${{ github.repository }}/releases/tag/$RELEASE_VERSION"
             echo ""
             echo "### Assets"
           } >> "$GITHUB_STEP_SUMMARY"
@@ -6687,9 +6676,9 @@ exit $OVERALL
 
 
 ===============================================================================
-EXPORT COMPLETED (UTC): 2026-11-17 14:08:03
+EXPORT COMPLETED (UTC): 2026-11-17 14:36:33
 Total Files Exported:   77
-Total Source Size:      0.20 MB (208775 bytes)
+Total Source Size:      0.20 MB (208503 bytes)
 Output File:            /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 ===============================================================================
-DUMP SHA256 (of all lines above this one): bd50014c8fabbd6537c68d1b4ff4f8e185cd43db6b659e376ad544b5f57bb937
+DUMP SHA256 (of all lines above this one): 295b18ccb2ed42d4a794b863eda9ca752c5962478164062444fdbf843760a986

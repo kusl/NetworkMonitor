@@ -1,243 +1,8 @@
-kushal@fedora:~/src/dotnet/zen-velixir-run$ free -h && swapon --show
-               total        used        free      shared  buff/cache   available
-Mem:            14Gi        10Gi       323Mi       130Mi       4.6Gi       4.7Gi
-Swap:          8.0Gi       7.3Gi       729Mi
-NAME       TYPE      SIZE USED PRIO
-/dev/zram0 partition   8G 7.3G  100
-kushal@fedora:~/src/dotnet/zen-velixir-run$ ps aux --sort=-%mem | head -n 15
-USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-kushal   2021299  4.1  4.5 14011512 709564 ?     Sl   Nov16  37:30 /usr/lib64/firefox/firefox
-kushal   2021850  0.3  4.5 16540220 704804 ?     Rl   Nov16   3:17 /usr/lib64/firefox/firefox -contentproc -isForBrowser -prefsHandle 0:42561 -prefMapHandle 1:307119 -jsInitHandle 2:161360 -parentBuildID 20261110113206 -sandboxReporter 3 -chrootClient 4 -ipcHandle 5 -initialChannelId {bd24e014-c258-473f-90b4-26cd6b4bbd28} -parentPid 2021299 -crashHelperPid 2021320 -crashHelper 6 -crashReporter 7 -greomni /usr/lib64/firefox/omni.ja -appomni /usr/lib64/firefox/browser/omni.ja -appDir /usr/lib64/firefox/browser 3 tab
-kushal   2022202  1.8  2.7 3854456 434628 ?      Sl   Nov16  16:29 /usr/lib64/firefox/firefox -contentproc -isForBrowser -prefsHandle 0:37412 -prefMapHandle 1:307119 -jsInitHandle 2:161360 -parentBuildID 20261110113206 -sandboxReporter 3 -chrootClient 4 -ipcHandle 5 -initialChannelId {3c9a3c16-1baa-4503-bc60-eb2a9ab2ac5a} -parentPid 2021299 -crashHelperPid 2021320 -crashHelper 6 -crashReporter 7 -greomni /usr/lib64/firefox/omni.ja -appomni /usr/lib64/firefox/browser/omni.ja -appDir /usr/lib64/firefox/browser 12 tab
-kushal   2018624  0.4  2.7 1525786100 422528 ?   Sl   Nov16   4:21 /app/extra/chrome --type=zygote --crashpad-handler-pid=18 --enable-crash-reporter=, --change-stack-guard-on-fork=enable
-kushal   3988536  0.9  2.6 3696968 419200 ?      Sl   Nov16   7:44 /usr/lib64/firefox/firefox -contentproc -isForBrowser -prefsHandle 0:56161 -prefMapHandle 1:307119 -jsInitHandle 2:161360 -parentBuildID 20261110113206 -sandboxReporter 3 -chrootClient 4 -ipcHandle 5 -initialChannelId {e4525fe2-4e9b-4d13-bd6f-2f7f09b6ad73} -parentPid 2021299 -crashHelperPid 2021320 -crashHelper 6 -crashReporter 7 -greomni /usr/lib64/firefox/omni.ja -appomni /usr/lib64/firefox/browser/omni.ja -appDir /usr/lib64/firefox/browser 56 tab
-kushal   2022125  0.3  2.6 8191596 413436 ?      Sl   Nov16   2:59 /usr/lib64/firefox/firefox -contentproc -isForBrowser -prefsHandle 0:37412 -prefMapHandle 1:307119 -jsInitHandle 2:161360 -parentBuildID 20261110113206 -sandboxReporter 3 -chrootClient 4 -ipcHandle 5 -initialChannelId {d0d1f893-370e-43f8-a878-a4771659e5e2} -parentPid 2021299 -crashHelperPid 2021320 -crashHelper 6 -crashReporter 7 -greomni /usr/lib64/firefox/omni.ja -appomni /usr/lib64/firefox/browser/omni.ja -appDir /usr/lib64/firefox/browser 9 tab
-kushal    404081  0.9  2.1 1522932692 342268 ?   Sl   01:54   3:38 /opt/VSCode-linux-x64/code --type=renderer --enable-crash-reporter=d7543a3b-1b9b-4bdc-ac73-84177d882a41,no_channel --user-data-dir=/home/kushal/.config/Code --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --cors-schemes=vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --fetch-schemes=vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file --app-path=/opt/VSCode-linux-x64/resources/app --enable-sandbox --enable-blink-features=HighlightAPI --max-active-webgl-contexts=32 --ozone-platform=wayland --disable-blink-features=FontMatchingCTMigration,StandardizedBrowserZoom, --lang=en-US --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=62 --time-ticks-at-unix-epoch=-1794796324993851 --launch-time-ticks=102122410372 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,10104979536272319559,7388351810322802298,262144 --enable-features=DocumentPolicyIncludeJSCallStacksInCrashReports,EarlyEstablishGpuChannel,EstablishGpuChannelAsync,GlobalShortcutsPortal,GlobalShortcutsPortalPreferredTrigger,PdfUseShowSaveFilePicker,UpdateCompositorMemoryPolicyOnScreenChange --disable-features=CalculateNativeWinOcclusion,DropInputEventsWhilePaintHolding,LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRendererForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version --pseudonymization-salt-handle=7,i,581396543916023893,6346928835501145639,4 --trace-process-track-uuid=3190709044408466132 --vscode-window-config=vscode:2a6392f0-5c84-43a8-bcd9-6f17881b3735
-kushal   2018712  0.0  1.5 1523532844 243404 ?   Sl   Nov16   0:36 /app/extra/chrome --type=zygote --crashpad-handler-pid=18 --enable-crash-reporter=, --change-stack-guard-on-fork=enable
-kushal   2022534  0.7  1.5 7753464 239308 ?      Sl   Nov16   6:42 /usr/lib64/firefox/firefox -contentproc -isForBrowser -prefsHandle 0:37412 -prefMapHandle 1:307119 -jsInitHandle 2:161360 -parentBuildID 20261110113206 -sandboxReporter 3 -chrootClient 4 -ipcHandle 5 -initialChannelId {e50897aa-d73e-43c5-a81f-0eeb7b2cf9ba} -parentPid 2021299 -crashHelperPid 2021320 -crashHelper 6 -crashReporter 7 -greomni /usr/lib64/firefox/omni.ja -appomni /usr/lib64/firefox/browser/omni.ja -appDir /usr/lib64/firefox/browser 22 tab
-kushal   2022180  0.0  1.4 3289580 234008 ?      Sl   Nov16   0:43 /usr/lib64/firefox/firefox -contentproc -isForBrowser -prefsHandle 0:37412 -prefMapHandle 1:307119 -jsInitHandle 2:161360 -parentBuildID 20261110113206 -sandboxReporter 3 -chrootClient 4 -ipcHandle 5 -initialChannelId {5f12712f-027c-471a-b1fd-3d02f2752282} -parentPid 2021299 -crashHelperPid 2021320 -crashHelper 6 -crashReporter 7 -greomni /usr/lib64/firefox/omni.ja -appomni /usr/lib64/firefox/browser/omni.ja -appDir /usr/lib64/firefox/browser 11 tab
-kushal      4081  2.3  1.4 4405936 221384 ?      Ssl  Nov15  48:51 /usr/bin/gnome-shell --mode=user
-kushal    752419  1.1  1.3 1518626220 206364 ?   Sl   08:35   0:01 /opt/VSCode-linux-x64/code --type=utility --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none --render-node-override=/dev/dri/renderD128 --dns-result-order=ipv4first --experimental-network-inspection --inspect-port=0 --enable-crash-reporter=d7543a3b-1b9b-4bdc-ac73-84177d882a41,no_channel --user-data-dir=/home/kushal/.config/Code --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --cors-schemes=vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --fetch-schemes=vscode-webview,vscode-file,vscode-remote-resource,vscode-managed-remote-resource --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,10104979536272319559,7388351810322802298,262144 --enable-features=DocumentPolicyIncludeJSCallStacksInCrashReports,EarlyEstablishGpuChannel,EstablishGpuChannelAsync,GlobalShortcutsPortal,GlobalShortcutsPortalPreferredTrigger,PdfUseShowSaveFilePicker,UpdateCompositorMemoryPolicyOnScreenChange --disable-features=CalculateNativeWinOcclusion,DropInputEventsWhilePaintHolding,LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRendererForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version --pseudonymization-salt-handle=7,i,581396543916023893,6346928835501145639,4 --trace-process-track-uuid=3190709050967759075
-root        5541  0.1  1.1 1186300 186564 ?      Ssl  Nov15   4:06 /usr/sbin/dnf5daemon-server
-kushal      4419  0.0  0.9 1944128 146248 ?      SNsl Nov15   1:31 /usr/bin/gnome-software --gapplication-service
-kushal@fedora:~/src/dotnet/zen-velixir-run$ for f in /proc/[0-9]*/status; do awk '/^Name:/{n=$2} /^VmSwap:/{s=$2} END{if(s>0) printf "%8.1f MB  %s\n", s/1024, n}' "$f" 2>/dev/null; done | sort -nr | head -n 15
-   369.8 MB  Isolated
-   353.0 MB  Isolated
-   337.7 MB  Isolated
-   306.6 MB  firefox
-   291.6 MB  Isolated
-   269.6 MB  Isolated
-   248.8 MB  ibus-portal
-   220.0 MB  dnf5daemon-serv
-   213.4 MB  gnome-software
-   208.9 MB  Isolated
-   200.7 MB  Isolated
-   198.0 MB  gnome-shell
-   171.8 MB  Isolated
-   163.2 MB  Isolated
-   152.6 MB  Isolated
-kushal@fedora:~/src/dotnet/zen-velixir-run$ cd ~/src/dotnet/network-monitor/src; time dotnet format; cd ~/src/dotnet/network-monitor/; time bash verify.sh; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet build; time dotnet test; time dotnet list package; time dotnet list package --outdated;
-
-real	0m5.660s
-user	0m7.408s
-sys	0m0.703s
->> .NET SDK version: 11.0.100-rc.3.26522.148
->> Checking source tree layout
-   layout OK
-------------------------------------------------------------
->> dotnet restore
-Restore complete (0.1s)
-
-Build succeeded in 0.2s
-------------------------------------------------------------
->> dotnet build (Release)
-    info NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy
-  NetworkMonitor.Core net11.0 succeeded (1.8s) → src/NetworkMonitor.Core/bin/Release/net11.0/NetworkMonitor.Core.dll
-  NetworkMonitor.Console net11.0 succeeded (0.4s) → src/NetworkMonitor.Console/bin/Release/net11.0/NetworkMonitor.Console.dll
-  NetworkMonitor.Tests net11.0 succeeded (0.7s) → src/NetworkMonitor.Tests/bin/Release/net11.0/NetworkMonitor.Tests.dll
-
-Build succeeded in 2.6s
-------------------------------------------------------------
->> dotnet test (Release)
-Running tests from src/NetworkMonitor.Tests/bin/Release/net11.0/NetworkMonitor.Tests.dll (net11.0|x64)
-src/NetworkMonitor.Tests/bin/Release/net11.0/NetworkMonitor.Tests.dll (net11.0|x64) passed [✓100/x0/↓0] (800ms)
-
-Test run summary: Passed!
-  total: 100
-  failed: 0
-  succeeded: 100
-  skipped: 0
-  duration: 1s 019ms
-------------------------------------------------------------
-NetworkMonitor verification summary
-------------------------------------------------------------
-  source layout:         PASS
-  restore:               PASS
-  build (Release):       PASS
-  tests (Release):       PASS
-  C# source files:       61
-------------------------------------------------------------
-RESULT: OK - build and tests passed.
-------------------------------------------------------------
-
-real	0m4.577s
-user	0m2.323s
-sys	0m0.391s
-Starting project export...
-Project Path: /home/kushal/src/dotnet/network-monitor
-Output File:  /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
-Listing files via git...
-Found 77 files to export
-Processing (1/77): .github/dependabot.yml
-Processing (2/77): .github/workflows/build-and-test.yml
-Processing (3/77): .github/workflows/dependency-check.yml
-Processing (4/77): .github/workflows/release.yml
-Processing (5/77): README.md
-Processing (6/77): export.sh
-Processing (7/77): global.json
-Processing (8/77): src/Directory.Build.props
-Processing (9/77): src/Directory.Packages.props
-Processing (10/77): src/NetworkMonitor.Console/NetworkMonitor.Console.csproj
-Processing (11/77): src/NetworkMonitor.Console/Program.cs
-Processing (12/77): src/NetworkMonitor.Console/appsettings.json
-Processing (13/77): src/NetworkMonitor.Core/Configuration/DatabricksSyncOptions.cs
-Processing (14/77): src/NetworkMonitor.Core/Configuration/MonitorOptions.cs
-Processing (15/77): src/NetworkMonitor.Core/Configuration/RemoteSyncOptions.cs
-Processing (16/77): src/NetworkMonitor.Core/Configuration/RollupSyncOptions.cs
-Processing (17/77): src/NetworkMonitor.Core/Configuration/StorageOptions.cs
-Processing (18/77): src/NetworkMonitor.Core/Display/ConsoleStatusDisplay.cs
-Processing (19/77): src/NetworkMonitor.Core/Display/LiveConsole.cs
-Processing (20/77): src/NetworkMonitor.Core/Display/LiveConsoleLogger.cs
-Processing (21/77): src/NetworkMonitor.Core/Models/CheckRollup.cs
-Processing (22/77): src/NetworkMonitor.Core/Models/DnsResult.cs
-Processing (23/77): src/NetworkMonitor.Core/Models/MonitorTarget.cs
-Processing (24/77): src/NetworkMonitor.Core/Models/NetworkStatus.cs
-Processing (25/77): src/NetworkMonitor.Core/Models/PingSample.cs
-Processing (26/77): src/NetworkMonitor.Core/Models/TargetCheckResult.cs
-Processing (27/77): src/NetworkMonitor.Core/Monitoring/AddressSelector.cs
-Processing (28/77): src/NetworkMonitor.Core/Monitoring/DnsResolver.cs
-Processing (29/77): src/NetworkMonitor.Core/Monitoring/GatewayDetector.cs
-Processing (30/77): src/NetworkMonitor.Core/Monitoring/HealthEvaluator.cs
-Processing (31/77): src/NetworkMonitor.Core/Monitoring/InternetTargets.cs
-Processing (32/77): src/NetworkMonitor.Core/Monitoring/MonitorBackgroundService.cs
-Processing (33/77): src/NetworkMonitor.Core/Monitoring/NetworkConfigurationService.cs
-Processing (34/77): src/NetworkMonitor.Core/Monitoring/NetworkMonitorService.cs
-Processing (35/77): src/NetworkMonitor.Core/Monitoring/PingService.cs
-Processing (36/77): src/NetworkMonitor.Core/Monitoring/PingStatistics.cs
-Processing (37/77): src/NetworkMonitor.Core/Monitoring/TargetProber.cs
-Processing (38/77): src/NetworkMonitor.Core/NetworkMonitor.Core.csproj
-Processing (39/77): src/NetworkMonitor.Core/ServiceCollectionExtensions.cs
-Processing (40/77): src/NetworkMonitor.Core/Storage/DataDirectory.cs
-Processing (41/77): src/NetworkMonitor.Core/Storage/SqliteStore.cs
-Processing (42/77): src/NetworkMonitor.Core/Sync/Databricks/DatabricksClient.cs
-Processing (43/77): src/NetworkMonitor.Core/Sync/Databricks/DatabricksRollupSink.cs
-Processing (44/77): src/NetworkMonitor.Core/Sync/IRollupSink.cs
-Processing (45/77): src/NetworkMonitor.Core/Sync/RollupRow.cs
-Processing (46/77): src/NetworkMonitor.Core/Sync/RollupSyncService.cs
-Processing (47/77): src/NetworkMonitor.Core/Sync/RollupSyncer.cs
-Processing (48/77): src/NetworkMonitor.Core/Sync/SqlIdentifier.cs
-Processing (49/77): src/NetworkMonitor.Core/Sync/SqlValue.cs
-Processing (50/77): src/NetworkMonitor.Core/Sync/SyncHttp.cs
-Processing (51/77): src/NetworkMonitor.Core/Sync/Turso/HranaClient.cs
-Processing (52/77): src/NetworkMonitor.Core/Sync/Turso/TursoRollupSink.cs
-Processing (53/77): src/NetworkMonitor.Core/Telemetry/FileExporterOptions.cs
-Processing (54/77): src/NetworkMonitor.Core/Telemetry/FileMetricExporter.cs
-Processing (55/77): src/NetworkMonitor.Core/Telemetry/NetworkMetrics.cs
-Processing (56/77): src/NetworkMonitor.Core/Telemetry/RollingJsonArrayWriter.cs
-Processing (57/77): src/NetworkMonitor.Tests/Configuration/OptionsTests.cs
-Processing (58/77): src/NetworkMonitor.Tests/Display/ConsoleStatusDisplayTests.cs
-Processing (59/77): src/NetworkMonitor.Tests/Display/LiveConsoleTests.cs
-Processing (60/77): src/NetworkMonitor.Tests/Fakes/Fakes.cs
-Processing (61/77): src/NetworkMonitor.Tests/Fakes/SyncFakes.cs
-Processing (62/77): src/NetworkMonitor.Tests/Monitoring/AddressSelectorTests.cs
-Processing (63/77): src/NetworkMonitor.Tests/Monitoring/EnvironmentTests.cs
-Processing (64/77): src/NetworkMonitor.Tests/Monitoring/HealthEvaluatorTests.cs
-Processing (65/77): src/NetworkMonitor.Tests/Monitoring/MonitorBackgroundServiceTests.cs
-Processing (66/77): src/NetworkMonitor.Tests/Monitoring/NetworkConfigurationServiceTests.cs
-Processing (67/77): src/NetworkMonitor.Tests/Monitoring/NetworkMonitorServiceTests.cs
-Processing (68/77): src/NetworkMonitor.Tests/Monitoring/PingStatisticsTests.cs
-Processing (69/77): src/NetworkMonitor.Tests/Monitoring/TargetProberTests.cs
-Processing (70/77): src/NetworkMonitor.Tests/NetworkMonitor.Tests.csproj
-Processing (71/77): src/NetworkMonitor.Tests/Storage/SqliteStoreTests.cs
-Processing (72/77): src/NetworkMonitor.Tests/Sync/RollupSyncerTests.cs
-Processing (73/77): src/NetworkMonitor.Tests/Sync/SinkTests.cs
-Processing (74/77): src/NetworkMonitor.Tests/Telemetry/RollingJsonArrayWriterTests.cs
-Processing (75/77): src/NetworkMonitor.slnx
-Processing (76/77): src/run.sh
-Processing (77/77): verify.sh
-
-Export completed successfully!
-Output file: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
-Total source size: 0.20 MB across 77 files
-
-real	0m0.939s
-user	0m0.474s
-sys	0m0.768s
-Restore complete (0.1s)
-    info NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy
-  NetworkMonitor.Core net11.0 succeeded (0.6s) → NetworkMonitor.Core/bin/Debug/net11.0/NetworkMonitor.Core.dll
-  NetworkMonitor.Console net11.0 succeeded (0.2s) → NetworkMonitor.Console/bin/Debug/net11.0/NetworkMonitor.Console.dll
-  NetworkMonitor.Tests net11.0 succeeded (0.5s) → NetworkMonitor.Tests/bin/Debug/net11.0/NetworkMonitor.Tests.dll
-
-Build succeeded in 1.3s
-
-real	0m1.480s
-user	0m0.223s
-sys	0m0.049s
-Running tests from NetworkMonitor.Tests/bin/Debug/net11.0/NetworkMonitor.Tests.dll (net11.0|x64)
-NetworkMonitor.Tests/bin/Debug/net11.0/NetworkMonitor.Tests.dll (net11.0|x64) passed [✓100/x0/↓0] (806ms)
-
-Test run summary: Passed!
-  total: 100
-  failed: 0
-  succeeded: 100
-  skipped: 0
-  duration: 1s 012ms
-
-real	0m1.833s
-user	0m2.035s
-sys	0m0.344s
-Restore complete (0.1s)
-
-Build succeeded in 0.1s
-Project 'NetworkMonitor.Console' has the following package references
-   [net11.0]: No packages were found for this framework.
-Project 'NetworkMonitor.Core' has the following package references
-   [net11.0]: 
-   Top-level Package                            Requested   Resolved
-   > Microsoft.Data.Sqlite                      11.0.0      11.0.0  
-   > Microsoft.Extensions.Hosting               11.0.0      11.0.0  
-   > OpenTelemetry.Extensions.Hosting           1.21.0      1.21.0  
-   > OpenTelemetry.Instrumentation.Runtime      1.21.0      1.21.0  
-
-Project 'NetworkMonitor.Tests' has the following package references
-   [net11.0]: 
-   Top-level Package      Requested   Resolved
-   > xunit.v3             4.0.3       4.0.3   
-
-
-real	0m1.043s
-user	0m0.737s
-sys	0m0.205s
-Restore complete (0.1s)
-
-Build succeeded in 0.1s
-
-The following sources were used:
-   https://api.nuget.org/v3/index.json
-
-The given project `NetworkMonitor.Console` has no updates given the current sources.
-The given project `NetworkMonitor.Core` has no updates given the current sources.
-The given project `NetworkMonitor.Tests` has no updates given the current sources.
-
-real	0m1.725s
-user	0m1.038s
-sys	0m0.246s
 kushal@fedora:~/src/dotnet/network-monitor/src$ cd ~/src/dotnet/network-monitor/src; time dotnet format; cd ~/src/dotnet/network-monitor/; time bash verify.sh; time bash export.sh; cd ~/src/dotnet/network-monitor/src; time dotnet build; time dotnet test; time dotnet list package; time dotnet list package --outdated;
 
-real	0m5.639s
-user	0m7.713s
-sys	0m0.622s
+real	0m6.102s
+user	0m7.890s
+sys	0m0.807s
 >> .NET SDK version: 11.0.100-rc.3.26522.148
 >> Checking source tree layout
    layout OK
@@ -249,22 +14,22 @@ Build succeeded in 0.2s
 ------------------------------------------------------------
 >> dotnet build (Release)
     info NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy
-  NetworkMonitor.Core net11.0 succeeded (1.9s) → src/NetworkMonitor.Core/bin/Release/net11.0/NetworkMonitor.Core.dll
-  NetworkMonitor.Console net11.0 succeeded (0.4s) → src/NetworkMonitor.Console/bin/Release/net11.0/NetworkMonitor.Console.dll
+  NetworkMonitor.Core net11.0 succeeded (2.0s) → src/NetworkMonitor.Core/bin/Release/net11.0/NetworkMonitor.Core.dll
+  NetworkMonitor.Console net11.0 succeeded (0.3s) → src/NetworkMonitor.Console/bin/Release/net11.0/NetworkMonitor.Console.dll
   NetworkMonitor.Tests net11.0 succeeded (0.7s) → src/NetworkMonitor.Tests/bin/Release/net11.0/NetworkMonitor.Tests.dll
 
-Build succeeded in 2.7s
+Build succeeded in 2.8s
 ------------------------------------------------------------
 >> dotnet test (Release)
 Running tests from src/NetworkMonitor.Tests/bin/Release/net11.0/NetworkMonitor.Tests.dll (net11.0|x64)
-src/NetworkMonitor.Tests/bin/Release/net11.0/NetworkMonitor.Tests.dll (net11.0|x64) passed [✓100/x0/↓0] (830ms)
+src/NetworkMonitor.Tests/bin/Release/net11.0/NetworkMonitor.Tests.dll (net11.0|x64) passed [✓100/x0/↓0] (870ms)
 
 Test run summary: Passed!
   total: 100
   failed: 0
   succeeded: 100
   skipped: 0
-  duration: 1s 069ms
+  duration: 1s 094ms
 ------------------------------------------------------------
 NetworkMonitor verification summary
 ------------------------------------------------------------
@@ -277,9 +42,9 @@ NetworkMonitor verification summary
 RESULT: OK - build and tests passed.
 ------------------------------------------------------------
 
-real	0m4.769s
-user	0m2.397s
-sys	0m0.444s
+real	0m4.964s
+user	0m2.455s
+sys	0m0.437s
 Starting project export...
 Project Path: /home/kushal/src/dotnet/network-monitor
 Output File:  /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
@@ -367,9 +132,9 @@ Export completed successfully!
 Output file: /home/kushal/src/dotnet/network-monitor/docs/llm/dump.txt
 Total source size: 0.20 MB across 77 files
 
-real	0m0.955s
-user	0m0.438s
-sys	0m0.829s
+real	0m0.953s
+user	0m0.491s
+sys	0m0.763s
 Restore complete (0.1s)
     info NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy
   NetworkMonitor.Core net11.0 succeeded (0.6s) → NetworkMonitor.Core/bin/Debug/net11.0/NetworkMonitor.Core.dll
@@ -378,9 +143,9 @@ Restore complete (0.1s)
 
 Build succeeded in 1.3s
 
-real	0m1.488s
-user	0m0.239s
-sys	0m0.050s
+real	0m1.474s
+user	0m0.231s
+sys	0m0.055s
 Running tests from NetworkMonitor.Tests/bin/Debug/net11.0/NetworkMonitor.Tests.dll (net11.0|x64)
 NetworkMonitor.Tests/bin/Debug/net11.0/NetworkMonitor.Tests.dll (net11.0|x64) passed [✓100/x0/↓0] (750ms)
 
@@ -389,11 +154,11 @@ Test run summary: Passed!
   failed: 0
   succeeded: 100
   skipped: 0
-  duration: 958ms
+  duration: 952ms
 
-real	0m1.794s
-user	0m2.047s
-sys	0m0.303s
+real	0m1.757s
+user	0m1.990s
+sys	0m0.306s
 Restore complete (0.1s)
 
 Build succeeded in 0.1s
@@ -413,9 +178,9 @@ Project 'NetworkMonitor.Tests' has the following package references
    > xunit.v3             4.0.3       4.0.3   
 
 
-real	0m1.087s
-user	0m0.785s
-sys	0m0.212s
+real	0m1.038s
+user	0m0.724s
+sys	0m0.216s
 Restore complete (0.1s)
 
 Build succeeded in 0.1s
@@ -427,7 +192,7 @@ The given project `NetworkMonitor.Console` has no updates given the current sour
 The given project `NetworkMonitor.Core` has no updates given the current sources.
 The given project `NetworkMonitor.Tests` has no updates given the current sources.
 
-real	0m1.195s
-user	0m0.910s
-sys	0m0.205s
+real	0m1.723s
+user	0m1.041s
+sys	0m0.250s
 kushal@fedora:~/src/dotnet/network-monitor/src$ 
