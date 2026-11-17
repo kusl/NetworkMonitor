@@ -127,8 +127,19 @@ jobs:
             -p:DebugType=None \
             -p:DebugSymbols=false \
             -p:InformationalVersion="${VERSION#v}" \
+            -v:diag \
+            -bl:publish-${{ matrix.rid }}.binlog \
             --output ./publish/${{ matrix.rid }}
           ls -la ./publish/${{ matrix.rid }}/
+
+      - name: Upload publish binlog on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: binlog-${{ matrix.rid }}
+          path: publish-${{ matrix.rid }}.binlog
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Create tar.gz archive (Unix)
         if: matrix.archive-type == 'tar'
